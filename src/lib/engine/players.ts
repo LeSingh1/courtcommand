@@ -338,7 +338,10 @@ export function awardRace(kind: AwardKind): AwardRow[] {
     let raw = 0;
     if (kind === "MVP")
       raw = predictMvpShare({ per: p.per, bpm: p.bpm, teamWins: wins, ppg: p.ppg, ts: p.tsp });
-    else if (kind === "DPOY") raw = p.defImpact * 0.9 + p.bpg * 6 + p.spg * 5 + (wins - 41) * 0.3;
+    else if (kind === "DPOY")
+      // DPOY rewards individual defense (rim protection + events), not team
+      // record — a dominant anchor on a losing team can still run away with it.
+      raw = p.defImpact * 1.4 + p.bpg * 9 + p.spg * 4 + p.rpg * 0.4 + Math.max(0, wins - 45) * 0.12;
     else if (kind === "ROTY") raw = (p.exp <= 1 ? p.per + p.ppg * 0.6 + p.bpm * 1.5 : -999);
     else raw = (p.salary < 18 && p.usg < 26 ? p.ppg * 1.2 + p.per * 0.5 : -999);
     return { player: p, raw };
@@ -352,7 +355,7 @@ export function awardRace(kind: AwardKind): AwardRow[] {
   const raws = top.map((x) => x.raw);
   const mean = raws.reduce((a, b) => a + b, 0) / raws.length;
   const std = Math.sqrt(raws.reduce((a, b) => a + (b - mean) ** 2, 0) / raws.length) || 1;
-  const T = 0.8;
+  const T = 0.72;
   const exps = top.map((x) => Math.exp((x.raw - mean) / std / T));
   const z = exps.reduce((a, b) => a + b, 0) || 1;
   const shares = exps.map((e) => (e / z) * 100);
