@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeftRight, Check, Plus, X, Loader2, ShieldAlert, BadgeCheck } from "lucide-react";
+import { ArrowLeftRight, Check, Plus, X, Loader2, ShieldAlert, BadgeCheck, GripVertical } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Insight } from "@/components/tool/ToolShell";
+import { Segmented } from "@/components/ui/Controls";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { getTool } from "@/lib/tools";
@@ -13,10 +14,10 @@ import { evaluateTrade, type TradeResult } from "@/lib/engine/teams";
 import type { Player, Team } from "@/lib/types";
 
 const teamOf = (abbr: string): Team => TEAMS.find((t) => t.abbr === abbr)!;
+const playerOf = (id: string): Player | undefined => PLAYERS.find((p) => p.id === id);
 const r1 = (n: number) => Math.round(n * 10) / 10;
 const sum = (ps: Player[], k: (p: Player) => number) => ps.reduce((a, p) => a + k(p), 0);
 
-// 2K-style overall-rating tint
 function ovrColor(o: number): string {
   if (o >= 90) return "#C9A14A";
   if (o >= 80) return "#5FA97E";
@@ -24,91 +25,134 @@ function ovrColor(o: number): string {
   return "#7E8CA0";
 }
 
+// one traded player: who, from where, to where
+interface PoolEntry {
+  id: string;
+  from: string;
+  to: string;
+}
+
+const DEFAULT_TEAMS = ["LAL", "GSW", "BOS", "NYK"];
+
 export default function TradeMachinePage() {
   const tool = getTool("trade-machine")!;
-  const [teamA, setTeamA] = useState("LAL");
-  const [teamB, setTeamB] = useState("GSW");
-  const [outA, setOutA] = useState<string[]>([]);
-  const [outB, setOutB] = useState<string[]>([]);
-
-  const rosterA = useMemo(() => playersByTeam(teamA), [teamA]);
-  const rosterB = useMemo(() => playersByTeam(teamB), [teamB]);
-  const pa = useMemo(() => outA.map((id) => PLAYERS.find((p) => p.id === id)!).filter(Boolean), [outA]);
-  const pb = useMemo(() => outB.map((id) => PLAYERS.find((p) => p.id === id)!).filter(Boolean), [outB]);
-
-  const result: TradeResult | null = useMemo(() => {
-    if (pa.length === 0 && pb.length === 0) return null;
-    return evaluateTrade([
-      { team: teamA, outgoing: pa, incoming: pb },
-      { team: teamB, outgoing: pb, incoming: pa },
-    ]);
-  }, [teamA, teamB, pa, pb]);
-
-  // per-side offense / defense swing (A receives pb, sends pa)
-  const swing = {
-    A: { off: r1(sum(pb, (p) => p.offImpact) - sum(pa, (p) => p.offImpact)), def: r1(sum(pb, (p) => p.defImpact) - sum(pa, (p) => p.defImpact)) },
-    B: { off: r1(sum(pa, (p) => p.offImpact) - sum(pb, (p) => p.offImpact)), def: r1(sum(pa, (p) => p.defImpact) - sum(pb, (p) => p.defImpact)) },
-  };
-
+  const [count, setCount] = useState<2 | 3 | 4>(2);
+  const [teams, setTeams] = useState<string[]>(["LAL", "GSW"]);
+  const [pool, setPool] = useState<PoolEntry[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toggle = (side: "A" | "B", id: string) => {
-    const [list, set] = side === "A" ? [outA, setOutA] : [outB, setOutB];
-    set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  const pulse = () => {
     const reduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) return;
     setAnalyzing(true);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setAnalyzing(false), 380);
+    timer.current = setTimeout(() => setAnalyzing(false), 360);
   };
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  const tA = teamOf(teamA);
-  const tB = teamOf(teamB);
-  const outAmtA = r1(sum(pa, (p) => p.salary));
-  const outAmtB = r1(sum(pb, (p) => p.salary));
+  const setCountN = (n: 2 | 3 | 4) => {
+    setCount(n);
+    setTeams((prev) => {
+      const next = [...prev];
+      while (next.length < n) next.push(DEFAULT_TEAMS.find((t) => !next.includes(t))!);
+      next.length = n;
+      setPool((p) => p.filter((e) => next.includes(e.from) && next.includes(e.to)));
+      return next;
+    });
+  };
+
+  const setTeamAt = (i: number, abbr: string) => {
+    setTeams((prev) => {
+      const old = prev[i];
+      const next = [...prev];
+      next[i] = abbr;
+      setPool((p) => p.filter((e) => e.from !== old && e.to !== old));
+      return next;
+    });
+  };
+
+  const addToPool = (id: string, from: string, to: string) => {
+    if (from === to) return;
+    setPool((p) => {
+      const without = p.filter((e) => e.id !== id);
+      return [...without, { id, from, to }];
+    });
+    pulse();
+  };
+  const removeFromPool = (id: string) => { setPool((p) => p.filter((e) => e.id !== id)); pulse(); };
+  const setDest = (id: string, to: string) => { setPool((p) => p.map((e) => (e.id === id ? { ...e, to } : e))); pulse(); };
+
+  // click-to-add sends to the next team in the ring
+  const nextTeam = (from: string) => {
+    const i = teams.indexOf(from);
+    return teams[(i + 1) % teams.length];
+  };
+  const toggle = (id: string, from: string) => {
+    if (pool.some((e) => e.id === id)) removeFromPool(id);
+    else addToPool(id, from, nextTeam(from));
+  };
+
+  const result: TradeResult | null = useMemo(() => {
+    if (pool.length === 0) return null;
+    const sides = teams.map((t) => ({
+      team: t,
+      outgoing: pool.filter((e) => e.from === t).map((e) => playerOf(e.id)!).filter(Boolean),
+      incoming: pool.filter((e) => e.to === t).map((e) => playerOf(e.id)!).filter(Boolean),
+    }));
+    return evaluateTrade(sides);
+  }, [teams, pool]);
+
+  const gridCols = count === 2 ? "lg:grid-cols-2" : count === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2";
 
   return (
     <ToolShell tool={tool}>
-      {/* team panels */}
-      <div className="relative grid gap-5 lg:grid-cols-2">
-        <TeamPanel
-          team={tA}
-          setTeam={(t) => { setTeamA(t); setOutA([]); }}
-          roster={rosterA}
-          selected={outA}
-          sends={pa}
-          receives={pb}
-          onToggle={(id) => toggle("A", id)}
-          exclude={teamB}
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <span className="kicker">Teams</span>
+        <Segmented
+          accent={teamOf(teams[0]).color}
+          value={String(count)}
+          onChange={(v) => setCountN(Number(v) as 2 | 3 | 4)}
+          options={[
+            { label: "2-team", value: "2" },
+            { label: "3-team", value: "3" },
+            { label: "4-team", value: "4" },
+          ]}
         />
-        <TeamPanel
-          team={tB}
-          setTeam={(t) => { setTeamB(t); setOutB([]); }}
-          roster={rosterB}
-          selected={outB}
-          sends={pb}
-          receives={pa}
-          onToggle={(id) => toggle("B", id)}
-          exclude={teamA}
-        />
-        {/* center swap node */}
-        <div className="pointer-events-none absolute left-1/2 top-[120px] hidden -translate-x-1/2 lg:block">
-          <div className="flex h-11 w-11 items-center justify-center border border-[var(--line-strong)] bg-[var(--bg)]">
-            <ArrowLeftRight size={18} className="text-white/70" />
-          </div>
-        </div>
+        <span className="hidden items-center gap-1.5 text-xs text-[var(--text-faint)] sm:flex">
+          <GripVertical size={13} /> Drag a player onto another team — or tap to send
+        </span>
       </div>
 
-      {/* salary balance meter */}
-      {result && <BalanceBar tA={tA} tB={tB} outA={outAmtA} outB={outAmtB} />}
+      <div className={`grid gap-5 ${gridCols}`}>
+        {teams.map((abbr, i) => {
+          const team = teamOf(abbr);
+          const outgoing = pool.filter((e) => e.from === abbr);
+          const incoming = pool.filter((e) => e.to === abbr).map((e) => playerOf(e.id)!).filter(Boolean);
+          return (
+            <TeamPanel
+              key={`${abbr}-${i}`}
+              team={team}
+              teams={teams}
+              roster={playersByTeam(abbr)}
+              outgoing={outgoing}
+              incoming={incoming}
+              onToggle={(id) => toggle(id, abbr)}
+              onDrop={(id, from) => from !== abbr && addToPool(id, from, abbr)}
+              onDest={setDest}
+              onRemove={removeFromPool}
+              onTeamChange={(t) => setTeamAt(i, t)}
+              exclude={teams}
+            />
+          );
+        })}
+      </div>
 
-      {/* verdict + after-trade */}
       <div className="mt-6">
         <AnimatePresence mode="wait">
           {analyzing && result ? (
             <motion.div key="eval" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={spring.soft}>
-              <div className="flex min-h-[140px] flex-col items-center justify-center gap-3 border border-[var(--line)] bg-[var(--surface)] text-center">
+              <div className="flex min-h-[130px] flex-col items-center justify-center gap-3 border border-[var(--line)] bg-[var(--surface)] text-center">
                 <Loader2 size={22} className="animate-spin text-white/50" />
                 <p className="kicker">Evaluating trade · CBA matching · apron caps</p>
               </div>
@@ -122,23 +166,31 @@ export default function TradeMachinePage() {
               transition={spring.soft}
               className="space-y-5"
             >
-              <VerdictBanner result={result} tA={tA} tB={tB} />
-              <div className="grid gap-5 sm:grid-cols-2">
-                <AfterTrade side={result.sides[0]} swing={swing.A} receives={pb} />
-                <AfterTrade side={result.sides[1]} swing={swing.B} receives={pa} />
+              <VerdictBanner result={result} teams={teams} />
+              <div className={`grid gap-5 ${count >= 3 ? "lg:grid-cols-3" : "sm:grid-cols-2"}`}>
+                {result.sides.map((s) => (
+                  <AfterTrade
+                    key={s.team.abbr}
+                    side={s}
+                    receives={pool.filter((e) => e.to === s.team.abbr).map((e) => playerOf(e.id)!).filter(Boolean)}
+                    sends={pool.filter((e) => e.from === s.team.abbr).map((e) => playerOf(e.id)!).filter(Boolean)}
+                  />
+                ))}
               </div>
-              <Insight accent={tA.color}>
+              <Insight accent={teamOf(teams[0]).color}>
                 {result.legal
-                  ? `${result.sides[0].team.abbr} grades ${result.sides[0].grade} (${result.sides[0].note.toLowerCase()}), ${result.sides[1].team.abbr} grades ${result.sides[1].grade} (${result.sides[1].note.toLowerCase()}). The deal clears 2024 CBA salary matching and apron hard-caps as built.`
+                  ? `${result.sides.length}-team deal clears 2024 CBA salary matching and apron hard-caps as built. ${result.sides
+                      .map((s) => `${s.team.abbr} ${s.grade}`)
+                      .join(", ")}.`
                   : `Not allowed yet — ${result.violations[0]} Adjust the outgoing salaries until the dollars line up.`}
               </Insight>
             </motion.div>
           ) : (
             <motion.div key="empty" className="enter" exit={{ opacity: 0, y: -8 }} transition={spring.soft}>
-              <div className="flex min-h-[140px] items-center justify-center border border-dashed border-[var(--line-strong)] bg-[var(--surface)] px-6 text-center">
+              <div className="flex min-h-[130px] items-center justify-center border border-dashed border-[var(--line-strong)] bg-[var(--surface)] px-6 text-center">
                 <p className="max-w-md text-sm text-white/55">
-                  Add players to each team&rsquo;s trade block. CourtCommand checks 2024 CBA salary matching and
-                  apron hard-caps, then grades the haul for both front offices.
+                  Drag players onto another team (or tap to send). CourtCommand checks 2024 CBA salary matching
+                  and apron hard-caps across every team, then grades the haul for each front office.
                 </p>
               </div>
             </motion.div>
@@ -149,136 +201,170 @@ export default function TradeMachinePage() {
   );
 }
 
-/* ---------------- Team panel (2K-style) ---------------- */
+/* ---------------- Team panel ---------------- */
 function TeamPanel({
   team,
-  setTeam,
+  teams,
   roster,
-  selected,
-  sends,
-  receives,
+  outgoing,
+  incoming,
   onToggle,
+  onDrop,
+  onDest,
+  onRemove,
+  onTeamChange,
   exclude,
 }: {
   team: Team;
-  setTeam: (t: string) => void;
+  teams: string[];
   roster: Player[];
-  selected: string[];
-  sends: Player[];
-  receives: Player[];
+  outgoing: PoolEntry[];
+  incoming: Player[];
   onToggle: (id: string) => void;
-  exclude: string;
+  onDrop: (id: string, from: string) => void;
+  onDest: (id: string, to: string) => void;
+  onRemove: (id: string) => void;
+  onTeamChange: (t: string) => void;
+  exclude: string[];
 }) {
   const c = team.color;
+  const [hover, setHover] = useState(false);
+  const outIds = new Set(outgoing.map((e) => e.id));
+  const outSalary = r1(sum(outgoing.map((e) => playerOf(e.id)!).filter(Boolean), (p) => p.salary));
+
   return (
-    <div className="relative overflow-hidden border border-[var(--line)] bg-[var(--surface)]">
-      {/* color rail */}
+    <div
+      data-team={team.abbr}
+      className="relative overflow-hidden border bg-[var(--surface)] transition-colors"
+      style={{ borderColor: hover ? c : "var(--line)" }}
+    >
       <div className="absolute inset-x-0 top-0 h-[3px]" style={{ background: c }} />
-      {/* header */}
-      <div className="relative overflow-hidden px-5 pb-4 pt-5" style={{ background: `${c}14` }}>
-        <div className="pointer-events-none absolute -right-6 -top-8 opacity-[0.14]">
-          <TeamLogo abbr={team.abbr} size={120} />
+      <div className="relative overflow-hidden px-4 pb-3.5 pt-4" style={{ background: `${c}14` }}>
+        <div className="pointer-events-none absolute -right-6 -top-8 opacity-[0.13]">
+          <TeamLogo abbr={team.abbr} size={110} />
         </div>
-        <div className="relative flex items-center gap-3">
-          <TeamLogo abbr={team.abbr} size={42} />
+        <div className="relative flex items-center gap-2.5">
+          <TeamLogo abbr={team.abbr} size={38} />
           <div className="min-w-0 flex-1">
             <select
               value={team.abbr}
-              onChange={(e) => setTeam(e.target.value)}
+              onChange={(e) => onTeamChange(e.target.value)}
               aria-label="Select team"
               className="w-full cursor-pointer border border-[var(--line)] bg-[var(--bg)] px-2.5 py-1.5 text-sm font-semibold text-white outline-none"
             >
-              {TEAMS.filter((t) => t.abbr !== exclude).map((t) => (
-                <option key={t.abbr} value={t.abbr}>
-                  {t.city} {t.name}
-                </option>
+              {TEAMS.filter((t) => t.abbr === team.abbr || !exclude.includes(t.abbr)).map((t) => (
+                <option key={t.abbr} value={t.abbr}>{t.city} {t.name}</option>
               ))}
             </select>
-            <div className="stat-num mt-1.5 flex items-center gap-2 text-[11px] text-white/55">
+            <div className="stat-num mt-1 flex items-center gap-1.5 text-[11px] text-white/55">
               <span className="font-semibold" style={{ color: c }}>{team.wins}-{team.losses}</span>
               <span className="text-white/25">·</span>
               <span>{team.conf}</span>
               <span className="text-white/25">·</span>
-              <span>${r1(team.payroll)}M payroll</span>
+              <span>${r1(team.payroll)}M</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* trade block (what this team sends) */}
-      <div className="border-y border-[var(--line)] bg-[var(--bg)]/40 px-5 py-3">
+      {/* drop zone: trade block */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setHover(true); }}
+        onDragLeave={() => setHover(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setHover(false);
+          const id = e.dataTransfer.getData("playerId");
+          const from = e.dataTransfer.getData("fromTeam");
+          if (id && from) onDrop(id, from);
+        }}
+        className="border-y px-4 py-3"
+        style={{ borderColor: "var(--line)", background: hover ? `${c}14` : "transparent" }}
+      >
         <div className="mb-2 flex items-center justify-between">
           <span className="kicker" style={{ color: c }}>Trade block</span>
-          <span className="stat-num text-[11px] text-white/45">
-            {sends.length ? `$${r1(sum(sends, (p) => p.salary))}M out` : "empty"}
-          </span>
+          <span className="stat-num text-[11px] text-white/45">{outgoing.length ? `$${outSalary}M out` : "drop here"}</span>
         </div>
         <div className="flex min-h-[34px] flex-wrap gap-1.5">
           <AnimatePresence mode="popLayout">
-            {sends.length === 0 ? (
-              <span className="self-center text-[11px] text-white/30">Add players from the roster below</span>
+            {outgoing.length === 0 ? (
+              <span className="self-center text-[11px] text-white/30">Drag or tap players to trade them away</span>
             ) : (
-              sends.map((p) => (
-                <motion.button
-                  key={p.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={spring.snappy}
-                  onClick={() => onToggle(p.id)}
-                  className="group flex items-center gap-1.5 border px-2 py-1"
-                  style={{ borderColor: `${c}55`, background: `${c}1a` }}
-                >
-                  <PlayerAvatar player={p} size={18} />
-                  <span className="text-[12px] text-white/90">{p.name}</span>
-                  <span className="stat-num text-[10px] text-white/45">${p.salary}M</span>
-                  <X size={11} className="text-white/40 group-hover:text-white" />
-                </motion.button>
-              ))
+              outgoing.map((e) => {
+                const p = playerOf(e.id)!;
+                return (
+                  <motion.div
+                    key={e.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={spring.snappy}
+                    className="flex items-center gap-1.5 border px-1.5 py-1"
+                    style={{ borderColor: `${c}55`, background: `${c}1a` }}
+                  >
+                    <PlayerAvatar player={p} size={18} />
+                    <span className="text-[12px] text-white/90">{p.name}</span>
+                    {teams.length > 2 && (
+                      <select
+                        value={e.to}
+                        onChange={(ev) => onDest(e.id, ev.target.value)}
+                        aria-label="Destination team"
+                        className="cursor-pointer border border-[var(--line)] bg-[var(--bg)] px-1 py-0.5 text-[10px] text-white outline-none"
+                      >
+                        {teams.filter((t) => t !== e.from).map((t) => (
+                          <option key={t} value={t}>→ {t}</option>
+                        ))}
+                      </select>
+                    )}
+                    <button onClick={() => onRemove(e.id)} aria-label="Remove" className="text-white/40 hover:text-white">
+                      <X size={11} />
+                    </button>
+                  </motion.div>
+                );
+              })
             )}
           </AnimatePresence>
         </div>
-        {receives.length > 0 && (
-          <div className="mt-2 flex items-center gap-1.5 border-t border-[var(--line)] pt-2">
+        {incoming.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-[var(--line)] pt-2">
             <span className="kicker text-[#5FA97E]">Gets</span>
-            <span className="truncate text-[11px] text-white/60">
-              {receives.map((p) => p.name).join(", ")}
-            </span>
+            {incoming.map((p) => (
+              <span key={p.id} className="flex items-center gap-1 text-[11px] text-white/70">
+                <PlayerAvatar player={p} size={14} /> {p.name}
+              </span>
+            ))}
           </div>
         )}
       </div>
 
-      {/* roster */}
-      <div className="no-scrollbar max-h-[300px] space-y-1 overflow-y-auto p-3">
-        {roster.length === 0 && (
-          <p className="py-6 text-center text-xs text-white/40">No tracked players for this team.</p>
-        )}
+      {/* roster (draggable) */}
+      <div className="no-scrollbar max-h-[290px] space-y-1 overflow-y-auto p-3">
+        {roster.length === 0 && <p className="py-6 text-center text-xs text-white/40">No tracked players.</p>}
         {roster.map((p) => {
-          const sel = selected.includes(p.id);
+          const sel = outIds.has(p.id);
           const ovr = Math.round(p.starPower);
           return (
             <button
               key={p.id}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData("playerId", p.id);
+                e.dataTransfer.setData("fromTeam", team.abbr);
+                e.dataTransfer.effectAllowed = "move";
+              }}
               onClick={() => onToggle(p.id)}
-              className="flex w-full cursor-pointer items-center gap-3 border px-2.5 py-2 text-left transition"
+              className="flex w-full cursor-grab items-center gap-3 border px-2.5 py-2 text-left transition hover:border-[var(--line-strong)] active:cursor-grabbing"
               style={{ borderColor: sel ? `${c}66` : "var(--line)", background: sel ? `${c}12` : "transparent" }}
             >
               <OvrBadge ovr={ovr} />
               <PlayerAvatar player={p} size={30} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm text-white/90">{p.name}</div>
-                <div className="stat-num text-[11px] text-white/45">
-                  {p.pos} · {p.age}y · {p.ppg} PPG
-                </div>
+                <div className="stat-num text-[11px] text-white/45">{p.pos} · {p.age}y · {p.ppg} PPG</div>
               </div>
-              <div className="stat-num shrink-0 text-right text-[12px] font-semibold text-white">
-                ${p.salary}M
-              </div>
-              <div
-                className="flex h-6 w-6 shrink-0 items-center justify-center border"
-                style={{ borderColor: sel ? c : "var(--line-strong)", background: sel ? c : "transparent" }}
-              >
+              <div className="stat-num shrink-0 text-[12px] font-semibold text-white">${p.salary}M</div>
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center border" style={{ borderColor: sel ? c : "var(--line-strong)", background: sel ? c : "transparent" }}>
                 {sel ? <Check size={13} className="text-[#0a0a0b]" /> : <Plus size={13} className="text-white/35" />}
               </div>
             </button>
@@ -292,80 +378,33 @@ function TeamPanel({
 function OvrBadge({ ovr }: { ovr: number }) {
   const c = ovrColor(ovr);
   return (
-    <div
-      className="flex h-9 w-9 shrink-0 flex-col items-center justify-center border"
-      style={{ borderColor: `${c}66`, background: `${c}14` }}
-    >
+    <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center border" style={{ borderColor: `${c}66`, background: `${c}14` }}>
       <span className="scoreboard text-base leading-none" style={{ color: c }}>{ovr}</span>
       <span className="text-[7px] uppercase tracking-wider text-white/40">ovr</span>
     </div>
   );
 }
 
-/* ---------------- Salary balance meter ---------------- */
-function BalanceBar({ tA, tB, outA, outB }: { tA: Team; tB: Team; outA: number; outB: number }) {
-  const span = Math.max(outA, outB, 1);
-  const aPct = (outA / span) * 100;
-  const bPct = (outB / span) * 100;
-  const diff = r1(Math.abs(outA - outB));
-  return (
-    <div className="mt-5 border border-[var(--line)] bg-[var(--surface)] px-5 py-4">
-      <div className="mb-2 flex items-center justify-between text-[11px]">
-        <span className="stat-num font-semibold" style={{ color: tA.color }}>{tA.abbr} ${outA}M out</span>
-        <span className="kicker">Salary balance{diff > 0 ? ` · $${diff}M apart` : " · even"}</span>
-        <span className="stat-num font-semibold" style={{ color: tB.color }}>{tB.abbr} ${outB}M out</span>
-      </div>
-      <div className="flex h-2.5 items-center gap-px">
-        <div className="flex flex-1 justify-end bg-white/[0.05]">
-          <motion.div
-            className="h-full"
-            style={{ background: tA.color }}
-            initial={{ width: 0 }}
-            animate={{ width: `${aPct}%` }}
-            transition={spring.soft}
-          />
-        </div>
-        <div className="h-3.5 w-px bg-white/40" />
-        <div className="flex flex-1 bg-white/[0.05]">
-          <motion.div
-            className="h-full"
-            style={{ background: tB.color }}
-            initial={{ width: 0 }}
-            animate={{ width: `${bPct}%` }}
-            transition={spring.soft}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ---------------- Verdict banner ---------------- */
-function VerdictBanner({ result, tA, tB }: { result: TradeResult; tA: Team; tB: Team }) {
+function VerdictBanner({ result, teams }: { result: TradeResult; teams: string[] }) {
   const ok = result.legal;
   const color = ok ? "#5FA97E" : "#BF5B4E";
   return (
-    <div
-      className="relative flex flex-col gap-3 overflow-hidden border px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-      style={{ borderColor: `${color}55`, background: `${color}10` }}
-    >
+    <div className="relative flex flex-col gap-3 overflow-hidden border px-5 py-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: `${color}55`, background: `${color}10` }}>
       <div className="flex items-center gap-3">
         {ok ? <BadgeCheck size={26} style={{ color }} /> : <ShieldAlert size={26} style={{ color }} />}
         <div>
-          <div className="scoreboard text-2xl tracking-wide" style={{ color }}>
-            {ok ? "TRADE ACCEPTED" : "NOT ALLOWED"}
-          </div>
-          <div className="text-xs text-white/55">
-            {ok
-              ? "Clears 2024 CBA salary matching & apron hard-caps"
-              : result.violations[0]}
-          </div>
+          <div className="scoreboard text-2xl tracking-wide" style={{ color }}>{ok ? "TRADE ACCEPTED" : "NOT ALLOWED"}</div>
+          <div className="text-xs text-white/55">{ok ? `${teams.length}-team deal clears 2024 CBA matching & apron hard-caps` : result.violations[0]}</div>
         </div>
       </div>
-      <div className="flex items-center gap-2.5 self-start sm:self-auto">
-        <TeamLogo abbr={tA.abbr} size={26} />
-        <ArrowLeftRight size={15} className="text-white/45" />
-        <TeamLogo abbr={tB.abbr} size={26} />
+      <div className="flex items-center gap-2 self-start sm:self-auto">
+        {teams.map((t, i) => (
+          <span key={t} className="flex items-center gap-2">
+            {i > 0 && <ArrowLeftRight size={13} className="text-white/40" />}
+            <TeamLogo abbr={t} size={24} />
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -374,51 +413,46 @@ function VerdictBanner({ result, tA, tB }: { result: TradeResult; tA: Team; tB: 
 /* ---------------- After-trade summary ---------------- */
 function AfterTrade({
   side,
-  swing,
   receives,
+  sends,
 }: {
   side: TradeResult["sides"][number];
-  swing: { off: number; def: number };
   receives: Player[];
+  sends: Player[];
 }) {
   const c = side.team.color;
   const gradeC = side.talentDelta > 5 ? "#5FA97E" : side.talentDelta < -5 ? "#BF5B4E" : "#C9A14A";
+  const offDelta = r1(sum(receives, (p) => p.offImpact) - sum(sends, (p) => p.offImpact));
+  const defDelta = r1(sum(receives, (p) => p.defImpact) - sum(sends, (p) => p.defImpact));
   return (
     <div className="relative overflow-hidden border border-[var(--line)] bg-[var(--surface)]">
       <div className="absolute inset-x-0 top-0 h-[3px]" style={{ background: c }} />
-      <div className="flex items-center justify-between px-5 pb-3 pt-4">
+      <div className="flex items-center justify-between px-4 pb-3 pt-4">
         <div className="flex items-center gap-2.5">
-          <TeamLogo abbr={side.team.abbr} size={28} />
+          <TeamLogo abbr={side.team.abbr} size={26} />
           <div>
-            <div className="text-sm font-semibold text-white">{side.team.city} {side.team.name}</div>
+            <div className="text-sm font-semibold text-white">{side.team.abbr}</div>
             <div className="stat-num text-[11px] text-white/45">{side.note}</div>
           </div>
         </div>
-        <div
-          className="flex h-12 w-12 flex-col items-center justify-center border"
-          style={{ borderColor: `${gradeC}66`, background: `${gradeC}14` }}
-        >
-          <span className="scoreboard text-xl leading-none" style={{ color: gradeC }}>{side.grade}</span>
+        <div className="flex h-11 w-11 flex-col items-center justify-center border" style={{ borderColor: `${gradeC}66`, background: `${gradeC}14` }}>
+          <span className="scoreboard text-lg leading-none" style={{ color: gradeC }}>{side.grade}</span>
           <span className="text-[7px] uppercase tracking-wider text-white/40">grade</span>
         </div>
       </div>
-
       <div className="grid grid-cols-3 gap-px border-y border-[var(--line)] bg-[var(--line)] text-center">
-        <Cell label="New payroll" value={`$${side.newPayroll}M`} />
-        <Cell label="Net salary" value={`${side.netSalary >= 0 ? "+" : ""}${side.netSalary}M`} />
+        <Cell label="Payroll" value={`$${side.newPayroll}M`} />
+        <Cell label="Net" value={`${side.netSalary >= 0 ? "+" : ""}${side.netSalary}M`} />
         <Cell label="Apron" value={side.apronBand} />
       </div>
-
-      <div className="space-y-2.5 px-5 py-4">
-        <ImpactMeter label="Offense" delta={swing.off} />
-        <ImpactMeter label="Defense" delta={swing.def} />
+      <div className="space-y-2.5 px-4 py-3.5">
+        <ImpactMeter label="Offense" delta={offDelta} />
+        <ImpactMeter label="Defense" delta={defDelta} />
         {receives.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             <span className="kicker">Acquires</span>
             {receives.map((p) => (
-              <span key={p.id} className="border border-[var(--line)] px-1.5 py-0.5 text-[11px] text-white/75">
-                {p.name}
-              </span>
+              <span key={p.id} className="border border-[var(--line)] px-1.5 py-0.5 text-[11px] text-white/75">{p.name}</span>
             ))}
           </div>
         )}
@@ -442,20 +476,12 @@ function ImpactMeter({ label, delta }: { label: string; delta: number }) {
   const w = Math.min(50, Math.abs(delta) * 1.1);
   return (
     <div className="flex items-center gap-3">
-      <span className="w-16 text-xs text-white/60">{label}</span>
+      <span className="w-14 text-xs text-white/60">{label}</span>
       <div className="relative h-2 flex-1 bg-white/[0.06]">
         <div className="absolute left-1/2 top-0 h-full w-px bg-white/20" />
-        <motion.div
-          className="absolute top-0 h-full"
-          style={{ background: color, left: pos ? "50%" : `${50 - w}%` }}
-          initial={{ width: 0 }}
-          animate={{ width: `${w}%` }}
-          transition={spring.soft}
-        />
+        <motion.div className="absolute top-0 h-full" style={{ background: color, left: pos ? "50%" : `${50 - w}%` }} initial={{ width: 0 }} animate={{ width: `${w}%` }} transition={spring.soft} />
       </div>
-      <span className="stat-num w-12 text-right text-xs font-semibold" style={{ color }}>
-        {pos ? "+" : ""}{delta}
-      </span>
+      <span className="stat-num w-12 text-right text-xs font-semibold" style={{ color }}>{pos ? "+" : ""}{delta}</span>
     </div>
   );
 }
