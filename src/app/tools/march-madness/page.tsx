@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Zap, Crown } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Badge } from "@/components/ui/Controls";
 import { Reveal } from "@/components/ui/Reveal";
@@ -85,19 +87,37 @@ export default function MarchMadnessPage() {
             </>
           )}
         </Insight>
-        <button
+        <motion.button
           onClick={run}
+          whileTap={{ scale: 0.96 }}
+          transition={spring.snappy}
           className="rounded-none px-5 py-2.5 text-sm font-semibold transition"
           style={{ background: GOLD, color: "#160d00" }}
         >
           {result ? "Re-simulate Tournament" : "Simulate Tournament"}
-        </button>
+        </motion.button>
       </div>
 
+      <AnimatePresence mode="wait">
       {analyze.phase === "running" ? (
-        <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={GOLD} />
+        <motion.div
+          key="running"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={GOLD} />
+        </motion.div>
       ) : result ? (
-        <div className="space-y-6">
+        <motion.div
+          key="result"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+          className="space-y-6"
+        >
           {/* champion banner */}
           <Reveal>
             <div
@@ -167,8 +187,15 @@ export default function MarchMadnessPage() {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       ) : (
+        <motion.div
+          key="field"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
         <Panel title="The field">
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             {NCAA_FIELD.map((t, i) => (
@@ -193,7 +220,9 @@ export default function MarchMadnessPage() {
             16 teams seeded 1–7. Press simulate to run the bracket end to end.
           </div>
         </Panel>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }

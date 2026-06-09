@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Crosshair, TrendingUp, TrendingDown } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Gauge } from "@/components/ui/Gauge";
 import { Segmented, Slider, Field } from "@/components/ui/Controls";
@@ -90,18 +92,39 @@ export default function ShotQualityPage() {
             <Slider label="Shot clock" value={shotClock} min={1} max={24} unit=" s" onChange={setShotClock} />
             <Slider label="Dribbles before shot" value={dribbles} min={0} max={8} onChange={setDribbles} />
             <Slider label="Touch time" value={touchTime} min={0} max={8} unit=" s" onChange={setTouchTime} />
-            <button onClick={run} className="btn-ember w-full rounded-none py-3 text-sm">
+            <motion.button
+              onClick={run}
+              whileTap={{ scale: 0.96 }}
+              transition={spring.snappy}
+              className="btn-ember w-full rounded-none py-3 text-sm"
+            >
               Grade this shot
-            </button>
+            </motion.button>
           </div>
         </Panel>
 
         {/* Result */}
         <div className="space-y-6">
+          <AnimatePresence mode="wait">
           {analyze.phase === "running" ? (
-            <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} />
+            <motion.div
+              key="running"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
+              <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} />
+            </motion.div>
           ) : result ? (
-            <>
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+              className="space-y-6"
+            >
               <div className="grid gap-6 sm:grid-cols-[auto_1fr]">
                 <Panel className="flex flex-col items-center justify-center">
                   <Gauge value={result.qSQ} label="Shot Quality" color={gradeColor(result.qSQ)} suffix="" />
@@ -152,18 +175,27 @@ export default function ShotQualityPage() {
                 halfcourt shots sit near 1.04 pts/shot — this look {result.expPoints >= 1.04 ? "beats" : "trails"} that
                 baseline.
               </Insight>
-            </>
+            </motion.div>
           ) : (
-            <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
-              <div className="mb-4">
-                <Crosshair size={40} className="text-ember" />
-              </div>
-              <p className="max-w-xs text-sm text-white/50">
-                Set the shot context on the left and grade its expected value. The dot shows where the
-                attempt comes from.
-              </p>
-            </Panel>
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
+              <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
+                <div className="mb-4">
+                  <Crosshair size={40} className="text-ember" />
+                </div>
+                <p className="max-w-xs text-sm text-white/50">
+                  Set the shot context on the left and grade its expected value. The dot shows where the
+                  attempt comes from.
+                </p>
+              </Panel>
+            </motion.div>
           )}
+          </AnimatePresence>
 
           <Panel title="Shot location">
             <CourtChart

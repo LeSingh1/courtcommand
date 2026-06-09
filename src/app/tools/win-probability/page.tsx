@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { Activity } from "lucide-react";
+import { staggerParent, staggerItem, spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider, Segmented, Field } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
@@ -119,10 +121,18 @@ export default function WinProbabilityPage() {
               />
             </Panel>
             <Panel title="Game events">
-              <div className="space-y-2.5">
+              <motion.div
+                className="space-y-2.5"
+                variants={staggerParent}
+                initial="initial"
+                animate="animate"
+              >
                 {curve.events.map((e) => (
-                  <div
+                  <motion.div
                     key={e.t}
+                    variants={staggerItem}
+                    whileHover={{ y: -3 }}
+                    transition={spring.snappy}
                     className="flex items-center gap-2.5 rounded-none border border-white/[0.07] bg-white/[0.03] px-3 py-2"
                   >
                     <span
@@ -132,12 +142,12 @@ export default function WinProbabilityPage() {
                       {e.t}'
                     </span>
                     <span className="text-xs text-white/70">{e.label}</span>
-                  </div>
+                  </motion.div>
                 ))}
                 <div className="stat-num pt-1 text-[11px] text-white/40">
                   Final-minute home WP: {curve.home[curve.home.length - 1]}%
                 </div>
-              </div>
+              </motion.div>
             </Panel>
           </div>
 

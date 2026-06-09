@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { GraduationCap, Star } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider, Field, TextInput, Segmented } from "@/components/ui/Controls";
 import { Gauge } from "@/components/ui/Gauge";
@@ -106,22 +108,40 @@ export default function RecruitRankPage() {
                 ]}
               />
             </Field>
-            <button
+            <motion.button
               onClick={run}
+              whileTap={{ scale: 0.96 }}
+              transition={spring.snappy}
               className="w-full rounded-none py-3 text-sm font-semibold transition"
               style={{ background: GOLD, color: "#160600" }}
             >
               Generate profile
-            </button>
+            </motion.button>
           </div>
         </Panel>
 
         {/* Result */}
         <div className="space-y-6">
+          <AnimatePresence mode="wait">
           {analyze.phase === "running" ? (
-            <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={GOLD} />
+            <motion.div
+              key="running"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
+              <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={GOLD} />
+            </motion.div>
           ) : result ? (
-            <>
+            <motion.div
+              key="result"
+              className="space-y-6"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
               {/* Recruiting card */}
               <Reveal>
                 <div className="glass relative overflow-hidden rounded-none p-6">
@@ -205,8 +225,15 @@ export default function RecruitRankPage() {
               </div>
 
               <Insight accent={GOLD}>{result.report}</Insight>
-            </>
+            </motion.div>
           ) : (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
             <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
               <div className="mb-4">
                 <GraduationCap size={40} style={{ color: GOLD }} />
@@ -216,7 +243,9 @@ export default function RecruitRankPage() {
                 recruiting-grade profile with star rating, national rank, and a scouting report.
               </p>
             </Panel>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
     </ToolShell>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Timer, Flame } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
@@ -41,12 +43,25 @@ export default function ClutchPage() {
         />
       </div>
 
+      <AnimatePresence mode="wait">
+      <motion.div
+        key={sort}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={spring.soft}
+      >
       {/* podium */}
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         {board.slice(0, 3).map((r, i) => {
           return (
             <Reveal key={r.player.id} delay={i * 0.08}>
-              <div className="glass relative overflow-hidden rounded-none p-5">
+              <motion.div
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.97 }}
+                transition={spring.snappy}
+                className="glass relative overflow-hidden rounded-none p-5"
+              >
                 <div className="flex items-center justify-between">
                   <span className="display text-4xl text-white/15">#{i + 1}</span>
                   <Flame size={20} style={{ color: gradeColor(r.clutchScore) }} />
@@ -67,7 +82,7 @@ export default function ClutchPage() {
                     <div>{(r.player.clutchFgp * 100).toFixed(0)}% FG</div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </Reveal>
           );
         })}
@@ -124,6 +139,8 @@ export default function ClutchPage() {
           </table>
         </div>
       </Panel>
+      </motion.div>
+      </AnimatePresence>
     </ToolShell>
   );
 }

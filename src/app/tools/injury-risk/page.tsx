@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { HeartPulse } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { Gauge } from "@/components/ui/Gauge";
@@ -61,7 +63,15 @@ export default function InjuryRiskPage() {
 
         {/* Result */}
         <div className="space-y-6">
+          <AnimatePresence mode="wait">
           {!player || !result ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
             <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
               <HeartPulse size={40} className="mb-4" style={{ color: ROSE }} />
               <p className="max-w-xs text-sm text-white/50">
@@ -69,8 +79,16 @@ export default function InjuryRiskPage() {
                 games, rest, and frame load into a single breakdown-risk score.
               </p>
             </Panel>
+            </motion.div>
           ) : (
-            <>
+            <motion.div
+              key={player.id}
+              className="space-y-6"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
               <div className="grid gap-6 sm:grid-cols-[auto_1fr]">
                 <Panel className="flex flex-col items-center justify-center">
                   <Gauge value={result.risk} label="Injury Risk" color={riskColor} suffix="" />
@@ -97,8 +115,9 @@ export default function InjuryRiskPage() {
                 <b>{player.name}</b> grades as a <b>{result.band.toLowerCase()}-risk</b> profile at{" "}
                 <b>{result.risk}/100</b> under this schedule. {result.recommendation}
               </Insight>
-            </>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
     </ToolShell>

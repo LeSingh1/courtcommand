@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeftRight, Check, X, Plus } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TeamLogo } from "@/components/ui/TeamLogo";
@@ -71,8 +73,16 @@ export default function TradeMachinePage() {
         </div>
       </div>
 
+      <AnimatePresence mode="wait">
       {result ? (
-        <div className="space-y-6">
+        <motion.div
+          key={`trade-${result.legal}-${result.sides.map((s) => s.team.abbr + s.grade).join("-")}`}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+          className="space-y-6"
+        >
           <div
             className="flex items-center gap-3 rounded-none border p-4"
             style={{
@@ -126,15 +136,24 @@ export default function TradeMachinePage() {
               </Panel>
             ))}
           </div>
-        </div>
+        </motion.div>
       ) : (
-        <Panel className="flex min-h-[160px] items-center justify-center text-center">
-          <p className="max-w-sm text-sm text-white/50">
-            Select players from each side to build a trade. CourtCommand checks 2024 CBA salary
-            matching, apron hard-caps, and grades the roster impact for both teams.
-          </p>
-        </Panel>
+        <motion.div
+          key="empty"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <Panel className="flex min-h-[160px] items-center justify-center text-center">
+            <p className="max-w-sm text-sm text-white/50">
+              Select players from each side to build a trade. CourtCommand checks 2024 CBA salary
+              matching, apron hard-caps, and grades the roster impact for both teams.
+            </p>
+          </Panel>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }
@@ -179,9 +198,12 @@ function TeamColumn({
         {roster.map((p) => {
           const sel = selected.includes(p.id);
           return (
-            <button
+            <motion.button
               key={p.id}
               onClick={() => onToggle(p.id)}
+              whileHover={{ y: -3 }}
+              whileTap={{ scale: 0.97 }}
+              transition={spring.snappy}
               className="flex w-full items-center gap-3 rounded-none border p-2.5 text-left transition"
               style={{
                 borderColor: sel ? `${accent}66` : "rgba(255,255,255,0.07)",
@@ -201,7 +223,7 @@ function TeamColumn({
                   {p.pos} · {p.ppg} PPG · ${p.salary}M
                 </div>
               </div>
-            </button>
+            </motion.button>
           );
         })}
       </div>

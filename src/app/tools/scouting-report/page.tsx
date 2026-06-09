@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { Check, ClipboardList, X } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
@@ -12,6 +13,7 @@ import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
 import { getTool } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { scoutingReport, type ScoutReport } from "@/lib/engine/players";
+import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
 const GOLD = "#C9A14A";
@@ -75,7 +77,15 @@ function ScoutingInner() {
       ) : analyze.phase === "running" || !report ? (
         <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={GOLD} />
       ) : (
-        <div className="space-y-6">
+        <AnimatePresence mode="wait">
+        <motion.div
+          key={player.id}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+          className="space-y-6"
+        >
           {/* Header strip */}
           <Panel>
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -172,7 +182,8 @@ function ScoutingInner() {
           </Panel>
 
           <Insight accent={GOLD}>{report.summary}</Insight>
-        </div>
+        </motion.div>
+        </AnimatePresence>
       )}
     </ToolShell>
   );

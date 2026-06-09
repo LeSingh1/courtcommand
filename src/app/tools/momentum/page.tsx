@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, Timer, Flame } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
 import { LineChart } from "@/components/ui/LineChart";
@@ -60,19 +62,37 @@ export default function MomentumPage() {
           }}
           options={Object.keys(SEEDS).map((g) => ({ label: g, value: g as keyof typeof SEEDS }))}
         />
-        <button
+        <motion.button
           onClick={replay}
+          whileTap={{ scale: 0.96 }}
+          transition={spring.snappy}
           className="flex items-center gap-2 rounded-none px-4 py-2.5 text-sm font-semibold text-[#0a0c11] transition"
           style={{ background: ACCENT }}
         >
           <TrendingUp size={16} />
           Replay game
-        </button>
+        </motion.button>
       </div>
 
+      <AnimatePresence mode="wait">
       {analyze.phase === "running" ? (
-        <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={ACCENT} />
+        <motion.div
+          key="running"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={ACCENT} />
+        </motion.div>
       ) : !result ? (
+        <motion.div
+          key="empty"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
           <TrendingUp size={40} className="mb-4" style={{ color: ACCENT }} />
           <p className="max-w-sm text-sm text-white/50">
@@ -80,8 +100,16 @@ export default function MomentumPage() {
             and flags every scoring run and timeout swing along the way.
           </p>
         </Panel>
+        </motion.div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+        <motion.div
+          key={`result-${game}`}
+          className="grid gap-6 lg:grid-cols-[1fr_340px]"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
           <div className="space-y-6">
             <Reveal>
               <Panel
@@ -182,8 +210,9 @@ export default function MomentumPage() {
               </div>
             </Panel>
           </Reveal>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }

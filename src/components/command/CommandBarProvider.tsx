@@ -117,10 +117,15 @@ export function CommandBarProvider({ children }: { children: React.ReactNode }) 
                       const accent = ACCENT[m.tool.accent];
                       const Icon = getIcon(m.tool.icon);
                       return (
-                        <button
+                        <motion.button
                           key={m.tool.slug}
                           onClick={() => go(m.href)}
-                          className="group flex w-full items-center gap-3 rounded-none px-2.5 py-2.5 text-left transition hover:bg-white/[0.06]"
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.22, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                          whileHover={{ x: 2 }}
+                          whileTap={{ scale: 0.99 }}
+                          className="group flex w-full items-center gap-3 rounded-none px-2.5 py-2.5 text-left hover:bg-white/[0.06]"
                         >
                           <div
                             className="flex h-9 w-9 items-center justify-center rounded-none"
@@ -144,7 +149,7 @@ export function CommandBarProvider({ children }: { children: React.ReactNode }) 
                           </div>
                           <div className="stat-num text-xs text-white/35">{m.confidence}%</div>
                           <CornerDownLeft size={14} className="text-white/20 group-hover:text-white/60" />
-                        </button>
+                        </motion.button>
                       );
                     })}
                   </div>

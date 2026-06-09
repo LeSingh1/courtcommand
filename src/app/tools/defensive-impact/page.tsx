@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Shield } from "lucide-react";
+import { spring, staggerParent, staggerItem } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
-import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { getTool } from "@/lib/tools";
 import { defenseBoard } from "@/lib/engine/players";
@@ -53,41 +54,55 @@ export default function DefensiveImpactPage() {
       </div>
 
       {/* Podium */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {board.slice(0, 3).map((r, i) => {
-          return (
-            <Reveal key={r.player.id} delay={i * 0.08}>
-              <div className="glass rounded-none p-5">
-                <div className="flex items-center justify-between">
-                  <span className="display text-4xl text-white/15">#{i + 1}</span>
-                  <Shield size={20} style={{ color: gradeColor(r.defScore) }} />
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <PlayerAvatar player={r.player} size={40} />
-                  <span className="font-semibold text-white">{r.player.name}</span>
-                </div>
-                <div className="mt-4 flex items-end justify-between">
-                  <div>
-                    <div
-                      className="stat-num text-3xl font-bold"
-                      style={{ color: gradeColor(r.defScore) }}
-                    >
-                      {r.defScore}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={sort}
+          className="mb-6 grid gap-4 sm:grid-cols-3"
+          variants={staggerParent}
+          initial="initial"
+          animate="animate"
+          exit={{ opacity: 0, y: -8 }}
+        >
+          {board.slice(0, 3).map((r, i) => {
+            return (
+              <motion.div
+                key={r.player.id}
+                variants={staggerItem}
+                whileHover={{ y: -3 }}
+                transition={spring.snappy}
+              >
+                <div className="glass rounded-none p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="display text-4xl text-white/15">#{i + 1}</span>
+                    <Shield size={20} style={{ color: gradeColor(r.defScore) }} />
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <PlayerAvatar player={r.player} size={40} />
+                    <span className="font-semibold text-white">{r.player.name}</span>
+                  </div>
+                  <div className="mt-4 flex items-end justify-between">
+                    <div>
+                      <div
+                        className="stat-num text-3xl font-bold"
+                        style={{ color: gradeColor(r.defScore) }}
+                      >
+                        {r.defScore}
+                      </div>
+                      <div className="text-[10px] uppercase text-white/40">
+                        Def score · {r.grade}
+                      </div>
                     </div>
-                    <div className="text-[10px] uppercase text-white/40">
-                      Def score · {r.grade}
+                    <div className="stat-num text-right text-xs text-white/50">
+                      <div>Rim {r.rimProtect}</div>
+                      <div>Perim {r.perimeter}</div>
                     </div>
                   </div>
-                  <div className="stat-num text-right text-xs text-white/50">
-                    <div>Rim {r.rimProtect}</div>
-                    <div>Perim {r.perimeter}</div>
-                  </div>
                 </div>
-              </div>
-            </Reveal>
-          );
-        })}
-      </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      </AnimatePresence>
 
       <Panel title="Defensive impact board">
         <div className="overflow-x-auto">

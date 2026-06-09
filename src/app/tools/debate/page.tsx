@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { MessagesSquare, Check } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
@@ -11,6 +12,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { getTool } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { debate } from "@/lib/engine/content";
+import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
 const GOLD = "#C9A14A";
@@ -65,6 +67,7 @@ function DebateInner() {
         <PlayerPicker value={b} onChange={setB} accent="#7E8CA0" exclude={a ? [a.id] : []} placeholder="Side B…" />
       </div>
 
+      <AnimatePresence mode="wait">
       {!result ? (
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
           <MessagesSquare size={40} className="mb-4 text-[#C9A14A]" />
@@ -74,7 +77,13 @@ function DebateInner() {
           </p>
         </Panel>
       ) : (
-        <>
+        <motion.div
+          key={`${result.a.player.id}-${result.b.player.id}-${lens}`}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
           <div className="grid items-stretch gap-4 lg:grid-cols-[1fr_120px_1fr]">
             <DebateCard side={result.a} accent={GOLD} leading={result.edge > 0} />
 
@@ -104,8 +113,9 @@ function DebateInner() {
               <b>Verdict:</b> {result.verdict}
             </Insight>
           </div>
-        </>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }
@@ -120,7 +130,9 @@ function DebateCard({
   leading: boolean;
 }) {
   return (
-    <div
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={spring.snappy}
       className="glass rounded-none p-5"
       style={{ boxShadow: leading ? `inset 0 0 0 1px ${accent}44` : undefined }}
     >
@@ -145,6 +157,6 @@ function DebateCard({
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Shapes } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { Badge } from "@/components/ui/Controls";
@@ -35,7 +37,15 @@ export default function PlayTypePage() {
         />
       </div>
 
+      <AnimatePresence mode="wait">
       {!player || !primary ? (
+        <motion.div
+          key="empty"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
           <Shapes size={40} className="mb-4" style={{ color: ACCENT }} />
           <p className="max-w-sm text-sm text-white/50">
@@ -43,8 +53,16 @@ export default function PlayTypePage() {
             spot-up, transition, post-up, cuts, and handoffs — with efficiency on each.
           </p>
         </Panel>
+        </motion.div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <motion.div
+          key={player.id}
+          className="grid gap-6 lg:grid-cols-[1fr_320px]"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
           <div className="space-y-6">
             <Reveal>
               <Panel
@@ -166,8 +184,9 @@ export default function PlayTypePage() {
               </Insight>
             </Reveal>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }

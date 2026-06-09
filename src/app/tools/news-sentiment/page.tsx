@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, TrendingDown, Minus, Rss } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { LineChart } from "@/components/ui/LineChart";
 import { Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
-import { Reveal } from "@/components/ui/Reveal";
+import { spring, staggerParent, staggerItem } from "@/lib/motion";
 import { getTool } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { newsSentiment } from "@/lib/engine/content";
@@ -33,16 +34,34 @@ export default function NewsSentimentPage() {
         <PlayerPicker value={player} onChange={setPlayer} accent={CYAN} placeholder="Track a player's narrative…" />
       </div>
 
-      {!player || !result ? (
-        <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
-          <Rss size={40} className="mb-4 text-cyan" />
-          <p className="max-w-xs text-sm text-white/50">
-            Pick a player to chart how media sentiment around them has trended over the last ten weeks.
-          </p>
-        </Panel>
-      ) : (
-        <SentimentView player={player} result={result} />
-      )}
+      <AnimatePresence mode="wait">
+        {!player || !result ? (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={spring.soft}
+          >
+            <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
+              <Rss size={40} className="mb-4 text-cyan" />
+              <p className="max-w-xs text-sm text-white/50">
+                Pick a player to chart how media sentiment around them has trended over the last ten weeks.
+              </p>
+            </Panel>
+          </motion.div>
+        ) : (
+          <motion.div
+            key={player.id}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={spring.soft}
+          >
+            <SentimentView player={player} result={result} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </ToolShell>
   );
 }
@@ -117,11 +136,16 @@ function SentimentView({
         </Panel>
 
         <Panel title="Latest headlines">
-          <div className="space-y-2.5">
+          <motion.div
+            className="space-y-2.5"
+            variants={staggerParent}
+            initial="initial"
+            animate="animate"
+          >
             {result.headlines.map((h, i) => {
               const pos = h.tone > 0;
               return (
-                <Reveal key={i} delay={i * 0.07}>
+                <motion.div key={i} variants={staggerItem}>
                   <div
                     className="rounded-none border-l-2 bg-white/[0.02] py-2 pl-3 pr-2"
                     style={{ borderColor: pos ? "#5FA97E" : "#BF5B4E" }}
@@ -135,10 +159,10 @@ function SentimentView({
                       {h.tone}
                     </span>
                   </div>
-                </Reveal>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </Panel>
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Workflow } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
@@ -12,6 +13,7 @@ import { getTool } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { pickAndRoll, type PnRResult } from "@/lib/engine/teams";
 import { gradeColor } from "@/lib/cn";
+import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
 const ACCENT = "#E0561F";
@@ -52,6 +54,7 @@ export default function PickAndRollPage() {
         </div>
       </div>
 
+      <AnimatePresence mode="wait">
       {!result ? (
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
           <Workflow size={40} className="mb-4" style={{ color: ACCENT }} />
@@ -61,7 +64,14 @@ export default function PickAndRollPage() {
           </p>
         </Panel>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <motion.div
+          key={`${handler!.id}-${roller!.id}`}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+          className="grid gap-6 lg:grid-cols-[1fr_320px]"
+        >
           <div className="space-y-6">
             <Reveal>
               <Panel
@@ -161,8 +171,9 @@ export default function PickAndRollPage() {
               />
             </div>
           </Reveal>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }

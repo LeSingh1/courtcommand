@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Gem } from "lucide-react";
+import { spring, staggerParent, staggerItem } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
-import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { getTool } from "@/lib/tools";
 import { underratedBoard } from "@/lib/engine/players";
@@ -42,24 +43,45 @@ export default function UnderratedPage() {
           </div>
         </Panel>
 
-        {sleeper ? (
-          <Insight accent="#5FA97E">
-            <b>{sleeper.player.name}</b> is the top sleeper at this price — an underrated score of{" "}
-            <b className="text-mint">{sleeper.underratedScore}</b> on a ${sleeper.player.salary}M
-            deal{sleeper.reasons.length ? `: ${sleeper.reasons.join(", ")}` : ""}. High output for a
-            fraction of the noise.
-          </Insight>
-        ) : (
-          <Insight accent="#5FA97E">No players fall under ${maxSalary}M — raise the cap.</Insight>
-        )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={sleeper ? sleeper.player.id : "empty"}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={spring.soft}
+          >
+            {sleeper ? (
+              <Insight accent="#5FA97E">
+                <b>{sleeper.player.name}</b> is the top sleeper at this price — an underrated score of{" "}
+                <b className="text-mint">{sleeper.underratedScore}</b> on a ${sleeper.player.salary}M
+                deal{sleeper.reasons.length ? `: ${sleeper.reasons.join(", ")}` : ""}. High output for a
+                fraction of the noise.
+              </Insight>
+            ) : (
+              <Insight accent="#5FA97E">No players fall under ${maxSalary}M — raise the cap.</Insight>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Hidden gem cards */}
       {top.length > 0 && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <motion.div
+          key={maxSalary}
+          className="mb-6 grid gap-4 sm:grid-cols-3"
+          variants={staggerParent}
+          initial="initial"
+          animate="animate"
+        >
           {top.map((r, i) => {
             return (
-              <Reveal key={r.player.id} delay={i * 0.08}>
+              <motion.div
+                key={r.player.id}
+                variants={staggerItem}
+                whileHover={{ y: -3 }}
+                transition={spring.snappy}
+              >
                 <div className="glass rounded-none p-5">
                   <div className="flex items-center justify-between">
                     <span className="display text-4xl text-white/15">#{i + 1}</span>
@@ -91,10 +113,10 @@ export default function UnderratedPage() {
                     ))}
                   </div>
                 </div>
-              </Reveal>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
 
       <Panel title="Underrated rankings">

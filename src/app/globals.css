@@ -255,6 +255,28 @@ body {
   }
 }
 
+/* Page transition wrapper (CSS — robust, ends visible) */
+@keyframes cc-page {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .page-enter {
+    animation: cc-page 0.42s var(--ease-out) both;
+  }
+  /* bar / meter draw-in */
+  .grow-x {
+    transform-origin: left;
+    animation: cc-sweep 0.7s var(--ease-out) both;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

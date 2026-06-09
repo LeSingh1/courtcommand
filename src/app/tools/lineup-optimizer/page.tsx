@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Users, Check, Plus, Zap, Star } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Meter } from "@/components/ui/Meter";
 import { Gauge } from "@/components/ui/Gauge";
@@ -129,15 +131,17 @@ export default function LineupOptimizerPage() {
             </div>
           </Panel>
 
-          <button
+          <motion.button
             onClick={optimize}
             disabled={pool.length < 5}
+            whileTap={{ scale: 0.96 }}
+            transition={spring.snappy}
             className="flex w-full items-center justify-center gap-2 rounded-none px-4 py-3 text-sm font-semibold text-[#0a0c11] transition disabled:cursor-not-allowed disabled:opacity-40"
             style={{ background: ACCENT }}
           >
             <Zap size={16} />
             Optimize lineup
-          </button>
+          </motion.button>
           {customFive.length > 0 && customFive.length !== 5 && (
             <p className="text-center text-[11px] text-white/45">
               {customFive.length}/5 selected for a live custom unit
@@ -147,18 +151,42 @@ export default function LineupOptimizerPage() {
 
         {/* results */}
         <div className="space-y-6">
+          <AnimatePresence mode="wait">
           {analyze.phase === "running" ? (
-            <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={ACCENT} />
+            <motion.div
+              key="running"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
+              <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={ACCENT} />
+            </motion.div>
           ) : !shown ? (
-            <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
-              <Users size={40} className="mb-4" style={{ color: ACCENT }} />
-              <p className="max-w-sm text-sm text-white/50">
-                Optimize a pool to surface the best 5-man unit, or hand-pick exactly five players to
-                score a custom lineup live across spacing, defense, scoring, playmaking, and balance.
-              </p>
-            </Panel>
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
+              <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
+                <Users size={40} className="mb-4" style={{ color: ACCENT }} />
+                <p className="max-w-sm text-sm text-white/50">
+                  Optimize a pool to surface the best 5-man unit, or hand-pick exactly five players to
+                  score a custom lineup live across spacing, defense, scoring, playmaking, and balance.
+                </p>
+              </Panel>
+            </motion.div>
           ) : (
-            <>
+            <motion.div
+              key={`result-${liveScore ? "live" : "opt"}-${shown.five.map((p) => p.id).join("-")}`}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+              className="space-y-6"
+            >
               <Reveal>
                 <Panel
                   title={liveScore ? "Custom five (live)" : "Optimal five"}
@@ -256,8 +284,9 @@ export default function LineupOptimizerPage() {
                   : "spacing that could get cramped"}
                 {shown.balance < 50 ? " and real usage overlap to manage." : " and clean role balance."}
               </Insight>
-            </>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
     </ToolShell>

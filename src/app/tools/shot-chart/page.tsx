@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { Target, Flame, Snowflake } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
@@ -11,6 +12,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { getTool } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { shotChart } from "@/lib/engine/game";
+import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
 const EMBER = "#E0561F";
@@ -71,6 +73,7 @@ function ShotChartInner() {
         />
       </div>
 
+      <AnimatePresence mode="wait">
       {!player || !chart ? (
         <Panel className="flex min-h-[320px] flex-col items-center justify-center text-center">
           <Target size={40} className="mb-4 text-ember" />
@@ -80,7 +83,14 @@ function ShotChartInner() {
           </p>
         </Panel>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <motion.div
+          key={player.id}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+          className="grid gap-6 lg:grid-cols-[1fr_320px]"
+        >
           <Panel
             title={view === "shots" ? "Shot distribution" : "Zone efficiency (eFG%)"}
             right={
@@ -89,13 +99,22 @@ function ShotChartInner() {
               </span>
             }
           >
-            <CourtChart
-              key={view}
-              shots={view === "shots" ? chart.shots : undefined}
-              zones={view === "zones" ? chart.zones : undefined}
-              showShots={view === "shots"}
-              height={420}
-            />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={view}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CourtChart
+                  shots={view === "shots" ? chart.shots : undefined}
+                  zones={view === "zones" ? chart.zones : undefined}
+                  showShots={view === "shots"}
+                  height={420}
+                />
+              </motion.div>
+            </AnimatePresence>
           </Panel>
 
           <div className="space-y-6">
@@ -167,8 +186,9 @@ function ShotChartInner() {
               <Badge color="#C9A14A">{Math.round(player.shotRim * 100)}% rim share</Badge>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {best && player && (
         <div className="mt-6">

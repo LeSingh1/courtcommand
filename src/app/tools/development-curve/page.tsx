@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { LineChart as LineChartIcon } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
@@ -10,6 +11,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { getTool } from "@/lib/tools";
 import { developmentCurve } from "@/lib/engine/players";
 import { getPlayer, getPlayerByName } from "@/lib/data";
+import { spring, staggerParent, staggerItem } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
 const CYAN = "#7E8CA0";
@@ -34,6 +36,7 @@ export default function DevelopmentCurvePage() {
         />
       </div>
 
+      <AnimatePresence mode="wait">
       {!player || !result ? (
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
           <LineChartIcon size={40} className="mb-4" style={{ color: CYAN }} />
@@ -43,7 +46,14 @@ export default function DevelopmentCurvePage() {
           </p>
         </Panel>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+        <motion.div
+          key={player.id}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+          className="grid gap-6 lg:grid-cols-[1fr_340px]"
+        >
           <div className="space-y-6">
             <Panel title="Projected development curve">
               <LineChart
@@ -68,28 +78,39 @@ export default function DevelopmentCurvePage() {
               </div>
             </Panel>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Panel className="text-center">
-                <div className="stat-num display text-3xl" style={{ color: CYAN }}>
-                  {result.peakAge}
-                </div>
-                <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">Peak age</div>
-                {peak && (
-                  <div className="stat-num mt-1 text-xs text-white/50">~{peak.proj} PER projected</div>
-                )}
-              </Panel>
-              <Panel className="text-center">
-                <div className="stat-num display text-3xl text-white">{now?.proj}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">
-                  Now (age {player.age})
-                </div>
-                <div className="stat-num mt-1 text-xs text-white/50">current PER</div>
-              </Panel>
-              <Panel className="flex flex-col items-center justify-center text-center">
-                <div className="mb-1.5 text-[10px] uppercase tracking-wide text-white/40">Ceiling</div>
-                <Badge color={CYAN}>{result.ceiling}</Badge>
-              </Panel>
-            </div>
+            <motion.div
+              variants={staggerParent}
+              initial="initial"
+              animate="animate"
+              className="grid gap-4 sm:grid-cols-3"
+            >
+              <motion.div variants={staggerItem}>
+                <Panel className="text-center">
+                  <div className="stat-num display text-3xl" style={{ color: CYAN }}>
+                    {result.peakAge}
+                  </div>
+                  <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">Peak age</div>
+                  {peak && (
+                    <div className="stat-num mt-1 text-xs text-white/50">~{peak.proj} PER projected</div>
+                  )}
+                </Panel>
+              </motion.div>
+              <motion.div variants={staggerItem}>
+                <Panel className="text-center">
+                  <div className="stat-num display text-3xl text-white">{now?.proj}</div>
+                  <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">
+                    Now (age {player.age})
+                  </div>
+                  <div className="stat-num mt-1 text-xs text-white/50">current PER</div>
+                </Panel>
+              </motion.div>
+              <motion.div variants={staggerItem}>
+                <Panel className="flex h-full flex-col items-center justify-center text-center">
+                  <div className="mb-1.5 text-[10px] uppercase tracking-wide text-white/40">Ceiling</div>
+                  <Badge color={CYAN}>{result.ceiling}</Badge>
+                </Panel>
+              </motion.div>
+            </motion.div>
           </div>
 
           <div className="space-y-6">
@@ -125,8 +146,9 @@ export default function DevelopmentCurvePage() {
               ) : null}
             </Insight>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }

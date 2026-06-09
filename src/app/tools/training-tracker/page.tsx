@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { Dumbbell, Flame, Plus, Target, Clock } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider, Field, Segmented, Badge } from "@/components/ui/Controls";
@@ -9,6 +10,7 @@ import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { getTool } from "@/lib/tools";
+import { spring } from "@/lib/motion";
 
 const MINT = "#5FA97E";
 
@@ -120,13 +122,15 @@ export default function TrainingTrackerPage() {
               </Field>
               <Slider label="Reps / makes" value={reps} min={0} max={500} step={10} onChange={setReps} accent={MINT} />
               <Slider label="Minutes" value={minutes} min={0} max={180} step={5} unit=" min" onChange={setMinutes} accent={MINT} />
-              <button
+              <motion.button
                 onClick={addSession}
+                whileTap={{ scale: 0.96 }}
+                transition={spring.snappy}
                 className="flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm font-semibold transition"
                 style={{ background: MINT, color: "#04130c" }}
               >
                 <Plus size={16} /> Add session
-              </button>
+              </motion.button>
             </div>
           </Panel>
 
@@ -184,8 +188,11 @@ export default function TrainingTrackerPage() {
           <Panel title="Session log">
             <div className="space-y-2">
               {sessions.map((s) => (
-                <div
+                <motion.div
                   key={s.id}
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={spring.soft}
                   className="flex items-center justify-between rounded-none border border-white/[0.06] bg-white/[0.02] px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
@@ -200,7 +207,7 @@ export default function TrainingTrackerPage() {
                       <b className="text-white/90">{s.minutes}</b> min
                     </span>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </Panel>

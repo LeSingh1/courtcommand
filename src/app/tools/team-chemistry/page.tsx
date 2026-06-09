@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Atom } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { Meter } from "@/components/ui/Meter";
@@ -68,7 +70,15 @@ export default function TeamChemistryPage() {
         </div>
       </div>
 
+      <AnimatePresence mode="wait">
       {!result ? (
+        <motion.div
+          key="empty"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
           <Atom size={40} className="mb-4" style={{ color: ACCENT }} />
           <p className="max-w-sm text-sm text-white/50">
@@ -76,8 +86,16 @@ export default function TeamChemistryPage() {
             overlap, spacing, defense, and positional need against the current core.
           </p>
         </Panel>
+        </motion.div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+        <motion.div
+          key={`${player!.id}-${team}`}
+          className="grid gap-6 lg:grid-cols-[300px_1fr]"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
           <Reveal>
             <Panel className="flex flex-col items-center justify-center text-center">
               <Gauge value={result.fit} label="Fit" color={gradeColor(result.fit)} />
@@ -153,8 +171,9 @@ export default function TeamChemistryPage() {
               </Reveal>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }

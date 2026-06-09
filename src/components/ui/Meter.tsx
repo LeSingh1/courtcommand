@@ -27,7 +27,7 @@ export function Meter({
         </div>
       )}
       <div className="w-full overflow-hidden bg-[rgba(255,255,255,0.06)]" style={{ height }}>
-        <div className="h-full" style={{ width: `${pct}%`, background: color }} />
+        <div className="grow-x h-full" style={{ width: `${pct}%`, background: color }} />
       </div>
     </div>
   );

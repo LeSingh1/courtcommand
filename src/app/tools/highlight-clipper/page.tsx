@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Scissors, UploadCloud, Film, Activity, Volume2, Zap } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
@@ -83,9 +85,9 @@ export default function HighlightClipperPage() {
               onChange={setDurationMin}
             />
 
-            <button onClick={detect} className="btn-ember flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm">
+            <motion.button onClick={detect} whileTap={{ scale: 0.96 }} transition={spring.snappy} className="btn-ember flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm">
               <Scissors size={15} /> Detect highlights
-            </button>
+            </motion.button>
             <p className="text-[11px] leading-relaxed text-white/40">
               The auto-editor scans the timeline for motion-vector bursts and crowd-audio spikes, then
               ranks each moment by detection confidence.
@@ -94,10 +96,26 @@ export default function HighlightClipperPage() {
         </Panel>
 
         <div className="space-y-6">
+          <AnimatePresence mode="wait">
           {analyze.phase === "running" ? (
-            <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={EMBER} />
+            <motion.div
+              key="running"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
+              <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={EMBER} />
+            </motion.div>
           ) : clips ? (
-            <>
+            <motion.div
+              key="result"
+              className="space-y-6"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
               {top && (
                 <Insight accent={EMBER}>
                   Top moment: a <b>{top.label.toLowerCase()}</b> at <b className="stat-num">{top.t}</b> with{" "}
@@ -158,8 +176,15 @@ export default function HighlightClipperPage() {
                   })}
                 </div>
               </Panel>
-            </>
+            </motion.div>
           ) : (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
             <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
               <div className="mb-4">
                 <Scissors size={40} className="text-ember" />
@@ -169,7 +194,9 @@ export default function HighlightClipperPage() {
                 dime ranked by how loud the moment was.
               </p>
             </Panel>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
     </ToolShell>

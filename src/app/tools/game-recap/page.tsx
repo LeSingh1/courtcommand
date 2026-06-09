@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Newspaper, Trophy } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Field } from "@/components/ui/Controls";
@@ -11,6 +12,7 @@ import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
 import { getTool } from "@/lib/tools";
 import { TEAMS, TEAM_MAP, playersByTeam } from "@/lib/data";
 import { gameRecap, type BoxLine } from "@/lib/engine/game";
+import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
 const EMBER = "#E0561F";
@@ -109,9 +111,14 @@ export default function GameRecapPage() {
               </div>
             </div>
 
-            <button onClick={generate} className="btn-ember w-full rounded-none py-3 text-sm">
+            <motion.button
+              onClick={generate}
+              whileTap={{ scale: 0.96 }}
+              transition={spring.snappy}
+              className="btn-ember w-full rounded-none py-3 text-sm"
+            >
               Generate recap
-            </button>
+            </motion.button>
           </div>
         </Panel>
 
@@ -119,6 +126,14 @@ export default function GameRecapPage() {
           {analyze.phase === "running" ? (
             <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={EMBER} />
           ) : recap ? (
+            <AnimatePresence mode="wait">
+            <motion.div
+              key={recap.headline}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
             <Panel>
               <div className="eyebrow mb-2 text-ember">Final · Recap</div>
               <Reveal>
@@ -163,6 +178,8 @@ export default function GameRecapPage() {
                 </div>
               </Reveal>
             </Panel>
+            </motion.div>
+            </AnimatePresence>
           ) : (
             <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
               <Newspaper size={40} className="mb-4 text-ember" />

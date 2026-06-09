@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { clutchBoard, awardRace } from "@/lib/engine/players";
 import { shotChart } from "@/lib/engine/game";
@@ -74,15 +77,28 @@ function PreviewCard({
   children: React.ReactNode;
 }) {
   return (
-    <Link href={href} className="group block h-full bg-[var(--surface)] p-5 transition-colors hover:bg-[var(--surface-2)]">
+    <Link href={href} className="group block h-full">
+      <motion.div
+        whileHover={{ y: -4 }}
+        whileTap={{ scale: 0.99 }}
+        transition={{ type: "spring", stiffness: 320, damping: 30 }}
+        className="h-full bg-[var(--surface)] p-5 transition-colors hover:bg-[var(--surface-2)]"
+      >
         <div className="mb-4 flex items-center justify-between border-b border-[var(--line)] pb-3">
           <div>
             <div className="text-sm font-semibold text-[var(--text)]">{title}</div>
             <div className="kicker mt-1">{tag}</div>
           </div>
-          <ArrowUpRight size={15} className="text-[var(--text-faint)] transition group-hover:text-[var(--accent)]" />
+          <motion.span
+            className="text-[var(--text-faint)] group-hover:text-[var(--accent)]"
+            initial={{ x: 0, y: 0 }}
+            whileHover={{ x: 2, y: -2 }}
+          >
+            <ArrowUpRight size={15} />
+          </motion.span>
         </div>
         {children}
-      </Link>
+      </motion.div>
+    </Link>
   );
 }

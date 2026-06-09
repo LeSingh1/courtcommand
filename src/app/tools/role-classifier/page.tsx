@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Boxes, X } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
-import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { getTool } from "@/lib/tools";
 import { roleClusters } from "@/lib/engine/players";
+import { spring, staggerParent, staggerItem } from "@/lib/motion";
 
 export default function RoleClassifierPage() {
   const tool = getTool("role-classifier")!;
@@ -42,14 +43,23 @@ export default function RoleClassifierPage() {
       </div>
 
       {/* Cluster grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {clusters.map((c, i) => (
-          <Reveal key={c.role} delay={i * 0.05}>
-            <button
-              onClick={() => setActiveRole(c.role)}
-              className="glass group relative flex h-full w-full flex-col overflow-hidden rounded-none p-5 text-left transition hover:-translate-y-0.5"
-              style={{ boxShadow: activeRole === c.role ? `0 0 0 1px ${c.color}66` : undefined }}
-            >
+      <motion.div
+        variants={staggerParent}
+        initial="initial"
+        animate="animate"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        {clusters.map((c) => (
+          <motion.button
+            key={c.role}
+            variants={staggerItem}
+            whileHover={{ y: -3 }}
+            whileTap={{ scale: 0.97 }}
+            transition={spring.snappy}
+            onClick={() => setActiveRole(c.role)}
+            className="glass group relative flex h-full w-full flex-col overflow-hidden rounded-none p-5 text-left"
+            style={{ boxShadow: activeRole === c.role ? `0 0 0 1px ${c.color}66` : undefined }}
+          >
               <div className="flex items-center justify-between">
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-none"
@@ -84,15 +94,21 @@ export default function RoleClassifierPage() {
                   </span>
                 )}
               </div>
-            </button>
-          </Reveal>
+          </motion.button>
         ))}
-      </div>
+      </motion.div>
 
       {/* Detail panel */}
+      <AnimatePresence mode="wait">
       {active && (
-        <div className="mt-6">
-          <Reveal>
+        <motion.div
+          key={active.role}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+          className="mt-6"
+        >
             <Panel
               title={`${active.role} · ${active.players.length} players`}
               right={
@@ -131,9 +147,9 @@ export default function RoleClassifierPage() {
                 })}
               </div>
             </Panel>
-          </Reveal>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }

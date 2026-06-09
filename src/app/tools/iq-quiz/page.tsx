@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Check, X, RotateCcw, ArrowRight } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Gauge } from "@/components/ui/Gauge";
 import { getTool } from "@/lib/tools";
@@ -71,9 +73,15 @@ export default function IqQuizPage() {
           </div>
         )}
 
-        <div>
+        <AnimatePresence mode="wait">
           {finished ? (
-            <div>
+            <motion.div
+              key="results"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
               <Panel className="flex flex-col items-center py-10 text-center">
                 <Gauge value={pct} color={verdictColor} label="IQ Score" />
                 <div className="mt-5 display text-3xl text-white">{verdict}</div>
@@ -87,17 +95,25 @@ export default function IqQuizPage() {
                       ? "Strong fundamentals with a few reads to sharpen. Review the scenarios you missed."
                       : "The reps will pay off — re-run the scenarios and lock in the help and coverage rules."}
                 </p>
-                <button
+                <motion.button
                   onClick={reset}
+                  whileTap={{ scale: 0.96 }}
+                  transition={spring.snappy}
                   className="mt-7 flex items-center gap-2 rounded-none px-5 py-3 text-sm font-semibold transition"
                   style={{ background: ROSE, color: "#1a0008" }}
                 >
                   <RotateCcw size={16} /> Retake quiz
-                </button>
+                </motion.button>
               </Panel>
-            </div>
+            </motion.div>
           ) : (
-            <div>
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
               <Panel>
                 <div className="eyebrow mb-2" style={{ color: ROSE }}>
                   Scenario {step + 1}
@@ -124,10 +140,12 @@ export default function IqQuizPage() {
                       }
                     }
                     return (
-                      <button
+                      <motion.button
                         key={opt}
                         onClick={() => pick(i)}
                         disabled={answered}
+                        whileTap={answered ? undefined : { scale: 0.98 }}
+                        transition={spring.snappy}
                         className={`flex items-center justify-between rounded-none border ${border} ${bg} px-4 py-3.5 text-left text-sm text-white/85 transition ${
                           !answered ? "hover:border-white/25 hover:bg-white/[0.05]" : ""
                         }`}
@@ -149,38 +167,48 @@ export default function IqQuizPage() {
                           </span>
                           {opt}
                         </span>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
 
+                <AnimatePresence>
                 {answered && (
-                  <div className="mt-5">
+                  <motion.div
+                    className="mt-5"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={spring.soft}
+                  >
                     <Insight accent={chosen === question.correct ? GREEN : ROSE}>
                         <span className="font-semibold" style={{ color: chosen === question.correct ? GREEN : ROSE }}>
                           {chosen === question.correct ? "Correct read. " : "Not quite. "}
                         </span>
                         {question.explain}
                       </Insight>
-                      <button
+                      <motion.button
                         onClick={next}
+                        whileTap={{ scale: 0.96 }}
+                        transition={spring.snappy}
                         className="mt-4 flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm font-semibold transition"
                         style={{ background: ROSE, color: "#1a0008" }}
                       >
                       {isLast ? "See results" : "Next scenario"}
                       <ArrowRight size={16} />
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </Panel>
 
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-white/40">
                 <Brain size={14} style={{ color: ROSE }} />
                 Running score: <b className="stat-num text-white/70">{score}</b> / {step + (answered ? 1 : 0)}
               </div>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
     </ToolShell>
   );

@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Plus, Check, Trash2, TrendingUp, TrendingDown, Sigma } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
@@ -229,24 +231,37 @@ export default function BettingPage() {
               </div>
             ) : (
               <div className="divide-y divide-[var(--line)]">
-                {picks.map((pk) => (
-                  <div key={pk.prop.id} className="flex items-center gap-2.5 px-4 py-2.5">
-                    <PlayerAvatar player={pk.prop.player} size={28} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs text-[var(--text)]">{pk.prop.player.name}</div>
-                      <div className="stat-num text-[10px] text-[var(--text-faint)]">
-                        {pk.side === "more" ? "Over" : "Under"} {pk.prop.line} {pk.prop.marketLabel} ·{" "}
-                        {(pk.prob * 100).toFixed(0)}%
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => toggle(pk.prop.id, pk.side)}
-                      className="text-[var(--text-faint)] transition hover:text-[#BF5B4E]"
+                <AnimatePresence initial={false}>
+                  {picks.map((pk) => (
+                    <motion.div
+                      key={pk.prop.id}
+                      layout
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={spring.soft}
+                      className="overflow-hidden"
                     >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-2.5 px-4 py-2.5">
+                        <PlayerAvatar player={pk.prop.player} size={28} />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-xs text-[var(--text)]">{pk.prop.player.name}</div>
+                          <div className="stat-num text-[10px] text-[var(--text-faint)]">
+                            {pk.side === "more" ? "Over" : "Under"} {pk.prop.line} {pk.prop.marketLabel} ·{" "}
+                            {(pk.prob * 100).toFixed(0)}%
+                          </div>
+                        </div>
+                        <motion.button
+                          whileTap={{ scale: 0.85 }}
+                          onClick={() => toggle(pk.prop.id, pk.side)}
+                          className="text-[var(--text-faint)] transition hover:text-[#BF5B4E]"
+                        >
+                          <Trash2 size={14} />
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             )}
 
@@ -357,9 +372,12 @@ function PickButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
-      className="inline-flex items-center gap-1 border px-2 py-1 text-[11px] font-semibold transition"
+      whileTap={{ scale: 0.9 }}
+      animate={{ scale: active ? 1.04 : 1 }}
+      transition={spring.snappy}
+      className="inline-flex items-center gap-1 border px-2 py-1 text-[11px] font-semibold"
       style={{
         color: active ? "#0a0a0b" : color,
         background: active ? color : "transparent",
@@ -367,7 +385,7 @@ function PickButton({
       }}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }
 

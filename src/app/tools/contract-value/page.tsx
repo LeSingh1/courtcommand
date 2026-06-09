@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { staggerParent, staggerItem, spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { Diverging } from "@/components/ui/Meter";
@@ -64,7 +66,7 @@ export default function ContractValuePage() {
         ].map(({ label, row, accent, Icon }, i) => {
           return (
             <Reveal key={label} delay={i * 0.08}>
-              <div className="glass relative overflow-hidden rounded-none p-5">
+              <motion.div whileHover={{ y: -3 }} transition={spring.snappy} className="glass relative overflow-hidden rounded-none p-5">
                 <div className="flex items-center justify-between">
                   <span className="eyebrow" style={{ color: accent }}>
                     {label}
@@ -93,7 +95,7 @@ export default function ContractValuePage() {
                     <div>Grade {row.grade}</div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </Reveal>
           );
         })}
@@ -113,12 +115,19 @@ export default function ContractValuePage() {
                 <th className="py-2 pr-2 text-right font-medium">Grade</th>
               </tr>
             </thead>
-            <tbody>
+            <AnimatePresence mode="wait">
+            <motion.tbody
+              key={filter}
+              variants={staggerParent}
+              initial="initial"
+              animate="animate"
+            >
               {rows.map((r, i) => {
                 const pos = r.surplus >= 0;
                 return (
-                  <tr
+                  <motion.tr
                     key={r.player.id}
+                    variants={staggerItem}
                     className="border-b border-white/[0.04] transition hover:bg-white/[0.03]"
                   >
                     <td className="stat-num py-2.5 pl-2 text-white/35">{i + 1}</td>
@@ -160,10 +169,11 @@ export default function ContractValuePage() {
                         {r.grade}
                       </span>
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
-            </tbody>
+            </motion.tbody>
+            </AnimatePresence>
           </table>
         </div>
       </Panel>

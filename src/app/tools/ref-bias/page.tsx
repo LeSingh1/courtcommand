@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Scale } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
 import { Meter, Diverging } from "@/components/ui/Meter";
@@ -74,6 +76,14 @@ export default function RefBiasPage() {
         />
       </div>
 
+      <AnimatePresence mode="wait">
+      <motion.div
+        key={sort}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={spring.soft}
+      >
       {/* spotlight cards */}
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         {sorted.slice(0, 3).map((r, i) => {
@@ -81,7 +91,12 @@ export default function RefBiasPage() {
           const val = sort === "homeWhistle" ? r.homeGap : sort === "starWhistle" ? r.starWhistle : r.foulDiff;
           return (
             <Reveal key={r.team} delay={i * 0.08}>
-              <div className="glass relative overflow-hidden rounded-none p-5">
+              <motion.div
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.97 }}
+                transition={spring.snappy}
+                className="glass relative overflow-hidden rounded-none p-5"
+              >
                 <div className="flex items-center justify-between">
                   <span className="display text-4xl text-white/15">#{i + 1}</span>
                   <Scale size={20} style={{ color: CYAN }} />
@@ -111,7 +126,7 @@ export default function RefBiasPage() {
                     <div>{r.awayFtRate} away FT</div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </Reveal>
           );
         })}
@@ -195,6 +210,8 @@ export default function RefBiasPage() {
           </table>
         </div>
       </Panel>
+      </motion.div>
+      </AnimatePresence>
     </ToolShell>
   );
 }

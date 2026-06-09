@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Award, Crown } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { BarChart } from "@/components/ui/BarChart";
@@ -43,12 +45,22 @@ export default function AwardPredictorPage() {
         <Segmented accent={GOLD} value={kind} onChange={setKind} options={AWARDS} />
       </div>
 
+      <AnimatePresence mode="wait">
       {leader && (
-        <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+        <motion.div
+          key={kind}
+          className="grid gap-6 lg:grid-cols-[360px_1fr]"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
           {/* frontrunner card */}
-          <div
+          <motion.div
             className="glass rounded-none p-6"
             style={{ boxShadow: `inset 0 0 0 1px ${GOLD}30` }}
+            whileHover={{ y: -3 }}
+            transition={spring.snappy}
           >
             <div className="flex items-center gap-2">
               <Crown size={18} style={{ color: GOLD }} />
@@ -76,7 +88,7 @@ export default function AwardPredictorPage() {
               </div>
               <Badge color={GOLD}>{leader.odds}% odds</Badge>
             </div>
-          </div>
+          </motion.div>
 
           {/* field bar chart */}
           <Panel title={`${kind} candidate field`}>
@@ -90,8 +102,9 @@ export default function AwardPredictorPage() {
               unit="%"
             />
           </Panel>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {leader && runnerUp && (
         <div className="mt-6">

@@ -2,7 +2,9 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { GitCompareArrows } from "lucide-react";
+import { spring, staggerParent, staggerItem } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -64,25 +66,52 @@ function SimilarityInner() {
         <PlayerPicker value={player} onChange={setPlayer} accent="#7E8CA0" placeholder="Pick a player to find twins…" />
       </div>
 
+      <AnimatePresence mode="wait">
       {!player ? (
-        <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
-          <GitCompareArrows size={40} className="mb-4 text-cyan" />
-          <p className="max-w-xs text-sm text-white/50">
-            Choose any player — HoopRadar maps their statistical fingerprint and finds the closest
-            stylistic twins in the league.
-          </p>
-        </Panel>
+        <motion.div
+          key="empty"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
+            <GitCompareArrows size={40} className="mb-4 text-cyan" />
+            <p className="max-w-xs text-sm text-white/50">
+              Choose any player — HoopRadar maps their statistical fingerprint and finds the closest
+              stylistic twins in the league.
+            </p>
+          </Panel>
+        </motion.div>
       ) : analyze.phase === "running" ? (
-        <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent="#7E8CA0" />
+        <motion.div
+          key="running"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent="#7E8CA0" />
+        </motion.div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <motion.div
+          key="results"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+          className="grid gap-6 lg:grid-cols-[1fr_360px]"
+        >
           <div className="space-y-6">
             <Panel title="Closest comparisons">
-              <div className="space-y-2.5">
+              <motion.div className="space-y-2.5" variants={staggerParent} initial="initial" animate="animate">
                 {results.map((r, i) => {
                   return (
-                    <button
+                    <motion.button
                       key={r.player.id}
+                      variants={staggerItem}
+                      whileHover={{ y: -3 }}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => setActive(i)}
                       className="flex w-full items-center gap-3 rounded-none border p-3 text-left transition"
                       style={{
@@ -108,10 +137,10 @@ function SimilarityInner() {
                         <div className="stat-num text-lg font-bold text-cyan">{r.score}</div>
                         <div className="text-[9px] uppercase text-white/35">match</div>
                       </div>
-                    </button>
+                    </motion.button>
                   );
                 })}
-              </div>
+              </motion.div>
             </Panel>
           </div>
 
@@ -145,8 +174,9 @@ function SimilarityInner() {
               </Insight>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </ToolShell>
   );
 }

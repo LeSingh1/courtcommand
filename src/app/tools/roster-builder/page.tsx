@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { LayoutGrid, Search, Check, AlertTriangle } from "lucide-react";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Meter } from "@/components/ui/Meter";
 import { Gauge } from "@/components/ui/Gauge";
@@ -78,10 +80,12 @@ export default function RosterBuilderPage() {
                 const sel = picks.includes(p.id);
                 const disabled = !sel && picks.length >= 5;
                 return (
-                  <button
+                  <motion.button
                     key={p.id}
                     onClick={() => toggle(p.id)}
                     disabled={disabled}
+                    whileTap={disabled ? undefined : { scale: 0.97 }}
+                    transition={spring.snappy}
                     className="flex items-center gap-2.5 rounded-none border p-2.5 text-left transition disabled:opacity-35"
                     style={{
                       borderColor: sel ? `${ACCENT}66` : "rgba(255,255,255,0.06)",
@@ -104,7 +108,7 @@ export default function RosterBuilderPage() {
                         {p.pos} · ${p.salary}M
                       </div>
                     </div>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -166,8 +170,15 @@ export default function RosterBuilderPage() {
             </Panel>
           </Reveal>
 
+          <AnimatePresence mode="wait">
           {score ? (
-            <Reveal delay={0.05}>
+            <motion.div
+              key="rating"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
               <Panel
                 title="Roster rating"
                 right={
@@ -193,16 +204,25 @@ export default function RosterBuilderPage() {
                   <Meter label="Balance" valueLabel={`${score.balance}`} value={score.balance} color="#BF5B4E" />
                 </div>
               </Panel>
-            </Reveal>
+            </motion.div>
           ) : (
-            <Panel className="flex min-h-[180px] flex-col items-center justify-center text-center">
-              <LayoutGrid size={32} className="mb-3" style={{ color: ACCENT }} />
-              <p className="text-sm text-white/50">
-                {5 - roster.length} more {5 - roster.length === 1 ? "signing" : "signings"} to lock
-                your starting five.
-              </p>
-            </Panel>
+            <motion.div
+              key="placeholder"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring.soft}
+            >
+              <Panel className="flex min-h-[180px] flex-col items-center justify-center text-center">
+                <LayoutGrid size={32} className="mb-3" style={{ color: ACCENT }} />
+                <p className="text-sm text-white/50">
+                  {5 - roster.length} more {5 - roster.length === 1 ? "signing" : "signings"} to lock
+                  your starting five.
+                </p>
+              </Panel>
+            </motion.div>
           )}
+          </AnimatePresence>
 
           {score && (
             <Reveal delay={0.1}>
