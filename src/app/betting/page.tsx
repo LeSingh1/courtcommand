@@ -5,12 +5,13 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Plus, Check, Trash2, TrendingUp, TrendingDown, Sigma } from "lucide-react";
 import { spring } from "@/lib/motion";
-import { Panel, Insight } from "@/components/tool/ToolShell";
+import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { gradeColor } from "@/lib/cn";
+import type { ToolMeta } from "@/lib/types";
 import {
   edgeBoard,
   optimizeLineup,
@@ -24,7 +25,22 @@ import {
   type LineupPick,
 } from "@/lib/engine/betting";
 
-const EMERALD = "#2FA96B";
+// Ember accent (= var(--accent) #e0561f), the sanctioned Prediction-category color.
+const EMERALD = "#E0561F";
+
+// Betting isn't registered in tools.ts (it's not a public /tools entry), so we
+// describe it locally to drive the shared ToolShell header (breadcrumb + Share).
+const BETTING_TOOL: ToolMeta = {
+  slug: "betting",
+  name: "EdgeBoard",
+  short: "EdgeBoard",
+  tagline:
+    "Every player prop projected with a recency-blended mean and variance floor, priced against the book line. Build a slip and the Poisson-binomial optimizer grades your expected value.",
+  category: "Prediction",
+  accent: "ember",
+  icon: "Sigma",
+  keywords: ["betting", "edge", "props", "over", "under", "parlay", "ev"],
+};
 
 const ODDS_LABEL: Record<OddsType, string> = { standard: "Standard", demon: "Demon", goblin: "Goblin" };
 
@@ -65,24 +81,11 @@ export default function BettingPage() {
   const lineup = useMemo(() => optimizeLineup(picks, playType, entry), [picks, playType, entry]);
 
   return (
-    <div className="mx-auto max-w-7xl px-5 pb-28 pt-28 sm:px-8">
-      {/* Header */}
-      <div className="enter mb-10 border-b border-[var(--line)] pb-8">
-        <div className="kicker mb-3 flex items-center gap-3" style={{ color: EMERALD }}>
-          <span className="h-px w-8" style={{ background: EMERALD }} />
-          Betting · Edge Board
-        </div>
-        <h1 className="display text-4xl text-[var(--text)] sm:text-6xl">
-          The <span className="display-italic" style={{ color: EMERALD }}>edge</span> engine.
-        </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[var(--text-muted)]">
-          The EdgeBoard model, inside CourtCommand. Every player prop is projected with a
-          recency-blended mean and variance floor, converted to a P(over) through a normal CDF,
-          nudged by matchup and form signals, then priced against the book line. Build a slip and the
-          Poisson-binomial optimizer grades your expected value.
-        </p>
+    <ToolShell tool={BETTING_TOOL}>
+      {/* EdgeBoard model tag + responsible-use disclaimer */}
+      <div className="enter mb-8">
         <div
-          className="mt-5 inline-flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-1.5 text-[11px]"
+          className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-1.5 text-[11px]"
           style={{ borderColor: `${EMERALD}40` }}
         >
           <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider" style={{ color: EMERALD }}>
@@ -102,9 +105,10 @@ export default function BettingPage() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <select
+              aria-label="Filter by market"
               value={market}
               onChange={(e) => setMarket(e.target.value as Market | "ALL")}
-              className="border border-[var(--line-strong)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none"
+              className="cursor-pointer border border-[var(--line-strong)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none"
             >
               <option value="ALL">All markets</option>
               {MARKETS.map((m) => (
@@ -143,6 +147,13 @@ export default function BettingPage() {
                   </tr>
                 </thead>
                 <tbody>
+                  {board.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-[var(--text-faint)]">
+                        No edges match these filters.
+                      </td>
+                    </tr>
+                  )}
                   {board.map((e) => {
                     const sel = slip.find((x) => x.id === e.id);
                     const ec = gradeColor(50 + e.edge * 280);
@@ -236,11 +247,10 @@ export default function BettingPage() {
                     <motion.div
                       key={pk.prop.id}
                       layout
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
                       transition={spring.soft}
-                      className="overflow-hidden"
                     >
                       <div className="flex items-center gap-2.5 px-4 py-2.5">
                         <PlayerAvatar player={pk.prop.player} size={28} />
@@ -252,9 +262,10 @@ export default function BettingPage() {
                           </div>
                         </div>
                         <motion.button
+                          aria-label={`Remove ${pk.prop.player.name} ${pk.prop.marketLabel}`}
                           whileTap={{ scale: 0.85 }}
                           onClick={() => toggle(pk.prop.id, pk.side)}
-                          className="text-[var(--text-faint)] transition hover:text-[#BF5B4E]"
+                          className="cursor-pointer text-[var(--text-faint)] transition hover:text-[#BF5B4E]"
                         >
                           <Trash2 size={14} />
                         </motion.button>
@@ -281,6 +292,7 @@ export default function BettingPage() {
                     $
                     <input
                       type="number"
+                      aria-label="Entry amount in dollars"
                       value={entry}
                       min={1}
                       onChange={(e) => setEntry(Math.max(1, Number(e.target.value)))}
@@ -354,7 +366,7 @@ export default function BettingPage() {
           odds of hitting <i>k</i> of your legs.
         </Insight>
       </div>
-    </div>
+    </ToolShell>
   );
 }
 
@@ -377,7 +389,7 @@ function PickButton({
       whileTap={{ scale: 0.9 }}
       animate={{ scale: active ? 1.04 : 1 }}
       transition={spring.snappy}
-      className="inline-flex items-center gap-1 border px-2 py-1 text-[11px] font-semibold"
+      className="inline-flex cursor-pointer items-center gap-1 border px-2 py-1 text-[11px] font-semibold"
       style={{
         color: active ? "#0a0a0b" : color,
         background: active ? color : "transparent",

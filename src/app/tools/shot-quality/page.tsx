@@ -98,10 +98,10 @@ export default function ShotQualityPage() {
                   <button
                     key={s.value}
                     onClick={() => setShotType(s.value)}
-                    className="rounded-none px-3 py-1.5 text-xs font-medium transition"
+                    className="cursor-pointer rounded-none px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E0561F]"
                     style={
                       shotType === s.value
-                        ? { background: tool.accent === "ember" ? "#E0561F" : "#E0561F", color: "#160600" }
+                        ? { background: "#E0561F", color: "#160600" }
                         : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" }
                     }
                   >
@@ -165,10 +165,10 @@ export default function ShotQualityPage() {
                         <div key={d.label} className="flex items-center gap-3">
                           <span className="flex-1 text-sm text-white/70">{d.label}</span>
                           <div className="flex w-32 items-center justify-center">
-                            <div className="relative h-2 w-full rounded-full bg-white/[0.06]">
+                            <div className="relative h-2 w-full bg-white/[0.06]">
                               <div className="absolute left-1/2 top-0 h-full w-px bg-white/20" />
                               <div
-                                className="absolute top-0 h-full rounded-full"
+                                className="absolute top-0 h-full"
                                 style={{
                                   background: pos ? "#5FA97E" : "#BF5B4E",
                                   width: `${Math.min(50, Math.abs(d.impact) * 400)}%`,
@@ -193,7 +193,7 @@ export default function ShotQualityPage() {
               </div>
               <Insight accent="#E0561F">
                 A {result.rating.toLowerCase()} worth <b>{result.expPoints} expected points</b>. The
-                biggest factor was <b>{result.drivers[0].label.toLowerCase()}</b>. League-average
+                biggest factor was <b>{result.drivers[0]?.label.toLowerCase() ?? "the shot context"}</b>. League-average
                 halfcourt shots sit near 1.04 pts/shot — this look {result.expPoints >= 1.04 ? "beats" : "trails"} that
                 baseline.
               </Insight>

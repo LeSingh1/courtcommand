@@ -73,7 +73,7 @@ export default function FantasyDraftPage() {
         <Segmented accent={GOLD} value={punt} onChange={setPunt} options={PUNTS} />
       </div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={punt}
         initial={{ opacity: 0, y: 14 }}
@@ -88,7 +88,6 @@ export default function FantasyDraftPage() {
             <Reveal key={r.player.id} delay={i * 0.08}>
               <motion.div
                 whileHover={{ y: -3 }}
-                whileTap={{ scale: 0.97 }}
                 transition={spring.snappy}
                 className="glass relative overflow-hidden rounded-none p-5"
               >
@@ -109,7 +108,7 @@ export default function FantasyDraftPage() {
                 </div>
                 <div className="mt-4 flex items-end justify-between">
                   <div>
-                    <div className="stat-num text-3xl font-bold" style={{ color: GOLD }}>
+                    <div className="scoreboard text-4xl" style={{ color: GOLD }}>
                       {r.zScore}
                     </div>
                     <div className="text-[10px] uppercase text-white/40">Total z-score</div>

@@ -51,7 +51,7 @@ export function AnalyzeOverlay({
       <div className="relative h-10 w-10">
         <motion.div
           className="h-10 w-10 rounded-full border border-[var(--line)]"
-          style={{ borderTopColor: "var(--accent)" }}
+          style={{ borderTopColor: accent }}
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 0.9, ease: "linear" }}
         />
@@ -75,7 +75,7 @@ export function AnalyzeOverlay({
           <div
             key={i}
             className="h-px w-8 transition-colors"
-            style={{ background: i <= stepIdx ? "var(--accent)" : "var(--line)" }}
+            style={{ background: i <= stepIdx ? accent : "var(--line)" }}
           />
         ))}
       </div>

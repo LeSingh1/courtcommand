@@ -9,10 +9,8 @@ import { Segmented, Badge } from "@/components/ui/Controls";
 import { BarChart } from "@/components/ui/BarChart";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { getTool } from "@/lib/tools";
+import { getTool, categoryColor } from "@/lib/tools";
 import { awardRace, type AwardKind } from "@/lib/engine/players";
-
-const GOLD = "#C9A14A";
 
 const AWARDS: { label: string; value: AwardKind }[] = [
   { label: "MVP", value: "MVP" },
@@ -30,6 +28,7 @@ const AWARD_FULL: Record<AwardKind, string> = {
 
 export default function AwardPredictorPage() {
   const tool = getTool("award-predictor")!;
+  const ACCENT = categoryColor(tool.category);
   const [kind, setKind] = useState<AwardKind>("MVP");
   const race = useMemo(() => awardRace(kind), [kind]);
   const leader = race[0];
@@ -39,14 +38,14 @@ export default function AwardPredictorPage() {
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="eyebrow flex items-center gap-2" style={{ color: GOLD }}>
+        <div className="eyebrow flex items-center gap-2" style={{ color: ACCENT }}>
           <Award size={15} /> {AWARD_FULL[kind]} race
         </div>
-        <Segmented accent={GOLD} value={kind} onChange={setKind} options={AWARDS} />
+        <Segmented accent={ACCENT} value={kind} onChange={setKind} options={AWARDS} />
       </div>
 
       <AnimatePresence mode="wait">
-      {leader && (
+      {leader ? (
         <motion.div
           key={kind}
           className="grid gap-6 lg:grid-cols-[360px_1fr]"
@@ -58,12 +57,12 @@ export default function AwardPredictorPage() {
           {/* frontrunner card */}
           <motion.div
             className="glass rounded-none p-6"
-            style={{ boxShadow: `inset 0 0 0 1px ${GOLD}30` }}
+            style={{ boxShadow: `inset 0 0 0 1px ${ACCENT}30` }}
             whileHover={{ y: -3 }}
             transition={spring.snappy}
           >
             <div className="flex items-center gap-2">
-              <Crown size={18} style={{ color: GOLD }} />
+              <Crown size={18} style={{ color: ACCENT }} />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-white/55">
                 Frontrunner
               </span>
@@ -79,14 +78,14 @@ export default function AwardPredictorPage() {
             </div>
             <div className="mt-6 flex items-end justify-between">
               <div>
-                <div className="display text-5xl" style={{ color: GOLD }}>
+                <div className="display text-5xl" style={{ color: ACCENT }}>
                   <AnimatedNumber value={leader.share} decimals={0} suffix="%" />
                 </div>
                 <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">
                   Projected vote share
                 </div>
               </div>
-              <Badge color={GOLD}>{leader.odds}% odds</Badge>
+              <Badge color={ACCENT}>{leader.odds}% odds</Badge>
             </div>
           </motion.div>
 
@@ -96,11 +95,25 @@ export default function AwardPredictorPage() {
               bars={race.map((r, i) => ({
                 label: r.player.name,
                 value: r.share,
-                color: GOLD,
+                color: ACCENT,
                 sub: i === 0 ? "lead" : `${r.player.team}`,
               }))}
               unit="%"
             />
+          </Panel>
+        </motion.div>
+      ) : (
+        <motion.div
+          key={`${kind}-empty`}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <Panel title={`${kind} candidate field`}>
+            <div className="py-10 text-center text-sm text-white/45">
+              No qualifying {AWARD_FULL[kind]} candidates in the current pool.
+            </div>
           </Panel>
         </motion.div>
       )}
@@ -108,13 +121,23 @@ export default function AwardPredictorPage() {
 
       {leader && runnerUp && (
         <div className="mt-6">
-          <Insight accent={GOLD}>
-            <b>{leader.player.name}</b> is the clear {kind} favorite at <b>{leader.share}%</b> of the
-            projected vote — a <b>{gap}-point</b> cushion over <b>{runnerUp.player.name}</b> (
-            {runnerUp.share}%).{" "}
-            {gap >= 12
-              ? "Barring a collapse, this is shaping up as a runaway."
-              : "Close enough that a strong finishing kick could flip the race."}
+          <Insight accent={ACCENT}>
+            {gap <= 0 ? (
+              <>
+                <b>{leader.player.name}</b> leads the {kind} race at <b>{leader.share}%</b> of the
+                projected vote — but it is a dead heat with <b>{runnerUp.player.name}</b> (
+                {runnerUp.share}%). Either could take it on a strong finishing kick.
+              </>
+            ) : (
+              <>
+                <b>{leader.player.name}</b> is the clear {kind} favorite at <b>{leader.share}%</b> of
+                the projected vote — a <b>{gap}-point</b> cushion over <b>{runnerUp.player.name}</b> (
+                {runnerUp.share}%).{" "}
+                {gap >= 12
+                  ? "Barring a collapse, this is shaping up as a runaway."
+                  : "Close enough that a strong finishing kick could flip the race."}
+              </>
+            )}
           </Insight>
         </div>
       )}

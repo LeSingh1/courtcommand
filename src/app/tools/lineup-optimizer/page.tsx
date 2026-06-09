@@ -69,13 +69,14 @@ export default function LineupOptimizerPage() {
           <Panel title="Candidate pool">
             <div className="mb-4">
               <select
+                aria-label="Filter candidate pool by team"
                 value={team}
                 onChange={(e) => {
                   setTeam(e.target.value);
                   setSelected([]);
                   setOptimized(null);
                 }}
-                className="w-full rounded-none border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none"
+                className="w-full cursor-pointer rounded-none border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none"
               >
                 <option value="" className="bg-ink-800">
                   All tracked players ({PLAYERS.length})
@@ -99,7 +100,8 @@ export default function LineupOptimizerPage() {
                   <button
                     key={p.id}
                     onClick={() => toggle(p.id)}
-                    className="flex w-full items-center gap-2.5 rounded-none border p-2 text-left transition"
+                    aria-pressed={sel}
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-none border p-2 text-left transition"
                     style={{
                       borderColor: sel ? `${ACCENT}66` : "rgba(255,255,255,0.06)",
                       background: sel ? `${ACCENT}12` : "transparent",
@@ -136,7 +138,7 @@ export default function LineupOptimizerPage() {
             disabled={pool.length < 5}
             whileTap={{ scale: 0.96 }}
             transition={spring.snappy}
-            className="flex w-full items-center justify-center gap-2 rounded-none px-4 py-3 text-sm font-semibold text-[#0a0c11] transition disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-none px-4 py-3 text-sm font-semibold text-[#0a0c11] transition disabled:cursor-not-allowed disabled:opacity-40"
             style={{ background: ACCENT }}
           >
             <Zap size={16} />
@@ -144,7 +146,9 @@ export default function LineupOptimizerPage() {
           </motion.button>
           {customFive.length > 0 && customFive.length !== 5 && (
             <p className="text-center text-[11px] text-white/45">
-              {customFive.length}/5 selected for a live custom unit
+              {customFive.length > 5
+                ? `Trim to 5 to score a live custom unit (${customFive.length} selected)`
+                : `${customFive.length}/5 selected for a live custom unit`}
             </p>
           )}
         </div>

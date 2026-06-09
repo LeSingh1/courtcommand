@@ -6,6 +6,8 @@ import { Reveal } from "@/components/ui/Reveal";
 import { TOOLS, CATEGORIES, categoryColor } from "@/lib/tools";
 import { HomePreviews } from "@/components/home/HomePreviews";
 
+const BETTING_GREEN = "#2FA96B";
+
 export default function HomePage() {
   return (
     <>
@@ -79,12 +81,12 @@ export default function HomePage() {
           <Link href="/betting" className="lift group block border border-[var(--line)] bg-[var(--surface)] hover:bg-[var(--surface-2)]">
             <div className="grid gap-6 p-8 sm:grid-cols-[1.4fr_1fr] sm:items-center sm:p-10">
               <div>
-                <div className="kicker mb-3 flex items-center gap-2" style={{ color: "#2FA96B" }}>
-                  <span className="h-px w-8" style={{ background: "#2FA96B" }} />
+                <div className="kicker mb-3 flex items-center gap-2" style={{ color: BETTING_GREEN }}>
+                  <span className="h-px w-8" style={{ background: BETTING_GREEN }} />
                   New · Betting
                 </div>
                 <h2 className="display text-3xl text-[var(--text)] sm:text-4xl">
-                  The <span className="display-italic" style={{ color: "#2FA96B" }}>EdgeBoard</span> model, built in.
+                  The <span className="display-italic" style={{ color: BETTING_GREEN }}>EdgeBoard</span> model, built in.
                 </h2>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-[var(--text-muted)]">
                   Recency-weighted prop projections, a normal-CDF edge over the book line, and a
@@ -93,7 +95,7 @@ export default function HomePage() {
                 </p>
                 <span
                   className="mt-5 inline-flex items-center gap-2 text-sm font-semibold"
-                  style={{ color: "#2FA96B" }}
+                  style={{ color: BETTING_GREEN }}
                 >
                   Open the Edge Board
                   <ArrowRight size={15} strokeWidth={2} className="transition-transform group-hover:translate-x-0.5" />
@@ -106,7 +108,7 @@ export default function HomePage() {
                   { k: "1.5×", l: "Demon payouts" },
                 ].map((s) => (
                   <div key={s.l} className="bg-[var(--surface)] p-4 text-center">
-                    <div className="scoreboard text-xl" style={{ color: "#2FA96B" }}>{s.k}</div>
+                    <div className="scoreboard text-xl" style={{ color: BETTING_GREEN }}>{s.k}</div>
                     <div className="mt-1 text-[10px] uppercase tracking-wide text-[var(--text-faint)]">{s.l}</div>
                   </div>
                 ))}
@@ -120,7 +122,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
         <Reveal>
           <div className="border border-[var(--line)] bg-[var(--surface)] px-8 py-16 text-center sm:py-20">
-            <h2 className="display mx-auto max-w-2xl text-3xl text-[var(--text)] sm:text-5xl">
+            <h2 className="display mx-auto max-w-2xl text-3xl text-[var(--text)] sm:text-4xl">
               Settle the argument with the numbers.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-[var(--text-muted)]">

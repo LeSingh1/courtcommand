@@ -18,7 +18,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-1 rounded-none px-2.5 py-0.5 text-[11px] font-medium",
         className,
       )}
       style={
@@ -52,8 +52,9 @@ export function Segmented<T extends string>({
           <button
             key={o.value}
             onClick={() => onChange(o.value)}
+            aria-pressed={sel}
             className={cn(
-              "relative px-3 py-1.5 text-xs font-medium transition-colors",
+              "relative cursor-pointer px-3 py-1.5 text-xs font-medium transition-colors",
               sel ? "text-[var(--accent-ink)]" : "text-[var(--text-muted)] hover:text-[var(--text)]",
             )}
           >
@@ -108,8 +109,9 @@ export function Slider({
         max={max}
         step={step}
         value={value}
+        aria-label={label}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-full outline-none"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-none outline-none"
         style={{
           background: `linear-gradient(90deg, ${accent} ${pct}%, rgba(255,255,255,0.1) ${pct}%)`,
         }}

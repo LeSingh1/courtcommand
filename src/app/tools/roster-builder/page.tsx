@@ -13,7 +13,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { getTool } from "@/lib/tools";
 import { PLAYERS, SALARY_CAP } from "@/lib/data";
 import { scoreLineup, type LineupScore } from "@/lib/engine/teams";
-import { gradeColor, letterGrade } from "@/lib/cn";
+import { gradeColor, letterGrade, STEEL } from "@/lib/cn";
 
 const ACCENT = "#5FA97E";
 
@@ -29,7 +29,6 @@ export default function RosterBuilderPage() {
 
   const payroll = useMemo(() => roster.reduce((a, p) => a + p.salary, 0), [roster]);
   const overCap = payroll > SALARY_CAP;
-  const payrollPct = Math.min(100, (payroll / SALARY_CAP) * 100);
 
   const score: LineupScore | null = useMemo(
     () => (roster.length === 5 ? scoreLineup(roster) : null),
@@ -71,6 +70,7 @@ export default function RosterBuilderPage() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search players…"
+                aria-label="Search players"
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35"
               />
             </div>
@@ -86,7 +86,7 @@ export default function RosterBuilderPage() {
                     disabled={disabled}
                     whileTap={disabled ? undefined : { scale: 0.97 }}
                     transition={spring.snappy}
-                    className="flex items-center gap-2.5 rounded-none border p-2.5 text-left transition disabled:opacity-35"
+                    className="flex cursor-pointer items-center gap-2.5 rounded-none border p-2.5 text-left transition focus-visible:border-white/40 focus-visible:outline-none disabled:cursor-default disabled:opacity-35"
                     style={{
                       borderColor: sel ? `${ACCENT}66` : "rgba(255,255,255,0.06)",
                       background: sel ? `${ACCENT}12` : "transparent",
@@ -129,22 +129,19 @@ export default function RosterBuilderPage() {
                   </span>
                 </div>
                 {overCap ? (
-                  <Badge color="#BF5B4E" soft={false}>
+                  <Badge color={gradeColor(0)} soft={false}>
                     <AlertTriangle size={11} /> Over cap
                   </Badge>
                 ) : (
                   <Badge color={ACCENT}>${(SALARY_CAP - payroll).toFixed(1)}M room</Badge>
                 )}
               </div>
-              <div className="h-3 w-full overflow-hidden rounded-full bg-white/[0.06]">
-                <div
-                  className="h-full rounded-full transition-[width] duration-500"
-                  style={{
-                    width: `${payrollPct}%`,
-                    background: overCap ? "#BF5B4E" : ACCENT,
-                  }}
-                />
-              </div>
+              <Meter
+                value={payroll}
+                max={SALARY_CAP}
+                color={overCap ? gradeColor(0) : ACCENT}
+                height={12}
+              />
 
               <div className="mt-4 space-y-1.5">
                 {roster.length === 0 && (
@@ -200,7 +197,7 @@ export default function RosterBuilderPage() {
                   <Meter label="Offense" valueLabel={`${score.scoring}`} value={score.scoring} color="#E0561F" />
                   <Meter label="Defense" valueLabel={`${score.defense}`} value={score.defense} color="#5FA97E" />
                   <Meter label="Playmaking" valueLabel={`${score.playmaking}`} value={score.playmaking} color="#C9A14A" />
-                  <Meter label="Spacing" valueLabel={`${score.spacing}`} value={score.spacing} color="#7E8CA0" />
+                  <Meter label="Spacing" valueLabel={`${score.spacing}`} value={score.spacing} color={STEEL} />
                   <Meter label="Balance" valueLabel={`${score.balance}`} value={score.balance} color="#BF5B4E" />
                 </div>
               </Panel>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { staggerParent, staggerItem, spring } from "@/lib/motion";
+import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { Diverging } from "@/components/ui/Meter";
@@ -27,6 +27,12 @@ export default function ContractValuePage() {
   const tool = getTool("contract-value")!;
   const [filter, setFilter] = useState<Filter>("all");
 
+  const [isAnalyzing, setIsAnalyzing] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setIsAnalyzing(false), 350);
+    return () => clearTimeout(t);
+  }, []);
+
   const board = useMemo(() => contractBoard(), []);
   const rows = useMemo(
     () => (filter === "all" ? board : board.filter((r) => r.verdict === filter)),
@@ -35,6 +41,24 @@ export default function ContractValuePage() {
 
   const bestBargain = board[0];
   const worstOverpay = board[board.length - 1];
+
+  if (isAnalyzing) {
+    return (
+      <ToolShell tool={tool}>
+        <Panel title="Contract value board">
+          <div className="flex items-center gap-3 py-2 text-sm text-[var(--text-muted)]">
+            <span className="inline-block h-3 w-3 animate-pulse" style={{ background: POS }} />
+            Analyzing contracts…
+          </div>
+          <div className="mt-4 space-y-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-9 w-full animate-pulse bg-white/[0.04]" />
+            ))}
+          </div>
+        </Panel>
+      </ToolShell>
+    );
+  }
 
   return (
     <ToolShell tool={tool}>
@@ -84,7 +108,7 @@ export default function ContractValuePage() {
                 </div>
                 <div className="mt-4 flex items-end justify-between">
                   <div>
-                    <div className="stat-num text-3xl font-bold" style={{ color: accent }}>
+                    <div className="scoreboard text-4xl leading-none tabular-nums" style={{ color: accent }}>
                       {row.surplus >= 0 ? "+" : ""}
                       ${row.surplus}M
                     </div>
@@ -102,7 +126,18 @@ export default function ContractValuePage() {
       </div>
 
       <Panel title={`Contract value board · ${rows.length} players`}>
-        <div className="overflow-x-auto">
+        {rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 border border-[var(--line)] px-6 py-12 text-center">
+            <p className="text-sm text-[var(--text-muted)]">No players match this filter.</p>
+            <button
+              onClick={() => setFilter("all")}
+              className="border border-[var(--line)] px-3 py-1.5 text-xs uppercase tracking-wide text-white/70 transition hover:bg-white/[0.04]"
+            >
+              Clear filter
+            </button>
+          </div>
+        ) : (
+        <div key={filter} className="enter overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
@@ -115,19 +150,12 @@ export default function ContractValuePage() {
                 <th className="py-2 pr-2 text-right font-medium">Grade</th>
               </tr>
             </thead>
-            <AnimatePresence mode="wait">
-            <motion.tbody
-              key={filter}
-              variants={staggerParent}
-              initial="initial"
-              animate="animate"
-            >
+            <tbody>
               {rows.map((r, i) => {
                 const pos = r.surplus >= 0;
                 return (
-                  <motion.tr
+                  <tr
                     key={r.player.id}
-                    variants={staggerItem}
                     className="border-b border-white/[0.04] transition hover:bg-white/[0.03]"
                   >
                     <td className="stat-num py-2.5 pl-2 text-white/35">{i + 1}</td>
@@ -169,13 +197,13 @@ export default function ContractValuePage() {
                         {r.grade}
                       </span>
                     </td>
-                  </motion.tr>
+                  </tr>
                 );
               })}
-            </motion.tbody>
-            </AnimatePresence>
+            </tbody>
           </table>
         </div>
+        )}
       </Panel>
 
       <div className="mt-6">

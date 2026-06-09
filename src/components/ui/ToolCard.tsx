@@ -25,20 +25,12 @@ export function ToolCard({ tool, index = 0 }: { tool: ToolMeta; index?: number }
         className="relative flex h-full flex-col overflow-hidden border border-[var(--line)] bg-[var(--surface)] p-5"
         style={{ ["--cat" as string]: color }}
       >
-        {/* category accent rule */}
+        {/* category accent rule — visible at rest, brightens on hover */}
         <motion.span
-          className="absolute inset-x-0 top-0 h-px origin-left"
+          className="absolute inset-x-0 top-0 h-px"
           style={{ background: color }}
-          variants={{ rest: { scaleX: 0 }, hover: { scaleX: 1 } }}
-          transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-        />
-        {/* soft category wash on hover */}
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl"
-          style={{ background: color }}
-          variants={{ rest: { opacity: 0 }, hover: { opacity: 0.14 } }}
-          transition={{ duration: 0.4 }}
+          variants={{ rest: { opacity: 0.35 }, hover: { opacity: 1 } }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         />
         <div className="relative mb-5 flex items-start justify-between">
           <motion.div

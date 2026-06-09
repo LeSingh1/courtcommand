@@ -12,7 +12,8 @@ import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { getTool } from "@/lib/tools";
 import { spring } from "@/lib/motion";
 
-const MINT = "#5FA97E";
+const ACCENT = "#B0688E";
+const TIME = "#4E8FA8";
 
 type SessionType = "Shooting" | "Conditioning" | "Strength" | "Skills";
 
@@ -26,7 +27,7 @@ interface Session {
 
 const TYPE_COLOR: Record<SessionType, string> = {
   Shooting: "#C9A14A",
-  Conditioning: "#7E8CA0",
+  Conditioning: "#4E8FA8",
   Strength: "#E0561F",
   Skills: "#5FA97E",
 };
@@ -49,6 +50,7 @@ export default function TrainingTrackerPage() {
   const [reps, setReps] = useState(150);
   const [minutes, setMinutes] = useState(45);
   const [nextId, setNextId] = useState(6);
+  const [saving, setSaving] = useState(false);
 
   const totalReps = useMemo(() => sessions.reduce((a, s) => a + s.reps, 0), [sessions]);
   const totalMinutes = useMemo(() => sessions.reduce((a, s) => a + s.minutes, 0), [sessions]);
@@ -57,9 +59,14 @@ export default function TrainingTrackerPage() {
   const recent = useMemo(() => [...sessions].slice(0, 6).reverse(), [sessions]);
 
   const addSession = () => {
-    const day = `S${nextId}`;
-    setSessions((prev) => [{ id: nextId, day, type, reps, minutes }, ...prev]);
-    setNextId((n) => n + 1);
+    if (saving) return;
+    setSaving(true);
+    const day = new Date().toLocaleDateString("en-US", { weekday: "short" });
+    window.setTimeout(() => {
+      setSessions((prev) => [{ id: nextId, day, type, reps, minutes }, ...prev]);
+      setNextId((n) => n + 1);
+      setSaving(false);
+    }, 300);
   };
 
   return (
@@ -69,10 +76,10 @@ export default function TrainingTrackerPage() {
         <Reveal>
           <div className="glass rounded-none p-5">
             <div className="flex items-center gap-2 text-white/55">
-              <Flame size={16} style={{ color: MINT }} />
+              <Flame size={16} style={{ color: ACCENT }} />
               <span className="text-xs uppercase tracking-wide">Day streak</span>
             </div>
-            <AnimatedNumber value={streak} className="stat-num mt-2 block text-4xl font-bold" />
+            <AnimatedNumber value={streak} className="scoreboard mt-2 block text-5xl" />
             <p className="mt-1 text-xs text-white/45">Keep the chain alive — log every day.</p>
           </div>
         </Reveal>
@@ -83,7 +90,7 @@ export default function TrainingTrackerPage() {
               <span className="text-xs uppercase tracking-wide">Total reps</span>
             </div>
             <span style={{ color: "#C9A14A" }}>
-              <AnimatedNumber value={totalReps} className="stat-num mt-2 block text-4xl font-bold" />
+              <AnimatedNumber value={totalReps} className="scoreboard mt-2 block text-5xl" />
             </span>
             <p className="mt-1 text-xs text-white/45">Makes & finishes across all sessions.</p>
           </div>
@@ -91,11 +98,11 @@ export default function TrainingTrackerPage() {
         <Reveal delay={0.12}>
           <div className="glass rounded-none p-5">
             <div className="flex items-center gap-2 text-white/55">
-              <Clock size={16} style={{ color: "#7E8CA0" }} />
+              <Clock size={16} style={{ color: TIME }} />
               <span className="text-xs uppercase tracking-wide">Total minutes</span>
             </div>
-            <span style={{ color: "#7E8CA0" }}>
-              <AnimatedNumber value={totalMinutes} suffix=" min" className="stat-num mt-2 block text-4xl font-bold" />
+            <span style={{ color: TIME }}>
+              <AnimatedNumber value={totalMinutes} suffix=" min" className="scoreboard mt-2 block text-5xl" />
             </span>
             <p className="mt-1 text-xs text-white/45">Time in the gym this week.</p>
           </div>
@@ -109,7 +116,7 @@ export default function TrainingTrackerPage() {
             <div className="space-y-5">
               <Field label="Session type">
                 <Segmented
-                  accent={MINT}
+                  accent={ACCENT}
                   value={type}
                   onChange={setType}
                   options={[
@@ -120,16 +127,25 @@ export default function TrainingTrackerPage() {
                   ]}
                 />
               </Field>
-              <Slider label="Reps / makes" value={reps} min={0} max={500} step={10} onChange={setReps} accent={MINT} />
-              <Slider label="Minutes" value={minutes} min={0} max={180} step={5} unit=" min" onChange={setMinutes} accent={MINT} />
+              <Slider label="Reps / makes" value={reps} min={0} max={500} step={10} onChange={setReps} accent={ACCENT} />
+              <Slider label="Minutes" value={minutes} min={0} max={180} step={5} unit=" min" onChange={setMinutes} accent={ACCENT} />
               <motion.button
                 onClick={addSession}
+                disabled={saving}
                 whileTap={{ scale: 0.96 }}
                 transition={spring.snappy}
-                className="flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm font-semibold transition"
-                style={{ background: MINT, color: "#04130c" }}
+                className="flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm font-semibold transition cursor-pointer hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+                style={{ background: ACCENT, color: "#15080f" }}
               >
-                <Plus size={16} /> Add session
+                {saving ? (
+                  <>
+                    <Dumbbell size={16} className="animate-spin" /> Logging…
+                  </>
+                ) : (
+                  <>
+                    <Plus size={16} /> Add session
+                  </>
+                )}
               </motion.button>
             </div>
           </Panel>
@@ -140,7 +156,7 @@ export default function TrainingTrackerPage() {
                 <Meter
                   value={totalReps}
                   max={REP_GOAL}
-                  color={MINT}
+                  color={ACCENT}
                   label="1,000 makes this week"
                   valueLabel={`${totalReps} / ${REP_GOAL}`}
                 />
@@ -154,7 +170,7 @@ export default function TrainingTrackerPage() {
                 <Meter
                   value={totalMinutes}
                   max={MIN_GOAL}
-                  color="#7E8CA0"
+                  color={TIME}
                   label="300 minutes of work"
                   valueLabel={`${totalMinutes} / ${MIN_GOAL}`}
                 />
@@ -171,21 +187,32 @@ export default function TrainingTrackerPage() {
         {/* Charts + log */}
         <div className="space-y-6">
           <Panel title="Reps by session">
-            <BarChart
-              bars={recent.map((s) => ({
-                label: `${s.day} · ${s.type.slice(0, 4)}`,
-                value: s.reps,
-                color: TYPE_COLOR[s.type],
-              }))}
-            />
+            {sessions.length === 0 ? (
+              <div className="py-10 text-center text-sm text-[var(--text-faint)]">
+                No sessions logged yet — add your first session on the left.
+              </div>
+            ) : (
+              <BarChart
+                bars={recent.map((s) => ({
+                  label: `${s.day} · ${s.type.slice(0, 4)}`,
+                  value: s.reps,
+                  color: TYPE_COLOR[s.type],
+                }))}
+              />
+            )}
           </Panel>
 
-          <Insight accent={MINT}>
+          <Insight accent={ACCENT}>
             You&apos;re on a <b>{streak}-day streak</b> with <b>{totalReps.toLocaleString()} total reps</b>{" "}
             logged. {totalReps >= REP_GOAL ? "You hit the weekly makes goal — set a new ceiling." : `Stay locked in — ${REP_GOAL - totalReps} makes from the weekly goal.`}
           </Insight>
 
           <Panel title="Session log">
+            {sessions.length === 0 ? (
+              <div className="py-10 text-center text-sm text-[var(--text-faint)]">
+                No sessions logged yet — add your first session on the left.
+              </div>
+            ) : (
             <div className="space-y-2">
               {sessions.map((s) => (
                 <motion.div
@@ -210,6 +237,7 @@ export default function TrainingTrackerPage() {
                 </motion.div>
               ))}
             </div>
+            )}
           </Panel>
         </div>
       </div>

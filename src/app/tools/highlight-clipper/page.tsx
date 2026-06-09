@@ -7,7 +7,7 @@ import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
-import { Reveal } from "@/components/ui/Reveal";
+import { Reveal, Enter } from "@/components/ui/Reveal";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
 import { getTool } from "@/lib/tools";
 import { detectHighlights, type HighlightClip } from "@/lib/engine/game";
@@ -71,7 +71,7 @@ export default function HighlightClipperPage() {
               ) : (
                 <div>
                   <div className="text-sm font-medium text-white/80">Drop game film here</div>
-                  <div className="text-[11px] text-white/40">MP4 · up to 4K · or click to load demo</div>
+                  <div className="text-[11px] text-white/55">MP4 · up to 4K · or click to load demo</div>
                 </div>
               )}
             </button>
@@ -88,7 +88,7 @@ export default function HighlightClipperPage() {
             <motion.button onClick={detect} whileTap={{ scale: 0.96 }} transition={spring.snappy} className="btn-ember flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm">
               <Scissors size={15} /> Detect highlights
             </motion.button>
-            <p className="text-[11px] leading-relaxed text-white/40">
+            <p className="text-[11px] leading-relaxed text-white/55">
               The auto-editor scans the timeline for motion-vector bursts and crowd-audio spikes, then
               ranks each moment by detection confidence.
             </p>
@@ -120,7 +120,10 @@ export default function HighlightClipperPage() {
                 <Insight accent={EMBER}>
                   Top moment: a <b>{top.label.toLowerCase()}</b> at <b className="stat-num">{top.t}</b> with{" "}
                   <b>{top.confidence}% confidence</b> — driven by a {top.motion}-motion / {top.audio}-audio spike.
-                  Lead your reel with this clip.
+                  {" "}
+                  {top.confidence >= 70
+                    ? "Lead your reel with this clip."
+                    : "Verify it before featuring — confidence is modest."}
                 </Insight>
               )}
 
@@ -137,7 +140,7 @@ export default function HighlightClipperPage() {
                           <div className="flex items-center gap-3">
                             <div className="flex flex-col items-center">
                               <span className="stat-num text-lg font-bold text-white">{c.t}</span>
-                              <span className="text-[9px] uppercase text-white/35">timestamp</span>
+                              <span className="text-[10px] uppercase text-white/50">timestamp</span>
                             </div>
                             <div className="h-9 w-px bg-white/10" />
                             <div className="min-w-0 flex-1">
@@ -178,13 +181,7 @@ export default function HighlightClipperPage() {
               </Panel>
             </motion.div>
           ) : (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={spring.soft}
-            >
+            <Enter key="empty">
             <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
               <div className="mb-4">
                 <Scissors size={40} className="text-ember" />
@@ -194,7 +191,7 @@ export default function HighlightClipperPage() {
                 dime ranked by how loud the moment was.
               </p>
             </Panel>
-            </motion.div>
+            </Enter>
           )}
           </AnimatePresence>
         </div>

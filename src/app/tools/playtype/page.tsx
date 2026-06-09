@@ -1,23 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shapes } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { Badge } from "@/components/ui/Controls";
+import { AnalyzeOverlay } from "@/components/ui/Analyze";
 import { Reveal } from "@/components/ui/Reveal";
-import { getTool } from "@/lib/tools";
-import { getPlayer, getPlayerByName } from "@/lib/data";
+import { getTool, categoryColor } from "@/lib/tools";
+import { getPlayerByName } from "@/lib/data";
 import { playTypeMix, type PlayTypeMix } from "@/lib/engine/teams";
 import type { Player } from "@/lib/types";
 
-const ACCENT = "#7E8CA0";
+const ANALYZE_STEPS = [
+  "Mapping possessions…",
+  "Tagging play types…",
+  "Computing efficiency…",
+];
 
 export default function PlayTypePage() {
   const tool = getTool("playtype")!;
+  const ACCENT = categoryColor(tool.category);
   const [player, setPlayer] = useState<Player | null>(() => getPlayerByName("Luka Doncic") ?? null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [stepIdx, setStepIdx] = useState(0);
 
   const mix: PlayTypeMix[] = useMemo(() => (player ? playTypeMix(player) : []), [player]);
   const primary = mix[0];
@@ -25,6 +33,31 @@ export default function PlayTypePage() {
     () => (mix.length ? [...mix].sort((a, b) => b.ppp - a.ppp)[0] : null),
     [mix],
   );
+
+  // Brief analyzing affordance on each player change (skips the preloaded
+  // default so above-the-fold content paints immediately on first load).
+  const firstLoad = useRef(true);
+  useEffect(() => {
+    if (!player) {
+      setAnalyzing(false);
+      return;
+    }
+    if (firstLoad.current) {
+      firstLoad.current = false;
+      return;
+    }
+    setAnalyzing(true);
+    setStepIdx(0);
+    const per = 450 / ANALYZE_STEPS.length;
+    const ticks = ANALYZE_STEPS.map((_, i) =>
+      setTimeout(() => setStepIdx(i), per * i),
+    );
+    const done = setTimeout(() => setAnalyzing(false), 450);
+    return () => {
+      ticks.forEach(clearTimeout);
+      clearTimeout(done);
+    };
+  }, [player?.id]);
 
   return (
     <ToolShell tool={tool}>
@@ -37,7 +70,7 @@ export default function PlayTypePage() {
         />
       </div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
       {!player || !primary ? (
         <motion.div
           key="empty"
@@ -48,11 +81,22 @@ export default function PlayTypePage() {
         >
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
           <Shapes size={40} className="mb-4" style={{ color: ACCENT }} />
-          <p className="max-w-sm text-sm text-white/50">
-            The PlayType Classifier breaks a player's possessions into pick-and-roll, isolation,
-            spot-up, transition, post-up, cuts, and handoffs — with efficiency on each.
+          <div className="kicker mb-2">No player selected</div>
+          <p className="max-w-sm text-sm text-[var(--text-faint)]">
+            Pick a player to break their possessions into pick-and-roll, isolation, spot-up,
+            transition, post-up, cuts, and handoffs — with efficiency on each.
           </p>
         </Panel>
+        </motion.div>
+      ) : analyzing ? (
+        <motion.div
+          key="analyzing"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <AnalyzeOverlay steps={ANALYZE_STEPS} stepIdx={stepIdx} accent={ACCENT} />
         </motion.div>
       ) : (
         <motion.div
@@ -86,8 +130,8 @@ export default function PlayTypePage() {
                 </div>
 
                 <div className="space-y-2.5">
-                  {mix.map((m, i) => (
-                    <Reveal key={m.type} delay={i * 0.04}>
+                  {mix.map((m) => (
+                    <Reveal key={m.type}>
                       <div
                         className="flex items-center gap-3 rounded-none border p-3"
                         style={{
@@ -96,29 +140,29 @@ export default function PlayTypePage() {
                         }}
                       >
                         <span
-                          className="h-3 w-3 shrink-0 rounded-full"
+                          className="h-3 w-3 shrink-0"
                           style={{ background: m.color }}
                         />
-                        <span className="flex-1 text-sm text-white/85">{m.type}</span>
+                        <span className="flex-1 text-sm text-[var(--text-muted)]">{m.type}</span>
                         <div className="w-32">
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                          <div className="h-1.5 w-full overflow-hidden bg-white/[0.06]">
                             <div
-                              className="h-full rounded-full"
+                              className="h-full"
                               style={{ width: `${m.freq}%`, background: m.color }}
                             />
                           </div>
                         </div>
-                        <span className="stat-num w-10 text-right text-sm font-semibold text-white">
+                        <span className="stat-num w-10 text-right text-sm font-semibold text-[var(--text)]">
                           {m.freq}%
                         </span>
-                        <span className="stat-num w-14 text-right text-xs text-white/55">
+                        <span className="stat-num w-14 text-right text-xs text-[var(--text-faint)]">
                           {m.ppp.toFixed(2)}
                         </span>
                       </div>
                     </Reveal>
                   ))}
                 </div>
-                <div className="mt-3 flex justify-end gap-[58px] pr-1 text-[10px] uppercase tracking-widest text-white/35">
+                <div className="mt-3 flex justify-end gap-[58px] pr-1 text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
                   <span>freq</span>
                   <span>ppp</span>
                 </div>
@@ -127,47 +171,47 @@ export default function PlayTypePage() {
           </div>
 
           <div className="space-y-6">
-            <Reveal delay={0.05}>
+            <Reveal>
               <Panel title="Offensive identity">
                 <div className="space-y-4">
                   <div>
-                    <div className="text-[10px] uppercase tracking-widest text-white/45">
+                    <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
                       Bread & butter
                     </div>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="h-3 w-3 rounded-full" style={{ background: primary.color }} />
-                      <span className="text-lg font-semibold text-white">{primary.type}</span>
-                      <span className="stat-num text-sm text-white/50">{primary.freq}%</span>
+                      <span className="h-3 w-3 shrink-0" style={{ background: primary.color }} />
+                      <span className="text-lg font-semibold text-[var(--text)]">{primary.type}</span>
+                      <span className="stat-num text-sm text-[var(--text-faint)]">{primary.freq}%</span>
                     </div>
                   </div>
                   {bestEff && (
                     <div>
-                      <div className="text-[10px] uppercase tracking-widest text-white/45">
+                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
                         Most efficient
                       </div>
                       <div className="mt-1 flex items-center gap-2">
                         <span
-                          className="h-3 w-3 rounded-full"
+                          className="h-3 w-3 shrink-0"
                           style={{ background: bestEff.color }}
                         />
-                        <span className="text-lg font-semibold text-white">{bestEff.type}</span>
-                        <span className="stat-num text-sm text-white/50">
+                        <span className="text-lg font-semibold text-[var(--text)]">{bestEff.type}</span>
+                        <span className="stat-num text-sm text-[var(--text-faint)]">
                           {bestEff.ppp.toFixed(2)} PPP
                         </span>
                       </div>
                     </div>
                   )}
                   <div>
-                    <div className="text-[10px] uppercase tracking-widest text-white/45">
+                    <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
                       Archetype
                     </div>
-                    <div className="mt-1 text-sm text-white/80">{player.archetype}</div>
+                    <div className="mt-1 text-sm text-[var(--text-muted)]">{player.archetype}</div>
                   </div>
                 </div>
               </Panel>
             </Reveal>
 
-            <Reveal delay={0.1}>
+            <Reveal>
               <Insight accent={ACCENT}>
                 <b>{player.name}</b> runs offense primarily out of{" "}
                 <b>{primary.type.toLowerCase()}</b> ({primary.freq}% of possessions)

@@ -149,17 +149,17 @@ export default function GameRecapPage() {
 
               <div className="space-y-3.5">
                 {recap.body.map((para, i) => (
-                  <Reveal key={i} delay={0.08 + i * 0.06}>
+                  <Reveal key={i}>
                     <p className="text-sm leading-relaxed text-white/75">{para}</p>
                   </Reveal>
                 ))}
               </div>
 
               {/* player of the game */}
-              <Reveal delay={0.3}>
+              <Reveal>
                 <div className="mt-6 flex items-center gap-4 rounded-none border border-[#C9A14A33] bg-[#C9A14A0d] p-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-none bg-[#C9A14A22]">
-                    <Trophy size={22} className="text-gold" style={{ color: "#C9A14A" }} />
+                    <Trophy size={22} className="text-gold" />
                   </div>
                   <div className="flex flex-1 items-center gap-3">
                     {playerByName.get(recap.topPerformer.name) && (
@@ -170,7 +170,7 @@ export default function GameRecapPage() {
                       <div className="font-semibold text-white">{recap.topPerformer.name}</div>
                     </div>
                   </div>
-                  <div className="stat-num flex gap-4 text-right">
+                  <div className="flex gap-4 text-right">
                     <StatCell value={recap.topPerformer.pts} label="PTS" />
                     <StatCell value={recap.topPerformer.reb} label="REB" />
                     <StatCell value={recap.topPerformer.ast} label="AST" />
@@ -238,7 +238,7 @@ function ScoreSide({ abbr, score, win }: { abbr: string; score: number; win: boo
       <div>
         <div className="text-xs text-white/55">{team?.name}</div>
         <div
-          className="stat-num text-2xl font-bold"
+          className="scoreboard text-3xl"
           style={{ color: win ? "#fff" : "rgba(255,255,255,0.45)" }}
         >
           {score}
@@ -252,7 +252,7 @@ function ScoreSide({ abbr, score, win }: { abbr: string; score: number; win: boo
 function StatCell({ value, label }: { value: number; label: string }) {
   return (
     <div>
-      <div className="text-lg font-bold text-white">{value}</div>
+      <div className="scoreboard text-xl text-white">{value}</div>
       <div className="text-[9px] uppercase text-white/40">{label}</div>
     </div>
   );

@@ -1,14 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import { Shield } from "lucide-react";
-import { spring, staggerParent, staggerItem } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { getTool } from "@/lib/tools";
+import { getTool, categoryColor } from "@/lib/tools";
 import { defenseBoard } from "@/lib/engine/players";
 import { gradeColor } from "@/lib/cn";
 
@@ -16,7 +14,14 @@ type SortKey = "defScore" | "rimProtect" | "perimeter";
 
 export default function DefensiveImpactPage() {
   const tool = getTool("defensive-impact")!;
+  const ACCENT = categoryColor(tool.category);
   const [sort, setSort] = useState<SortKey>("defScore");
+
+  const [isAnalyzing, setIsAnalyzing] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setIsAnalyzing(false), 500);
+    return () => clearTimeout(t);
+  }, []);
 
   const base = useMemo(() => defenseBoard(), []);
   const board = useMemo(
@@ -36,13 +41,19 @@ export default function DefensiveImpactPage() {
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Insight accent="#7E8CA0">
-          <b>{board[0].player.name}</b> leads the defensive board on this view. Rim protection
-          weights blocks, position, and defensive rebounding; perimeter weights steals, guard
-          position, and on-court net.
+        <Insight accent={ACCENT}>
+          {board.length > 0 ? (
+            <>
+              <b>{board[0].player.name}</b> leads the defensive board on this view. Rim protection
+              weights blocks, position, and defensive rebounding; perimeter weights steals, guard
+              position, and on-court net.
+            </>
+          ) : (
+            <>No defenders match this view — adjust the sort to see the board.</>
+          )}
         </Insight>
         <Segmented
-          accent="#7E8CA0"
+          accent={ACCENT}
           value={sort}
           onChange={setSort}
           options={[
@@ -54,22 +65,25 @@ export default function DefensiveImpactPage() {
       </div>
 
       {/* Podium */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={sort}
-          className="mb-6 grid gap-4 sm:grid-cols-3"
-          variants={staggerParent}
-          initial="initial"
-          animate="animate"
-          exit={{ opacity: 0, y: -8 }}
-        >
+      {isAnalyzing ? (
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="glass skeleton h-[148px] rounded-none p-5 animate-pulse" />
+          ))}
+        </div>
+      ) : board.length === 0 ? (
+        <Panel className="mb-6 flex min-h-[148px] flex-col items-center justify-center text-center">
+          <Shield size={32} className="mb-3" style={{ color: ACCENT }} />
+          <p className="text-sm text-white/55">No defenders match this view.</p>
+        </Panel>
+      ) : (
+        <div className="enter mb-6 grid gap-4 sm:grid-cols-3">
           {board.slice(0, 3).map((r, i) => {
             return (
-              <motion.div
+              <div
                 key={r.player.id}
-                variants={staggerItem}
-                whileHover={{ y: -3 }}
-                transition={spring.snappy}
+                className="enter lift"
+                style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="glass rounded-none p-5">
                   <div className="flex items-center justify-between">
@@ -83,12 +97,12 @@ export default function DefensiveImpactPage() {
                   <div className="mt-4 flex items-end justify-between">
                     <div>
                       <div
-                        className="stat-num text-3xl font-bold"
+                        className="scoreboard text-4xl"
                         style={{ color: gradeColor(r.defScore) }}
                       >
                         {r.defScore}
                       </div>
-                      <div className="text-[10px] uppercase text-white/40">
+                      <div className="text-[11px] uppercase text-white/55">
                         Def score · {r.grade}
                       </div>
                     </div>
@@ -98,11 +112,11 @@ export default function DefensiveImpactPage() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      )}
 
       <Panel title="Defensive impact board">
         <div className="overflow-x-auto">
@@ -119,13 +133,20 @@ export default function DefensiveImpactPage() {
               </tr>
             </thead>
             <tbody>
+              {board.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-sm text-white/55">
+                    No defenders match this view.
+                  </td>
+                </tr>
+              )}
               {board.map((r, i) => {
                 return (
                   <tr
                     key={r.player.id}
                     className="border-b border-white/[0.04] transition hover:bg-white/[0.03]"
                   >
-                    <td className="stat-num py-2.5 pl-2 text-white/35">{i + 1}</td>
+                    <td className="stat-num py-2.5 pl-2 text-white/55">{i + 1}</td>
                     <td className="py-2.5">
                       <div className="flex items-center gap-2.5">
                         <PlayerAvatar player={r.player} size={28} />
@@ -159,8 +180,9 @@ export default function DefensiveImpactPage() {
         </div>
       </Panel>
 
+      {bestRim && bestPerimeter && (
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Insight accent="#7E8CA0">
+        <Insight accent={ACCENT}>
           <b>{bestRim.player.name}</b> is the league&apos;s best rim protector (
           <b>{bestRim.rimProtect}</b> rim score), walling off the paint and holding opponents to{" "}
           <b>{bestRim.oppFg}%</b> at the rim.
@@ -171,6 +193,7 @@ export default function DefensiveImpactPage() {
           containment.
         </Insight>
       </div>
+      )}
     </ToolShell>
   );
 }

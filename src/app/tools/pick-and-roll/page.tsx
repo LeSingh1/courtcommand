@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Workflow } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
@@ -18,6 +18,8 @@ import type { Player } from "@/lib/types";
 
 const ACCENT = "#E0561F";
 const LEAGUE_AVG = 1.0;
+// Mirrors the engine's clamp(turnoverRate, 6, 22) ceiling in pickAndRoll().
+const TURNOVER_CEILING = 22;
 
 export default function PickAndRollPage() {
   const tool = getTool("pick-and-roll")!;
@@ -28,6 +30,17 @@ export default function PickAndRollPage() {
     () => (handler && roller ? pickAndRoll(handler, roller) : null),
     [handler, roller],
   );
+
+  const [phase, setPhase] = useState<"idle" | "analyzing" | "ready">("idle");
+  useEffect(() => {
+    if (!result) {
+      setPhase("idle");
+      return;
+    }
+    setPhase("analyzing");
+    const t = setTimeout(() => setPhase("ready"), 650);
+    return () => clearTimeout(t);
+  }, [result]);
 
   return (
     <ToolShell tool={tool}>
@@ -56,13 +69,52 @@ export default function PickAndRollPage() {
 
       <AnimatePresence mode="wait">
       {!result ? (
-        <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
-          <Workflow size={40} className="mb-4" style={{ color: ACCENT }} />
-          <p className="max-w-sm text-sm text-white/50">
-            Pair a ball-handler with a roll-man and the analyzer grades the two-man game by points
-            per possession, turnover rate, shot quality, and fouls drawn.
-          </p>
-        </Panel>
+        <motion.div
+          key="idle"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={spring.soft}
+        >
+          <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
+            <Workflow size={40} className="mb-4" style={{ color: ACCENT }} />
+            <p className="max-w-sm text-sm text-white/50">
+              Pair a ball-handler with a roll-man and the analyzer grades the two-man game by points
+              per possession, turnover rate, shot quality, and fouls drawn.
+            </p>
+          </Panel>
+        </motion.div>
+      ) : phase === "analyzing" ? (
+        <motion.div
+          key="analyzing"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <Panel className="min-h-[300px]">
+            <div className="flex items-center gap-3 border-b border-[var(--line)] pb-3">
+              <Workflow size={18} className="animate-pulse" style={{ color: ACCENT }} />
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                Grading the two-man game…
+              </span>
+            </div>
+            <div className="mt-5 space-y-4">
+              {["Handler creation", "Roll-man finishing", "Spacing gravity", "Ball security"].map(
+                (label) => (
+                  <div key={label} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[var(--text-faint)]">{label}</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden bg-[rgba(255,255,255,0.06)]">
+                      <div className="h-full w-1/3 animate-pulse bg-white/15" />
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+          </Panel>
+        </motion.div>
       ) : (
         <motion.div
           key={`${handler!.id}-${roller!.id}`}
@@ -194,7 +246,7 @@ function StatCard({
   invert?: boolean;
 }) {
   return (
-    <div className="glass rounded-none p-5">
+    <div className="border border-[var(--line)] bg-[var(--surface)] p-5 transition-colors duration-200 hover:border-[var(--line-strong)]">
       <div className="text-[10px] uppercase tracking-widest text-white/45">{label}</div>
       <AnimatedNumber
         value={value}
@@ -204,8 +256,11 @@ function StatCard({
       />
       <div className="mt-3">
         <Meter
-          value={invert ? 22 - value : value}
-          max={invert ? 22 : 100}
+          // Inverted (turnover) meters fill more as the rate worsens; keep a
+          // small floor so the worst case (engine clamp ceiling) still shows a
+          // sliver instead of an empty "no data" bar.
+          value={invert ? Math.max(2, TURNOVER_CEILING + 2 - value) : value}
+          max={invert ? TURNOVER_CEILING + 2 : 100}
           color={color}
           height={6}
         />

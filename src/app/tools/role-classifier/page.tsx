@@ -5,22 +5,33 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Boxes, X } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { getTool } from "@/lib/tools";
+import { getTool, categoryColor } from "@/lib/tools";
 import { roleClusters } from "@/lib/engine/players";
 import { spring, staggerParent, staggerItem } from "@/lib/motion";
 
 export default function RoleClassifierPage() {
   const tool = getTool("role-classifier")!;
+  const accent = categoryColor(tool.category);
   const clusters = useMemo(() => roleClusters(), []);
   const [activeRole, setActiveRole] = useState<string | null>(null);
 
   const totalPlayers = clusters.reduce((s, c) => s + c.players.length, 0);
   const active = clusters.find((c) => c.role === activeRole) ?? null;
 
+  if (!clusters.length) {
+    return (
+      <ToolShell tool={tool}>
+        <Panel title="No clusters">
+          <p className="text-sm text-[var(--text-muted)]">No players available to classify.</p>
+        </Panel>
+      </ToolShell>
+    );
+  }
+
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Insight accent="#7E8CA0">
+        <Insight accent={accent}>
           <b>{totalPlayers}</b> players cluster into <b>{clusters.length}</b> on-court roles by
           archetype. The largest group is <b>{clusters[0].role}</b> ({clusters[0].players.length}).
           Tap any cluster to scout its players.
@@ -33,9 +44,9 @@ export default function RoleClassifierPage() {
           <button
             key={c.role}
             onClick={() => setActiveRole(c.role)}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-white/65 transition hover:bg-white/[0.06]"
+            className="inline-flex items-center gap-2 rounded-none border border-[var(--line)] bg-white/[0.03] px-3 py-1 text-xs text-white/65 transition hover:bg-white/[0.06]"
           >
-            <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
+            <span className="h-2 w-2 rounded-none" style={{ background: c.color }} />
             {c.role}
             <span className="stat-num text-white/40">{c.players.length}</span>
           </button>
@@ -65,23 +76,23 @@ export default function RoleClassifierPage() {
                   className="flex h-9 w-9 items-center justify-center rounded-none"
                   style={{ background: `${c.color}1f` }}
                 >
-                  <span className="h-3 w-3 rounded-full" style={{ background: c.color }} />
+                  <span className="h-3 w-3 rounded-none" style={{ background: c.color }} />
                 </span>
                 <span
-                  className="stat-num rounded-full px-2 py-0.5 text-[11px] font-bold"
+                  className="stat-num rounded-none px-2 py-0.5 text-[11px] font-bold"
                   style={{ background: `${c.color}1f`, color: c.color }}
                 >
                   {c.players.length}
                 </span>
               </div>
-              <h3 className="mt-3 text-base font-semibold text-white">{c.role}</h3>
+              <h3 className="mt-3 text-[15px] font-semibold tracking-tight text-white">{c.role}</h3>
               <p className="mt-1 text-xs leading-relaxed text-white/50">{c.blurb}</p>
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {c.players.slice(0, 5).map((p) => {
                   return (
                     <span
                       key={p.id}
-                      className="inline-flex items-center gap-1 rounded-full bg-white/[0.04] py-0.5 pl-0.5 pr-2 text-[10px] text-white/70"
+                      className="inline-flex items-center gap-1 rounded-none bg-white/[0.04] py-0.5 pl-0.5 pr-2 text-[10px] text-white/70"
                     >
                       <PlayerAvatar player={p} size={16} rounded />
                       {p.name}
@@ -89,7 +100,7 @@ export default function RoleClassifierPage() {
                   );
                 })}
                 {c.players.length > 5 && (
-                  <span className="inline-flex items-center rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/45">
+                  <span className="inline-flex items-center rounded-none bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/45">
                     +{c.players.length - 5} more
                   </span>
                 )}

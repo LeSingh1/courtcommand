@@ -10,11 +10,10 @@ import { Gauge } from "@/components/ui/Gauge";
 import { RadarChart } from "@/components/ui/RadarChart";
 import { Reveal } from "@/components/ui/Reveal";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
-import { getTool } from "@/lib/tools";
+import { getTool, categoryColor } from "@/lib/tools";
 import { recruitRank, type RecruitInput, type RecruitResult } from "@/lib/engine/content";
 import { letterGrade } from "@/lib/cn";
 
-const GOLD = "#C9A14A";
 const POSITIONS = ["PG", "SG", "SF", "PF", "C"] as const;
 
 function heightLabel(inches: number) {
@@ -25,7 +24,8 @@ function heightLabel(inches: number) {
 
 export default function RecruitRankPage() {
   const tool = getTool("recruit-rank")!;
-  const [name, setName] = useState("Jalen Carter");
+  const ACCENT = categoryColor(tool.category);
+  const [name, setName] = useState("");
   const [ppg, setPpg] = useState(22);
   const [rpg, setRpg] = useState(7);
   const [apg, setApg] = useState(5);
@@ -66,9 +66,9 @@ export default function RecruitRankPage() {
             <Field label="Player name">
               <TextInput value={name} onChange={setName} placeholder="First Last" />
             </Field>
-            <Slider label="Points per game" value={ppg} min={0} max={40} unit=" ppg" onChange={setPpg} accent={GOLD} />
-            <Slider label="Rebounds per game" value={rpg} min={0} max={20} unit=" rpg" onChange={setRpg} accent={GOLD} />
-            <Slider label="Assists per game" value={apg} min={0} max={15} unit=" apg" onChange={setApg} accent={GOLD} />
+            <Slider label="Points per game" value={ppg} min={0} max={40} unit=" ppg" onChange={setPpg} accent={ACCENT} />
+            <Slider label="Rebounds per game" value={rpg} min={0} max={20} unit=" rpg" onChange={setRpg} accent={ACCENT} />
+            <Slider label="Assists per game" value={apg} min={0} max={15} unit=" apg" onChange={setApg} accent={ACCENT} />
             <Slider
               label={`Height — ${heightLabel(heightIn)}`}
               value={heightIn}
@@ -76,29 +76,19 @@ export default function RecruitRankPage() {
               max={86}
               unit='"'
               onChange={setHeightIn}
-              accent={GOLD}
+              accent={ACCENT}
             />
             <Field label="Position">
-              <div className="flex flex-wrap gap-1.5">
-                {POSITIONS.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPosition(p)}
-                    className="rounded-none px-3 py-1.5 text-xs font-medium transition"
-                    style={
-                      position === p
-                        ? { background: GOLD, color: "#160600" }
-                        : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" }
-                    }
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
+              <Segmented
+                accent={ACCENT}
+                value={position}
+                onChange={setPosition}
+                options={POSITIONS.map((p) => ({ label: p, value: p }))}
+              />
             </Field>
             <Field label="Competition level">
               <Segmented
-                accent={GOLD}
+                accent={ACCENT}
                 value={level}
                 onChange={setLevel}
                 options={[
@@ -113,7 +103,7 @@ export default function RecruitRankPage() {
               whileTap={{ scale: 0.96 }}
               transition={spring.snappy}
               className="w-full rounded-none py-3 text-sm font-semibold transition"
-              style={{ background: GOLD, color: "#160600" }}
+              style={{ background: ACCENT, color: "#0a0c11" }}
             >
               Generate profile
             </motion.button>
@@ -131,7 +121,7 @@ export default function RecruitRankPage() {
               exit={{ opacity: 0, y: -8 }}
               transition={spring.soft}
             >
-              <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={GOLD} />
+              <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={ACCENT} />
             </motion.div>
           ) : result ? (
             <motion.div
@@ -147,13 +137,13 @@ export default function RecruitRankPage() {
                 <div className="glass relative overflow-hidden rounded-none p-6">
                   <div className="relative grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
                     <div className="flex flex-col items-center">
-                      <Gauge value={result.grade} color={GOLD} label="Grade" />
-                      <div className="mt-2 stat-num text-sm font-semibold" style={{ color: GOLD }}>
+                      <Gauge value={result.grade} color={ACCENT} label="Grade" />
+                      <div className="mt-2 stat-num text-sm font-semibold" style={{ color: ACCENT }}>
                         {letterGrade(result.grade)}
                       </div>
                     </div>
                     <div>
-                      <div className="eyebrow mb-1" style={{ color: GOLD }}>
+                      <div className="eyebrow mb-1" style={{ color: ACCENT }}>
                         {position} · {heightLabel(heightIn)} · {level}
                       </div>
                       <h2 className="display text-3xl text-white">{name.trim() || "Unnamed Prospect"}</h2>
@@ -164,8 +154,8 @@ export default function RecruitRankPage() {
                               size={26}
                               strokeWidth={1.5}
                               style={{
-                                color: GOLD,
-                                fill: i < result.stars ? GOLD : "transparent",
+                                color: ACCENT,
+                                fill: i < result.stars ? ACCENT : "transparent",
                                 opacity: i < result.stars ? 1 : 0.3,
                               }}
                             />
@@ -175,12 +165,12 @@ export default function RecruitRankPage() {
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         <span
-                          className="stat-num rounded-full px-3 py-1 text-xs font-bold"
-                          style={{ background: `${GOLD}1f`, color: GOLD, border: `1px solid ${GOLD}33` }}
+                          className="stat-num rounded-none px-3 py-1 text-xs font-bold"
+                          style={{ background: `${ACCENT}1f`, color: ACCENT, border: `1px solid ${ACCENT}33` }}
                         >
                           #{result.nationalRank} nationally
                         </span>
-                        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs text-white/70">
+                        <span className="rounded-none border border-[var(--line)] bg-white/[0.06] px-3 py-1 text-xs text-white/70">
                           Comp: {result.comp}
                         </span>
                       </div>
@@ -196,7 +186,7 @@ export default function RecruitRankPage() {
                     series={[
                       {
                         name: name.trim() || "Prospect",
-                        color: GOLD,
+                        color: ACCENT,
                         values: result.attributes.map((a) => a.value),
                       },
                     ]}
@@ -208,10 +198,10 @@ export default function RecruitRankPage() {
                       <Reveal key={a.label} delay={i * 0.05}>
                         <div className="flex items-center gap-3">
                           <span className="w-24 shrink-0 text-xs text-white/60">{a.label}</span>
-                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                          <div className="h-2 flex-1 overflow-hidden rounded-none bg-white/[0.06]">
                             <div
-                              className="h-full rounded-full"
-                              style={{ width: `${a.value}%`, background: GOLD }}
+                              className="h-full rounded-none"
+                              style={{ width: `${a.value}%`, background: ACCENT }}
                             />
                           </div>
                           <span className="stat-num w-8 text-right text-xs font-semibold text-white/80">
@@ -224,7 +214,7 @@ export default function RecruitRankPage() {
                 </Panel>
               </div>
 
-              <Insight accent={GOLD}>{result.report}</Insight>
+              <Insight accent={ACCENT}>{result.report}</Insight>
             </motion.div>
           ) : (
             <motion.div
@@ -236,7 +226,7 @@ export default function RecruitRankPage() {
             >
             <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
               <div className="mb-4">
-                <GraduationCap size={40} style={{ color: GOLD }} />
+                <GraduationCap size={40} style={{ color: ACCENT }} />
               </div>
               <p className="max-w-xs text-sm text-white/50">
                 Fill in the prospect&apos;s stats, height, position, and level, then generate a

@@ -11,10 +11,8 @@ import { Slider, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { getTool } from "@/lib/tools";
 import { injuryRisk } from "@/lib/engine/players";
-import { gradeColor } from "@/lib/cn";
+import { gradeColor, ACCENT_HEX } from "@/lib/cn";
 import type { Player } from "@/lib/types";
-
-const ROSE = "#BF5B4E";
 
 const BAND_COLOR: Record<string, string> = {
   Low: "#5FA97E",
@@ -36,8 +34,8 @@ export default function InjuryRiskPage() {
   );
 
   // higher risk = redder: invert the 0-100 scale into gradeColor
-  const riskColor = result ? gradeColor(100 - result.risk) : ROSE;
-  const bandColor = result ? BAND_COLOR[result.band] : ROSE;
+  const riskColor = result ? gradeColor(100 - result.risk) : ACCENT_HEX;
+  const bandColor = result ? BAND_COLOR[result.band] : ACCENT_HEX;
 
   return (
     <ToolShell tool={tool}>
@@ -48,12 +46,12 @@ export default function InjuryRiskPage() {
             <PlayerPicker
               value={player}
               onChange={setPlayer}
-              accent={ROSE}
+              accent={ACCENT_HEX}
               placeholder="Pick a player to assess…"
             />
-            <Slider label="Days of rest" value={restDays} min={0} max={3} unit=" d" accent={ROSE} onChange={setRestDays} />
-            <Slider label="Back-to-backs" value={b2b} min={0} max={25} accent={ROSE} onChange={setB2b} />
-            <Slider label="Minutes load" value={minutesLoad} min={24} max={40} unit=" mpg" accent={ROSE} onChange={setMinutesLoad} />
+            <Slider label="Days of rest" value={restDays} min={0} max={3} unit=" d" accent={ACCENT_HEX} onChange={setRestDays} />
+            <Slider label="Back-to-backs" value={b2b} min={0} max={25} unit=" B2B" accent={ACCENT_HEX} onChange={setB2b} />
+            <Slider label="Minutes load" value={minutesLoad} min={24} max={40} unit=" mpg" accent={ACCENT_HEX} onChange={setMinutesLoad} />
             <p className="text-xs leading-relaxed text-white/40">
               Adjust the schedule context — fewer rest days, more B2Bs, and heavier minutes all push
               breakdown risk higher.
@@ -73,7 +71,7 @@ export default function InjuryRiskPage() {
               transition={spring.soft}
             >
             <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
-              <HeartPulse size={40} className="mb-4" style={{ color: ROSE }} />
+              <HeartPulse size={40} className="mb-4" style={{ color: ACCENT_HEX }} />
               <p className="max-w-xs text-sm text-white/50">
                 Choose a player and dial in their schedule. The model blends age, minutes, missed
                 games, rest, and frame load into a single breakdown-risk score.
@@ -111,7 +109,7 @@ export default function InjuryRiskPage() {
                   </div>
                 </Panel>
               </div>
-              <Insight accent={ROSE}>
+              <Insight>
                 <b>{player.name}</b> grades as a <b>{result.band.toLowerCase()}-risk</b> profile at{" "}
                 <b>{result.risk}/100</b> under this schedule. {result.recommendation}
               </Insight>

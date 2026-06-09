@@ -6,13 +6,21 @@ import { cn } from "@/lib/cn";
 export function Reveal({
   children,
   className,
+  delay,
 }: {
   children: React.ReactNode;
   delay?: number;
   y?: number;
   className?: string;
 }) {
-  return <div className={cn("reveal", className)}>{children}</div>;
+  return (
+    <div
+      className={cn("reveal", className)}
+      style={delay ? { animationDelay: `${delay}s` } : undefined}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function Stagger({
@@ -29,11 +37,20 @@ export function Stagger({
 export function StaggerItem({
   children,
   className,
+  delay,
 }: {
   children: React.ReactNode;
   className?: string;
+  delay?: number;
 }) {
-  return <div className={cn("reveal", className)}>{children}</div>;
+  return (
+    <div
+      className={cn("reveal", className)}
+      style={delay ? { animationDelay: `${delay}s` } : undefined}
+    >
+      {children}
+    </div>
+  );
 }
 
 // On-load entrance with optional stagger index (use for above-the-fold content).

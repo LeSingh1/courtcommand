@@ -22,7 +22,10 @@ export function ToolShell({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="relative mx-auto max-w-6xl px-5 pb-28 pt-24 sm:px-8">
+    <div
+      className="relative mx-auto max-w-6xl px-5 pb-28 pt-24 sm:px-8"
+      style={{ ["--accent" as string]: color } as React.CSSProperties}
+    >
       <nav className="mb-8 flex items-center gap-1.5 text-xs text-[var(--text-faint)]">
         <Link href="/" className="transition hover:text-[var(--text)]">
           Home
@@ -132,13 +135,14 @@ function ModelTag({ slug }: { slug: string }) {
 
 export function Insight({
   children,
+  accent,
 }: {
   children: React.ReactNode;
   accent?: string;
 }) {
   return (
     <div className="border border-[var(--line)] bg-[var(--surface)] p-4 pl-5">
-      <div className="border-l-2 border-[var(--accent)] pl-4">
+      <div className="border-l-2 pl-4" style={{ borderColor: accent ?? "var(--accent)" }}>
         <div className="kicker mb-1.5">Read</div>
         <div className="text-sm leading-relaxed text-[var(--text-muted)]">{children}</div>
       </div>

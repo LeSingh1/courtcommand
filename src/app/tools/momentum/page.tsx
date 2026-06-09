@@ -13,7 +13,7 @@ import { getTool } from "@/lib/tools";
 import { momentumGame, type MomentumEvent } from "@/lib/engine/teams";
 
 const ACCENT = "#E0561F";
-const CYAN = "#7E8CA0";
+const AWAY = "#4E8FA8";
 
 type GameResult = {
   events: MomentumEvent[];
@@ -64,9 +64,10 @@ export default function MomentumPage() {
         />
         <motion.button
           onClick={replay}
+          whileHover={{ y: -1 }}
           whileTap={{ scale: 0.96 }}
           transition={spring.snappy}
-          className="flex items-center gap-2 rounded-none px-4 py-2.5 text-sm font-semibold text-[#0a0c11] transition"
+          className="flex items-center gap-2 rounded-none px-4 py-2.5 text-sm font-semibold text-[var(--accent-ink)]"
           style={{ background: ACCENT }}
         >
           <TrendingUp size={16} />
@@ -86,13 +87,7 @@ export default function MomentumPage() {
           <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={ACCENT} />
         </motion.div>
       ) : !result ? (
-        <motion.div
-          key="empty"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={spring.soft}
-        >
+        <div key="empty" className="enter">
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
           <TrendingUp size={40} className="mb-4" style={{ color: ACCENT }} />
           <p className="max-w-sm text-sm text-white/50">
@@ -100,7 +95,7 @@ export default function MomentumPage() {
             and flags every scoring run and timeout swing along the way.
           </p>
         </Panel>
-        </motion.div>
+        </div>
       ) : (
         <motion.div
           key={`result-${game}`}
@@ -117,7 +112,7 @@ export default function MomentumPage() {
                 right={
                   <span className="stat-num text-xs text-white/50">
                     Final:{" "}
-                    <span style={{ color: finalMargin >= 0 ? ACCENT : CYAN }}>
+                    <span style={{ color: finalMargin >= 0 ? ACCENT : AWAY }}>
                       {finalMargin >= 0 ? "HOME +" : "AWAY +"}
                       {Math.abs(finalMargin)}
                     </span>
@@ -141,7 +136,7 @@ export default function MomentumPage() {
                     )}
                   />
                 </div>
-                <div className="mt-2 flex items-center justify-between text-[11px] text-white/40">
+                <div className="mt-2 flex items-center justify-between text-[11px] text-white/50">
                   <span>Above the line = HOME ahead</span>
                   <span>48-minute regulation</span>
                 </div>
@@ -166,13 +161,13 @@ export default function MomentumPage() {
             <Panel title="Momentum timeline">
               <div className="space-y-2.5">
                 {swingEvents.length === 0 && (
-                  <p className="py-6 text-center text-xs text-white/40">No major swings logged.</p>
+                  <p className="py-6 text-center text-xs text-white/50">No major swings logged.</p>
                 )}
                 {swingEvents.map((e, i) => {
                   const isRun = e.type === "run";
                   const home =
                     result.runs.find((r) => r.at === e.minute)?.team === "HOME";
-                  const clr = !isRun ? "#C9A14A" : home ? ACCENT : CYAN;
+                  const clr = !isRun ? "#C9A14A" : home ? ACCENT : AWAY;
                   return (
                     <div
                       key={`${e.minute}-${i}`}
@@ -191,13 +186,13 @@ export default function MomentumPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-sm text-white/85">{e.event}</span>
-                          <span className="stat-num shrink-0 text-[11px] text-white/40">
+                          <span className="stat-num shrink-0 text-[11px] text-white/50">
                             {e.minute}:00
                           </span>
                         </div>
                         <div
                           className="stat-num mt-0.5 text-[11px]"
-                          style={{ color: isRun ? clr : "rgba(255,255,255,0.4)" }}
+                          style={{ color: isRun ? clr : "rgba(255,255,255,0.5)" }}
                         >
                           {isRun ? (home ? "HOME run" : "AWAY run") : "Stoppage"} · margin{" "}
                           {e.margin >= 0 ? "+" : ""}

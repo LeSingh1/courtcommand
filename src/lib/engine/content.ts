@@ -98,8 +98,20 @@ export const NCAA_FIELD: NcaaTeam[] = [
   { name: "Saint Mary's", seed: 7, eff: 14.8, sos: 4.6, form: 0.66, color: "#06315B" },
 ];
 
-function winProb(a: NcaaTeam, b: NcaaTeam): number {
-  const edge = (a.eff - b.eff) + (a.sos - b.sos) * 0.4 + (a.form - b.form) * 8 + (b.seed - a.seed) * 0.6;
+export type BracketEmphasis = "balanced" | "efficiency" | "form";
+
+function winProb(a: NcaaTeam, b: NcaaTeam, emphasis: BracketEmphasis = "balanced"): number {
+  const w =
+    emphasis === "efficiency"
+      ? { eff: 1.35, sos: 0.5, form: 4, seed: 0.7 }
+      : emphasis === "form"
+        ? { eff: 0.7, sos: 0.3, form: 16, seed: 0.45 }
+        : { eff: 1, sos: 0.4, form: 8, seed: 0.6 };
+  const edge =
+    (a.eff - b.eff) * w.eff +
+    (a.sos - b.sos) * w.sos +
+    (a.form - b.form) * w.form +
+    (b.seed - a.seed) * w.seed;
   return clamp(1 / (1 + Math.exp(-edge / 7)), 0.05, 0.95);
 }
 
@@ -111,7 +123,9 @@ export interface BracketGame {
   winner: NcaaTeam;
   upset: boolean;
 }
-export function simulateBracket(): { rounds: BracketGame[][]; champion: NcaaTeam } {
+export function simulateBracket(
+  emphasis: BracketEmphasis = "balanced",
+): { rounds: BracketGame[][]; champion: NcaaTeam } {
   let alive = [...NCAA_FIELD];
   const rounds: BracketGame[][] = [];
   let roundNum = 1;
@@ -121,7 +135,7 @@ export function simulateBracket(): { rounds: BracketGame[][]; champion: NcaaTeam
     for (let i = 0; i < alive.length; i += 2) {
       const a = alive[i];
       const b = alive[i + 1];
-      const ap = winProb(a, b);
+      const ap = winProb(a, b, emphasis);
       const winner = ap >= 0.5 ? a : b;
       const upset = winner.seed > (ap >= 0.5 ? b.seed : a.seed);
       games.push({ round: roundNum, a, b, aProb: Math.round(ap * 100), winner, upset });

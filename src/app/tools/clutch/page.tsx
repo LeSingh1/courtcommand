@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Timer, Flame } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
@@ -9,7 +9,7 @@ import { Segmented } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { getTool } from "@/lib/tools";
+import { getTool, categoryColor } from "@/lib/tools";
 import { clutchBoard } from "@/lib/engine/players";
 import { gradeColor } from "@/lib/cn";
 
@@ -23,16 +23,27 @@ export default function ClutchPage() {
     [sort],
   );
   const leader = board[0];
+  const accent = categoryColor(tool.category);
+
+  if (!leader) {
+    return (
+      <ToolShell tool={tool}>
+        <Panel title="Full clutch leaderboard">
+          <p className="text-sm text-[var(--text-muted)]">No clutch data available.</p>
+        </Panel>
+      </ToolShell>
+    );
+  }
 
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Insight accent="#BF5B4E">
+        <Insight accent={accent}>
           <b>{leader.player.name}</b> tops the Clutch Index — elite poise ({leader.poise}) on
           high-difficulty late-game looks. Clutch = last 5 minutes, margin within 5.
         </Insight>
         <Segmented
-          accent="#BF5B4E"
+          accent={accent}
           value={sort}
           onChange={setSort}
           options={[
@@ -43,14 +54,7 @@ export default function ClutchPage() {
         />
       </div>
 
-      <AnimatePresence mode="wait">
-      <motion.div
-        key={sort}
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={spring.soft}
-      >
+      <div key={sort} className="enter">
       {/* podium */}
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         {board.slice(0, 3).map((r, i) => {
@@ -72,10 +76,10 @@ export default function ClutchPage() {
                 </div>
                 <div className="mt-4 flex items-end justify-between">
                   <div>
-                    <div className="stat-num text-3xl font-bold" style={{ color: gradeColor(r.clutchScore) }}>
+                    <div className="scoreboard text-4xl" style={{ color: gradeColor(r.clutchScore) }}>
                       {r.clutchScore}
                     </div>
-                    <div className="text-[10px] uppercase text-white/40">Clutch score · {r.grade}</div>
+                    <div className="text-[11px] uppercase text-white/55">Clutch score · {r.grade}</div>
                   </div>
                   <div className="stat-num text-right text-xs text-white/50">
                     <div>{r.player.clutchPpg} clutch PPG</div>
@@ -139,8 +143,7 @@ export default function ClutchPage() {
           </table>
         </div>
       </Panel>
-      </motion.div>
-      </AnimatePresence>
+      </div>
     </ToolShell>
   );
 }

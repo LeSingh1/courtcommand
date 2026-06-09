@@ -10,8 +10,9 @@ import { getTool } from "@/lib/tools";
 import { QUIZ } from "@/lib/engine/content";
 import { gradeColor } from "@/lib/cn";
 
-const ROSE = "#BF5B4E";
-const GREEN = "#5FA97E";
+const ACCENT = "#B0688E"; // category color for "Player Tools"
+const GREEN = "#5FA97E"; // correct answer
+const WRONG = "#C57A47"; // muted negative tint for incorrect reads
 
 export default function IqQuizPage() {
   const tool = getTool("iq-quiz")!;
@@ -60,14 +61,14 @@ export default function IqQuizPage() {
             {QUIZ.map((_, i) => (
               <div
                 key={i}
-                className="h-2 rounded-full transition-all duration-300"
+                className="h-2 w-7 rounded-none transition-colors duration-300"
                 style={{
-                  width: i === step ? 28 : 8,
-                  backgroundColor: i <= step ? ROSE : "rgba(255,255,255,0.12)",
+                  backgroundColor:
+                    i === step ? ACCENT : i < step ? `${ACCENT}66` : "rgba(255,255,255,0.12)",
                 }}
               />
             ))}
-            <span className="ml-3 stat-num text-xs text-white/45">
+            <span className="ml-3 stat-num text-xs text-white/60">
               {step + 1} / {total}
             </span>
           </div>
@@ -100,7 +101,7 @@ export default function IqQuizPage() {
                   whileTap={{ scale: 0.96 }}
                   transition={spring.snappy}
                   className="mt-7 flex items-center gap-2 rounded-none px-5 py-3 text-sm font-semibold transition"
-                  style={{ background: ROSE, color: "#1a0008" }}
+                  style={{ background: ACCENT, color: "var(--accent-ink)" }}
                 >
                   <RotateCcw size={16} /> Retake quiz
                 </motion.button>
@@ -115,7 +116,7 @@ export default function IqQuizPage() {
               transition={spring.soft}
             >
               <Panel>
-                <div className="eyebrow mb-2" style={{ color: ROSE }}>
+                <div className="eyebrow mb-2" style={{ color: ACCENT }}>
                   Scenario {step + 1}
                 </div>
                 <h2 className="display text-2xl text-white">{question.q}</h2>
@@ -127,16 +128,16 @@ export default function IqQuizPage() {
                     const isChosen = i === chosen;
                     let border = "border-white/10";
                     let bg = "bg-white/[0.03]";
-                    let glow: string | undefined;
+                    let markColor: string | undefined;
                     if (answered) {
                       if (isCorrect) {
                         border = "border-transparent";
                         bg = "";
-                        glow = GREEN;
+                        markColor = GREEN;
                       } else if (isChosen) {
                         border = "border-transparent";
                         bg = "";
-                        glow = ROSE;
+                        markColor = WRONG;
                       }
                     }
                     return (
@@ -150,8 +151,8 @@ export default function IqQuizPage() {
                           !answered ? "hover:border-white/25 hover:bg-white/[0.05]" : ""
                         }`}
                         style={
-                          glow
-                            ? { background: `${glow}1a`, borderColor: `${glow}66`, color: "#fff" }
+                          markColor
+                            ? { background: `${markColor}1a`, borderColor: `${markColor}66`, color: "#fff" }
                             : undefined
                         }
                       >
@@ -159,11 +160,11 @@ export default function IqQuizPage() {
                           <span
                             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-none text-[11px] font-bold"
                             style={{
-                              background: glow ? glow : "rgba(255,255,255,0.07)",
-                              color: glow ? "#0a0c11" : "rgba(255,255,255,0.6)",
+                              background: markColor ? markColor : "rgba(255,255,255,0.07)",
+                              color: markColor ? "#0a0c11" : "rgba(255,255,255,0.6)",
                             }}
                           >
-                            {glow === GREEN ? <Check size={14} /> : glow === ROSE ? <X size={14} /> : String.fromCharCode(65 + i)}
+                            {markColor === GREEN ? <Check size={14} /> : markColor === WRONG ? <X size={14} /> : String.fromCharCode(65 + i)}
                           </span>
                           {opt}
                         </span>
@@ -181,8 +182,8 @@ export default function IqQuizPage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={spring.soft}
                   >
-                    <Insight accent={chosen === question.correct ? GREEN : ROSE}>
-                        <span className="font-semibold" style={{ color: chosen === question.correct ? GREEN : ROSE }}>
+                    <Insight accent={chosen === question.correct ? GREEN : WRONG}>
+                        <span className="font-semibold" style={{ color: chosen === question.correct ? GREEN : WRONG }}>
                           {chosen === question.correct ? "Correct read. " : "Not quite. "}
                         </span>
                         {question.explain}
@@ -192,7 +193,7 @@ export default function IqQuizPage() {
                         whileTap={{ scale: 0.96 }}
                         transition={spring.snappy}
                         className="mt-4 flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm font-semibold transition"
-                        style={{ background: ROSE, color: "#1a0008" }}
+                        style={{ background: ACCENT, color: "var(--accent-ink)" }}
                       >
                       {isLast ? "See results" : "Next scenario"}
                       <ArrowRight size={16} />
@@ -202,8 +203,8 @@ export default function IqQuizPage() {
                 </AnimatePresence>
               </Panel>
 
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-white/40">
-                <Brain size={14} style={{ color: ROSE }} />
+              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-white/60">
+                <Brain size={14} style={{ color: ACCENT }} />
                 Running score: <b className="stat-num text-white/70">{score}</b> / {step + (answered ? 1 : 0)}
               </div>
             </motion.div>

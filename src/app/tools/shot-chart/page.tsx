@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { Target, Flame, Snowflake } from "lucide-react";
@@ -17,11 +17,13 @@ import type { Player } from "@/lib/types";
 
 const EMBER = "#E0561F";
 
+// Mirrors CourtChart.heatColor exactly (>=0.58, >=0.50, >=0.44, >=0.38, else).
+// Keep these thresholds/colors in sync with that component's heatColor map.
 const LEGEND = [
   { label: "Hot · 58%+ eFG", color: "#E0561F" },
-  { label: "Warm · 50–57%", color: "#E0561F" },
-  { label: "Neutral · 44–49%", color: "#C9A14A" },
-  { label: "Cool · 38–43%", color: "#7E8CA0" },
+  { label: "Warm · 50–57%", color: "#C9A14A" },
+  { label: "Neutral · 44–49%", color: "#9FB07A" },
+  { label: "Cool · 38–43%", color: "#8E96A4" },
   { label: "Cold · <38%", color: "#7E8CA0" },
 ];
 
@@ -38,6 +40,9 @@ function ShotChartInner() {
   const params = useSearchParams();
   const [player, setPlayer] = useState<Player | null>(() => getPlayerByName("Stephen Curry") ?? null);
   const [view, setView] = useState<"shots" | "zones">("shots");
+  // The default Curry chart is always-visible on first load; never gate it behind a
+  // Framer mount animation. Only animate the entrance on subsequent player swaps.
+  const firstRender = useRef(true);
 
   useEffect(() => {
     const a = params.get("a");
@@ -55,6 +60,11 @@ function ShotChartInner() {
     const m = chart.shots.filter((s) => s.made).length;
     return { best: ranked[0], worst: ranked[ranked.length - 1], made: m, total: chart.shots.length };
   }, [chart]);
+
+  // First paint = the default (Curry) chart. Render it immediately visible via CSS
+  // (.enter ends visible, survives Framer not hydrating). Animate only later swaps.
+  const isFirstMount = firstRender.current;
+  firstRender.current = false;
 
   return (
     <ToolShell tool={tool}>
@@ -85,11 +95,11 @@ function ShotChartInner() {
       ) : (
         <motion.div
           key={player.id}
-          initial={{ opacity: 0, y: 14 }}
+          initial={isFirstMount ? false : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={spring.soft}
-          className="grid gap-6 lg:grid-cols-[1fr_320px]"
+          className={`grid gap-6 lg:grid-cols-[1fr_320px]${isFirstMount ? " enter" : ""}`}
         >
           <Panel
             title={view === "shots" ? "Shot distribution" : "Zone efficiency (eFG%)"}
@@ -122,7 +132,7 @@ function ShotChartInner() {
               <div className="space-y-2.5">
                 {LEGEND.map((l) => (
                   <div key={l.label} className="flex items-center gap-2.5 text-xs text-white/65">
-                    <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: l.color }} />
+                    <span className="h-3 w-3 shrink-0" style={{ background: l.color }} />
                     {l.label}
                   </div>
                 ))}
@@ -190,13 +200,13 @@ function ShotChartInner() {
       )}
       </AnimatePresence>
 
-      {best && player && (
+      {best && worst && player && (
         <div className="mt-6">
           <Insight accent={EMBER}>
             <b>{player.name}</b> is most lethal from the <b>{best.label.toLowerCase()}</b>, hitting{" "}
             <b>{Math.round(best.efg * 100)}% eFG</b> there on {Math.round(best.freq * 100)}% of his volume.
-            Defenses should run him off that spot first — his coldest look is the {worst?.label.toLowerCase()}
-            {worst ? ` at ${Math.round(worst.efg * 100)}%` : ""}.
+            Defenses should run him off that spot first — his coldest look is the {worst.label.toLowerCase()}
+            {` at ${Math.round(worst.efg * 100)}%`}.
           </Insight>
         </div>
       )}

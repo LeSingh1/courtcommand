@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { GitCompareArrows } from "lucide-react";
 import { spring, staggerParent, staggerItem } from "@/lib/motion";
@@ -9,10 +9,8 @@ import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { RadarChart } from "@/components/ui/RadarChart";
-import { Meter } from "@/components/ui/Meter";
-import { Badge } from "@/components/ui/Controls";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
-import { getTool } from "@/lib/tools";
+import { getTool, categoryColor } from "@/lib/tools";
 import { getPlayer } from "@/lib/data";
 import { similarPlayers, radarValues, RADAR_AXES, type SimResult } from "@/lib/engine/players";
 import type { Player } from "@/lib/types";
@@ -27,7 +25,9 @@ export default function SimilarityPage() {
 
 function SimilarityInner() {
   const tool = getTool("player-similarity")!;
+  const accent = categoryColor(tool.category);
   const params = useSearchParams();
+  const router = useRouter();
   const [player, setPlayer] = useState<Player | null>(null);
   const [results, setResults] = useState<SimResult[]>([]);
   const [active, setActive] = useState(0);
@@ -49,8 +49,10 @@ function SimilarityInner() {
   useEffect(() => {
     if (!player) {
       setResults([]);
+      router.replace("?", { scroll: false });
       return;
     }
+    router.replace(`?a=${player.id}`, { scroll: false });
     analyze.run(() => {
       setResults(similarPlayers(player.id, 6));
       setActive(0);
@@ -63,7 +65,7 @@ function SimilarityInner() {
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 max-w-md">
-        <PlayerPicker value={player} onChange={setPlayer} accent="#7E8CA0" placeholder="Pick a player to find twins…" />
+        <PlayerPicker value={player} onChange={setPlayer} accent={accent} placeholder="Pick a player to find twins…" />
       </div>
 
       <AnimatePresence mode="wait">
@@ -76,7 +78,7 @@ function SimilarityInner() {
           transition={spring.soft}
         >
           <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
-            <GitCompareArrows size={40} className="mb-4 text-cyan" />
+            <GitCompareArrows size={40} className="mb-4" style={{ color: accent }} />
             <p className="max-w-xs text-sm text-white/50">
               Choose any player — HoopRadar maps their statistical fingerprint and finds the closest
               stylistic twins in the league.
@@ -91,7 +93,7 @@ function SimilarityInner() {
           exit={{ opacity: 0, y: -8 }}
           transition={spring.soft}
         >
-          <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent="#7E8CA0" />
+          <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={accent} />
         </motion.div>
       ) : (
         <motion.div
@@ -115,8 +117,8 @@ function SimilarityInner() {
                       onClick={() => setActive(i)}
                       className="flex w-full items-center gap-3 rounded-none border p-3 text-left transition"
                       style={{
-                        borderColor: i === active ? "#7E8CA055" : "rgba(255,255,255,0.07)",
-                        background: i === active ? "#7E8CA00f" : "transparent",
+                        borderColor: i === active ? `${accent}55` : "rgba(255,255,255,0.07)",
+                        background: i === active ? `${accent}0f` : "transparent",
                       }}
                     >
                       <PlayerAvatar player={r.player} size={40} />
@@ -134,7 +136,7 @@ function SimilarityInner() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="stat-num text-lg font-bold text-cyan">{r.score}</div>
+                        <div className="stat-num text-lg font-bold" style={{ color: accent }}>{r.score}</div>
                         <div className="text-[9px] uppercase text-white/35">match</div>
                       </div>
                     </motion.button>
@@ -151,7 +153,7 @@ function SimilarityInner() {
                   axes={RADAR_AXES}
                   series={[
                     { name: player.name, color: "#E0561F", values: radarValues(player) },
-                    ...(comp ? [{ name: comp.name, color: "#7E8CA0", values: radarValues(comp) }] : []),
+                    ...(comp ? [{ name: comp.name, color: accent, values: radarValues(comp) }] : []),
                   ]}
                 />
               </div>
@@ -161,14 +163,14 @@ function SimilarityInner() {
                 </span>
                 {comp && (
                   <span className="flex items-center gap-1.5 text-white/70">
-                    <span className="h-2 w-2 rounded-full bg-cyan" /> {comp.name}
+                    <span className="h-2 w-2 rounded-full" style={{ background: accent }} /> {comp.name}
                   </span>
                 )}
               </div>
             </Panel>
 
             {comp && (
-              <Insight accent="#7E8CA0">
+              <Insight accent={accent}>
                 <b>{comp.name}</b> is the closest match to <b>{player.name}</b> at{" "}
                 <b>{results[active].score}%</b> similarity — {results[active].reasons.join(", ")}.
               </Insight>

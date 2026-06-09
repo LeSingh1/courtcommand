@@ -14,12 +14,14 @@ export function PlayerPicker({
   placeholder = "Search a player…",
   exclude = [],
   accent = "#E0561F",
+  ariaLabel,
 }: {
   value?: Player | null;
   onChange: (p: Player | null) => void;
   placeholder?: string;
   exclude?: string[];
   accent?: string;
+  ariaLabel?: string;
 }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -73,6 +75,9 @@ export function PlayerPicker({
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
+          role="combobox"
+          aria-expanded={open}
+          aria-label={ariaLabel ?? placeholder}
           onKeyDown={(e) => {
             if (e.key === "ArrowDown") setActive((a) => Math.min(results.length - 1, a + 1));
             if (e.key === "ArrowUp") setActive((a) => Math.max(0, a - 1));

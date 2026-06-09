@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeftRight, Check, X, Plus } from "lucide-react";
+import { ArrowLeftRight, Check, X, Plus, Loader2 } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -33,10 +33,26 @@ export default function TradeMachinePage() {
     ]);
   }, [teamA, teamB, outA, outB]);
 
+  const [analyzing, setAnalyzing] = useState(false);
+  const analyzeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const toggle = (side: "A" | "B", id: string) => {
     const [list, set] = side === "A" ? [outA, setOutA] : [outB, setOutB];
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
+
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return;
+
+    setAnalyzing(true);
+    if (analyzeTimer.current) clearTimeout(analyzeTimer.current);
+    analyzeTimer.current = setTimeout(() => setAnalyzing(false), 400);
   };
+
+  useEffect(() => () => {
+    if (analyzeTimer.current) clearTimeout(analyzeTimer.current);
+  }, []);
 
   return (
     <ToolShell tool={tool}>
@@ -62,19 +78,34 @@ export default function TradeMachinePage() {
           roster={rosterB}
           selected={outB}
           onToggle={(id) => toggle("B", id)}
-          accent="#7E8CA0"
+          accent="#5FA97E"
           exclude={teamA}
         />
       </div>
 
       <div className="my-6 flex items-center justify-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+        <div className="flex h-12 w-12 items-center justify-center rounded-none border border-white/10 bg-white/[0.04]">
           <ArrowLeftRight size={20} className="text-white/60" />
         </div>
       </div>
 
       <AnimatePresence mode="wait">
-      {result ? (
+      {analyzing && result ? (
+        <motion.div
+          key="analyzing"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <Panel className="flex min-h-[160px] flex-col items-center justify-center gap-3 text-center">
+            <Loader2 size={22} className="animate-spin text-white/50" />
+            <p className="max-w-sm text-sm text-white/55">
+              Checking CBA salary matching, apron hard-caps, and roster impact…
+            </p>
+          </Panel>
+        </motion.div>
+      ) : result ? (
         <motion.div
           key={`trade-${result.legal}-${result.sides.map((s) => s.team.abbr + s.grade).join("-")}`}
           initial={{ opacity: 0, y: 14 }}
@@ -101,8 +132,8 @@ export default function TradeMachinePage() {
               </div>
               {!result.legal && (
                 <ul className="mt-1 space-y-0.5 text-sm text-white/55">
-                  {result.violations.map((v) => (
-                    <li key={v}>· {v}</li>
+                  {result.violations.map((v, i) => (
+                    <li key={i}>· {v}</li>
                   ))}
                 </ul>
               )}
@@ -136,12 +167,17 @@ export default function TradeMachinePage() {
               </Panel>
             ))}
           </div>
+
+          <Insight>
+            {result.legal
+              ? `${result.sides[0].team.abbr} grades ${result.sides[0].grade} and ${result.sides[1].team.abbr} grades ${result.sides[1].grade}. ${result.sides[0].note} for ${result.sides[0].team.abbr}; ${result.sides[1].note.toLowerCase()} for ${result.sides[1].team.abbr}. The deal clears 2024 CBA salary matching and apron caps as built.`
+              : "This deal violates CBA matching or apron rules — adjust the outgoing salaries on each side until the dollars line up to make it legal."}
+          </Insight>
         </motion.div>
       ) : (
         <motion.div
           key="empty"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
+          className="enter"
           exit={{ opacity: 0, y: -8 }}
           transition={spring.soft}
         >

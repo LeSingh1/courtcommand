@@ -9,13 +9,13 @@ import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { Diverging } from "@/components/ui/Meter";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { getTool } from "@/lib/tools";
+import { getTool, categoryColor } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { debate } from "@/lib/engine/content";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const GOLD = "#C9A14A";
+const TEAL = "#4E8FA8";
 type Lens = "overall" | "offense" | "defense";
 
 export default function DebatePage() {
@@ -28,6 +28,7 @@ export default function DebatePage() {
 
 function DebateInner() {
   const tool = getTool("debate")!;
+  const GOLD = categoryColor(tool.category);
   const params = useSearchParams();
   const [a, setA] = useState<Player | null>(() => getPlayerByName("Anthony Edwards") ?? null);
   const [b, setB] = useState<Player | null>(() => getPlayerByName("Luka Doncic") ?? null);
@@ -64,7 +65,7 @@ function DebateInner() {
             ]}
           />
         </div>
-        <PlayerPicker value={b} onChange={setB} accent="#7E8CA0" exclude={a ? [a.id] : []} placeholder="Side B…" />
+        <PlayerPicker value={b} onChange={setB} accent={TEAL} exclude={a ? [a.id] : []} placeholder="Side B…" />
       </div>
 
       <AnimatePresence mode="wait">
@@ -91,21 +92,21 @@ function DebateInner() {
               <div className="text-[10px] uppercase tracking-widest text-white/40">Edge</div>
               <div
                 className="stat-num text-3xl font-bold"
-                style={{ color: result.edge >= 0 ? GOLD : "#7E8CA0" }}
+                style={{ color: result.edge >= 0 ? GOLD : TEAL }}
               >
                 {result.edge > 0 ? "+" : ""}
                 {result.edge}
               </div>
               <div className="w-full px-1">
-                <Diverging value={result.edge} range={100} color={GOLD} negColor="#7E8CA0" />
+                <Diverging value={result.edge} range={100} color={GOLD} negColor={TEAL} />
               </div>
               <div className="flex w-full justify-between text-[9px] text-white/35">
-                <span className="truncate">{result.a.player.name.split(" ").slice(-1)}</span>
-                <span className="truncate">{result.b.player.name.split(" ").slice(-1)}</span>
+                <span className="truncate">{result.a.player.name.split(" ").slice(-1)[0]}</span>
+                <span className="truncate">{result.b.player.name.split(" ").slice(-1)[0]}</span>
               </div>
             </div>
 
-            <DebateCard side={result.b} accent="#7E8CA0" leading={result.edge < 0} />
+            <DebateCard side={result.b} accent={TEAL} leading={result.edge < 0} />
           </div>
 
           <div className="mt-6">

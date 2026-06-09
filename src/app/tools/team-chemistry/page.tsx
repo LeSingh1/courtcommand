@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Atom } from "lucide-react";
 import { spring } from "@/lib/motion";
@@ -27,6 +27,24 @@ export default function TeamChemistryPage() {
     () => (player ? teamChemistry(player, team) : null),
     [player, team],
   );
+
+  // Brief analyzing beat whenever the fit inputs change, so the synchronous
+  // result still surfaces a loading state like sibling tools.
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    if (!player) {
+      setIsAnalyzing(false);
+      return;
+    }
+    setIsAnalyzing(true);
+    const id = window.setTimeout(() => setIsAnalyzing(false), 320);
+    return () => window.clearTimeout(id);
+  }, [player, team]);
 
   const roster = useMemo(
     () => playersByTeam(team).filter((p) => !player || p.id !== player.id),
@@ -56,6 +74,7 @@ export default function TeamChemistryPage() {
               {tm?.abbr}
             </span>
             <select
+              aria-label="Destination team"
               value={team}
               onChange={(e) => setTeam(e.target.value)}
               className="flex-1 bg-transparent text-sm text-white outline-none"
@@ -70,22 +89,39 @@ export default function TeamChemistryPage() {
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
       {!result ? (
-        <motion.div
-          key="empty"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={spring.soft}
-        >
-        <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
+        // Always-visible-on-load content: CSS entrance, never Framer-gated.
+        <Panel className="enter flex min-h-[300px] flex-col items-center justify-center text-center">
           <Atom size={40} className="mb-4" style={{ color: ACCENT }} />
+          <div className="kicker mb-2" style={{ color: ACCENT }}>
+            Chemistry Simulator
+          </div>
           <p className="max-w-sm text-sm text-white/50">
             Drop any player onto a roster and the Chemistry Simulator predicts fit from usage
             overlap, spacing, defense, and positional need against the current core.
           </p>
         </Panel>
+      ) : (
+      <AnimatePresence mode="wait">
+      {isAnalyzing ? (
+        <motion.div
+          key="analyzing"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+        >
+          <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-3 text-sm text-[var(--text-muted)]">
+              <span className="inline-block h-3 w-3 animate-pulse" style={{ background: ACCENT }} />
+              Simulating fit…
+            </div>
+            <div className="mt-5 w-full max-w-sm space-y-2">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="skeleton h-9 w-full animate-pulse" />
+              ))}
+            </div>
+          </Panel>
         </motion.div>
       ) : (
         <motion.div
@@ -174,6 +210,7 @@ export default function TeamChemistryPage() {
         </motion.div>
       )}
       </AnimatePresence>
+      )}
     </ToolShell>
   );
 }

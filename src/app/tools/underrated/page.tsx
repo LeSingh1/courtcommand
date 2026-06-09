@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gem } from "lucide-react";
 import { spring, staggerParent, staggerItem } from "@/lib/motion";
@@ -8,18 +8,24 @@ import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { getTool } from "@/lib/tools";
+import { getTool, categoryColor } from "@/lib/tools";
 import { underratedBoard } from "@/lib/engine/players";
-
-const MINT = "#5FA97E";
 
 export default function UnderratedPage() {
   const tool = getTool("underrated")!;
+  const ACCENT = categoryColor(tool.category);
   const [maxSalary, setMaxSalary] = useState(25);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const board = useMemo(() => underratedBoard(maxSalary), [maxSalary]);
   const top = board.slice(0, 3);
   const sleeper = board[0];
+
+  useEffect(() => {
+    setAnalyzing(true);
+    const t = setTimeout(() => setAnalyzing(false), 250);
+    return () => clearTimeout(t);
+  }, [maxSalary]);
 
   return (
     <ToolShell tool={tool}>
@@ -32,12 +38,12 @@ export default function UnderratedPage() {
               min={5}
               max={40}
               unit=" M$"
-              accent={MINT}
+              accent={ACCENT}
               onChange={setMaxSalary}
             />
             <div className="rounded-none border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
               Showing <b className="text-white">{board.length}</b> players under{" "}
-              <b className="text-mint">${maxSalary}M</b>. Score blends true shooting, BPM, on-court
+              <b style={{ color: ACCENT }}>${maxSalary}M</b>. Score blends true shooting, BPM, on-court
               net, cheapness, and low-usage &ldquo;under-the-radar&rdquo; value.
             </div>
           </div>
@@ -52,21 +58,38 @@ export default function UnderratedPage() {
             transition={spring.soft}
           >
             {sleeper ? (
-              <Insight accent="#5FA97E">
+              <Insight accent={ACCENT}>
                 <b>{sleeper.player.name}</b> is the top sleeper at this price — an underrated score of{" "}
-                <b className="text-mint">{sleeper.underratedScore}</b> on a ${sleeper.player.salary}M
+                <b style={{ color: ACCENT }}>{sleeper.underratedScore}</b> on a ${sleeper.player.salary}M
                 deal{sleeper.reasons.length ? `: ${sleeper.reasons.join(", ")}` : ""}. High output for a
                 fraction of the noise.
               </Insight>
             ) : (
-              <Insight accent="#5FA97E">No players fall under ${maxSalary}M — raise the cap.</Insight>
+              <Insight accent={ACCENT}>No players fall under ${maxSalary}M — raise the cap.</Insight>
             )}
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Hidden gem cards */}
-      {top.length > 0 && (
+      {analyzing ? (
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="glass rounded-none p-5">
+              <div className="text-[10px] uppercase tracking-wider text-white/35">
+                Scanning the cap sheet…
+              </div>
+              <div className="mt-3 h-10 w-2/3 bg-white/[0.04]" />
+              <div className="mt-4 h-8 w-1/3 bg-white/[0.04]" />
+              <div className="mt-3 flex gap-1.5">
+                <div className="h-4 w-16 bg-white/[0.03]" />
+                <div className="h-4 w-12 bg-white/[0.03]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        top.length > 0 && (
         <motion.div
           key={maxSalary}
           className="mb-6 grid gap-4 sm:grid-cols-3"
@@ -85,7 +108,7 @@ export default function UnderratedPage() {
                 <div className="glass rounded-none p-5">
                   <div className="flex items-center justify-between">
                     <span className="display text-4xl text-white/15">#{i + 1}</span>
-                    <Gem size={20} style={{ color: MINT }} />
+                    <Gem size={20} style={{ color: ACCENT }} />
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <PlayerAvatar player={r.player} size={40} />
@@ -93,7 +116,7 @@ export default function UnderratedPage() {
                   </div>
                   <div className="mt-4 flex items-end justify-between">
                     <div>
-                      <div className="stat-num text-3xl font-bold text-mint">
+                      <div className="stat-num text-3xl font-bold" style={{ color: ACCENT }}>
                         {r.underratedScore}
                       </div>
                       <div className="text-[10px] uppercase text-white/40">
@@ -105,8 +128,8 @@ export default function UnderratedPage() {
                     {r.reasons.map((reason) => (
                       <span
                         key={reason}
-                        className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                        style={{ background: `${MINT}1f`, color: MINT }}
+                        className="rounded-none px-2 py-0.5 text-[10px] font-medium"
+                        style={{ background: `${ACCENT}1f`, color: ACCENT }}
                       >
                         {reason}
                       </span>
@@ -117,9 +140,27 @@ export default function UnderratedPage() {
             );
           })}
         </motion.div>
+        )
       )}
 
       <Panel title="Underrated rankings">
+        {analyzing ? (
+          <div className="space-y-2">
+            <div className="text-[10px] uppercase tracking-wider text-white/35">
+              Scanning the cap sheet…
+            </div>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 rounded-none border border-white/[0.06] bg-white/[0.02] p-3"
+              >
+                <div className="h-8 w-8 bg-white/[0.04]" />
+                <div className="h-3 w-32 bg-white/[0.04]" />
+                <div className="ml-auto h-3 w-12 bg-white/[0.03]" />
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="space-y-2">
           {board.map((r, i) => {
             return (
@@ -137,18 +178,19 @@ export default function UnderratedPage() {
                 </div>
                 <div className="flex min-w-[160px] flex-1 items-center gap-2.5">
                   <div className="flex-1">
-                    <Meter value={r.underratedScore} color={MINT} height={6} />
+                    <Meter value={r.underratedScore} color={ACCENT} height={6} />
                   </div>
-                  <span className="stat-num w-7 text-sm font-bold text-mint">
+                  <span className="stat-num w-7 text-sm font-bold" style={{ color: ACCENT }}>
                     {r.underratedScore}
                   </span>
                 </div>
-                <div className="hidden flex-wrap gap-1.5 sm:flex">
-                  {r.reasons.map((reason) => (
+                <div className="flex w-full flex-wrap gap-1.5 sm:w-auto">
+                  {r.reasons.map((reason, ri) => (
                     <span
                       key={reason}
-                      className="rounded-full px-2 py-0.5 text-[10px] text-white/55"
-                      style={{ background: "rgba(255,255,255,0.05)" }}
+                      className={`rounded-none border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/55 ${
+                        ri === 0 ? "" : "hidden sm:inline-block"
+                      }`}
                     >
                       {reason}
                     </span>
@@ -161,6 +203,7 @@ export default function UnderratedPage() {
             );
           })}
         </div>
+        )}
       </Panel>
     </ToolShell>
   );

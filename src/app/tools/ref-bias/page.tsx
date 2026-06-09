@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { Scale } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
@@ -9,18 +9,23 @@ import { Segmented } from "@/components/ui/Controls";
 import { Meter, Diverging } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-import { getTool } from "@/lib/tools";
+import { getTool, categoryColor } from "@/lib/tools";
 import { refBiasBoard } from "@/lib/engine/game";
 import { TEAM_MAP } from "@/lib/data";
 import { gradeColor } from "@/lib/cn";
-
-const CYAN = "#7E8CA0";
 
 type SortKey = "homeWhistle" | "starWhistle" | "foulDiff";
 
 export default function RefBiasPage() {
   const tool = getTool("ref-bias")!;
+  const ACCENT = categoryColor(tool.category);
   const [sort, setSort] = useState<SortKey>("homeWhistle");
+
+  const [isAnalyzing, setIsAnalyzing] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setIsAnalyzing(false), 600);
+    return () => clearTimeout(t);
+  }, []);
 
   const board = useMemo(() => refBiasBoard(), []);
 
@@ -54,18 +59,49 @@ export default function RefBiasPage() {
     [withGap],
   );
 
-  const gapTeam = TEAM_MAP[biggestGap.team];
+  const gapTeam = biggestGap ? TEAM_MAP[biggestGap.team] : undefined;
+
+  if (isAnalyzing) {
+    return (
+      <ToolShell tool={tool}>
+        <Panel title="Officiating tendency board">
+          <div className="flex items-center gap-3 py-2 text-sm text-[var(--text-muted)]">
+            <span
+              className="inline-block h-3 w-3 animate-pulse"
+              style={{ background: ACCENT }}
+            />
+            Reading officiating logs…
+          </div>
+          <div className="mt-4 space-y-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-9 w-full animate-pulse bg-white/[0.04]" />
+            ))}
+          </div>
+        </Panel>
+      </ToolShell>
+    );
+  }
+
+  if (sorted.length === 0 || !biggestGap) {
+    return (
+      <ToolShell tool={tool}>
+        <Panel title="Officiating tendency board">
+          <p className="text-sm text-[var(--text-muted)]">No officiating data available.</p>
+        </Panel>
+      </ToolShell>
+    );
+  }
 
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Insight accent={CYAN}>
+        <Insight accent={ACCENT}>
           League-wide, home teams average <b>+{leagueHomeGap} free throws</b> per game over visitors —
           a measurable home-whistle tilt. <b>{gapTeam?.city} {gapTeam?.name}</b> draw the most one-sided
           home advantage at <b>+{biggestGap.homeGap} FT/game</b>.
         </Insight>
         <Segmented
-          accent={CYAN}
+          accent={ACCENT}
           value={sort}
           onChange={setSort}
           options={[
@@ -76,14 +112,7 @@ export default function RefBiasPage() {
         />
       </div>
 
-      <AnimatePresence mode="wait">
-      <motion.div
-        key={sort}
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={spring.soft}
-      >
+      <div key={sort} className="enter">
       {/* spotlight cards */}
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         {sorted.slice(0, 3).map((r, i) => {
@@ -99,7 +128,7 @@ export default function RefBiasPage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="display text-4xl text-white/15">#{i + 1}</span>
-                  <Scale size={20} style={{ color: CYAN }} />
+                  <Scale size={20} style={{ color: ACCENT }} />
                 </div>
                 <div className="mt-2 flex items-center gap-2.5">
                   <TeamLogo abbr={r.team} size={32} />
@@ -109,7 +138,7 @@ export default function RefBiasPage() {
                 </div>
                 <div className="mt-4 flex items-end justify-between">
                   <div>
-                    <div className="stat-num text-3xl font-bold" style={{ color: CYAN }}>
+                    <div className="scoreboard text-4xl font-bold tabular-nums" style={{ color: ACCENT }}>
                       {val > 0 && sort !== "starWhistle" ? "+" : ""}
                       {val}
                     </div>
@@ -153,7 +182,7 @@ export default function RefBiasPage() {
                   <tr
                     key={r.team}
                     className="border-b border-white/[0.04] transition hover:bg-white/[0.03]"
-                    style={isFlag ? { background: `${CYAN}12` } : undefined}
+                    style={isFlag ? { background: `${ACCENT}12` } : undefined}
                   >
                     <td className="py-2.5 pl-2">
                       <div className="flex items-center gap-2.5">
@@ -163,8 +192,8 @@ export default function RefBiasPage() {
                         </span>
                         {isFlag && (
                           <span
-                            className="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
-                            style={{ background: `${CYAN}22`, color: CYAN }}
+                            className="rounded-none px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+                            style={{ background: `${ACCENT}22`, color: ACCENT }}
                           >
                             Biggest tilt
                           </span>
@@ -198,7 +227,7 @@ export default function RefBiasPage() {
                     <td className="py-2.5 pr-2 text-right">
                       <span
                         className="stat-num rounded-none px-2 py-0.5 text-xs font-bold"
-                        style={{ background: `${CYAN}1f`, color: CYAN }}
+                        style={{ background: `${ACCENT}1f`, color: ACCENT }}
                       >
                         +{r.homeGap}
                       </span>
@@ -210,8 +239,7 @@ export default function RefBiasPage() {
           </table>
         </div>
       </Panel>
-      </motion.div>
-      </AnimatePresence>
+      </div>
     </ToolShell>
   );
 }
