@@ -13,6 +13,7 @@ import { getTool } from "@/lib/tools";
 import { shotQuality, type ShotType, type ShotQualityResult } from "@/lib/engine/game";
 import { gradeColor } from "@/lib/cn";
 import { RealShots } from "./RealShots";
+import { ShotFilm } from "./ShotFilm";
 
 const SHOT_TYPES: { label: string; value: ShotType }[] = [
   { label: "Rim", value: "rim" },
@@ -34,7 +35,7 @@ const SHOT_POS: Record<ShotType, { x: number; y: number }> = {
 
 export default function ShotQualityPage() {
   const tool = getTool("shot-quality")!;
-  const [mode, setMode] = useState<"real" | "manual">("real");
+  const [mode, setMode] = useState<"film" | "real" | "manual">("film");
   const [shotType, setShotType] = useState<ShotType>("catch3");
   const [defenderDist, setDefenderDist] = useState(5);
   const [shotClock, setShotClock] = useState(12);
@@ -74,18 +75,23 @@ export default function ShotQualityPage() {
           value={mode}
           onChange={setMode}
           options={[
+            { label: "Film room", value: "film" },
             { label: "Real shots", value: "real" },
             { label: "Manual grader", value: "manual" },
           ]}
         />
         <span className="text-xs text-[var(--text-faint)]">
-          {mode === "real"
-            ? "Grade actual NBA shots from recent games — model vs. reality, with a replay"
-            : "Build a hypothetical shot and grade its expected value"}
+          {mode === "film"
+            ? "Watch the real NBA clip, then the model grade vs. reality and a 2.5D replay"
+            : mode === "real"
+              ? "Grade actual NBA shots from recent games — model vs. reality, with a replay"
+              : "Build a hypothetical shot and grade its expected value"}
         </span>
       </div>
 
-      {mode === "real" ? (
+      {mode === "film" ? (
+        <ShotFilm />
+      ) : mode === "real" ? (
         <RealShots />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
