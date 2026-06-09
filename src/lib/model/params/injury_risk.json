@@ -1,0 +1,14 @@
+{
+  "intercept": 0.000747,
+  "coef": {
+    "age": 0.030333,
+    "mpg": -0.032662,
+    "games_missed_prev": 0.021103,
+    "b2b_count": 0.012005,
+    "frame_index": -0.35559
+  },
+  "metrics": {
+    "auc": 0.6351,
+    "n": 660
+  }
+}

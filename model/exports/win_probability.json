@@ -1,0 +1,15 @@
+{
+  "intercept": -0.082783,
+  "coef": {
+    "margin": -0.020476,
+    "margin_over_sqrt_time": 0.856124,
+    "time_frac": 0.069388,
+    "possession": -0.090205,
+    "home_strength": 0.315542
+  },
+  "metrics": {
+    "auc": 0.9304,
+    "brier": 0.1073,
+    "n": 52000
+  }
+}

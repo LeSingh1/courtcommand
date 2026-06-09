@@ -1,0 +1,275 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Fraunces", Georgia, serif;
+  --font-condensed: "Saira Condensed", "Arial Narrow", sans-serif;
+  --font-sans: "Archivo", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --bg: #0a0a0b;
+  --surface: #121214;
+  --surface-2: #17171a;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #ededee;
+  --text-muted: #9a9aa0;
+  --text-faint: #6c6c72;
+  --accent: #e0561f;
+  --accent-ink: #120802;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: "kern";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* ---------- Typography ---------- */
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+}
+.display-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.scoreboard {
+  font-family: var(--font-condensed);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 0.9;
+}
+
+.stat-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.01em;
+}
+
+.kicker,
+.eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+/* ---------- Surfaces ---------- */
+.panel,
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.glass-strong {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.hairline {
+  border: 1px solid var(--line);
+}
+
+/* ---------- Buttons ---------- */
+.btn-accent,
+.btn-ember {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  border: 1px solid var(--accent);
+  transition: background 0.18s var(--ease-out), transform 0.12s var(--ease-out);
+}
+.btn-accent:hover,
+.btn-ember:hover {
+  background: #ef6326;
+}
+.btn-accent:active,
+.btn-ember:active {
+  transform: scale(0.97);
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  transition: border-color 0.18s var(--ease-out), background 0.18s var(--ease-out), transform 0.12s var(--ease-out);
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.btn-ghost:active {
+  transform: scale(0.97);
+}
+
+/* ---------- Loading ---------- */
+.skeleton {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a2f;
+  border: 3px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a41;
+}
+
+::selection {
+  background: rgba(224, 86, 31, 0.28);
+  color: #fff;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============ MOTION LAYER ============ */
+/* Reliable, reduced-motion-safe. Content is always visible by default;
+   motion is an enhancement layered on top, never a prerequisite to see it. */
+
+@keyframes cc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes cc-sweep {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* On-load entrance — stagger via inline animation-delay */
+  .enter {
+    animation: cc-rise 0.7s var(--ease-out) both;
+  }
+  .enter-fade {
+    animation: cc-fade 0.8s var(--ease-out) both;
+  }
+  .sweep-in {
+    transform-origin: left;
+    animation: cc-sweep 0.9s var(--ease-out) both;
+  }
+
+  /* Scroll-driven reveal — native, no JS, no rAF-stall risk.
+     Falls back to fully-visible where unsupported. */
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: cc-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 2% cover 22%;
+    }
+  }
+}
+
+/* Hover micro-interactions */
+.lift {
+  transition: transform 0.25s var(--ease-out), border-color 0.25s var(--ease-out),
+    background 0.25s var(--ease-out);
+  will-change: transform;
+}
+.lift:hover {
+  transform: translateY(-3px);
+}
+
+/* Animated underline for nav/links */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 1px;
+  width: 100%;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.28s var(--ease-out);
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
+}
+
+/* SVG draw-in for charts (paths set pathLength via dasharray) */
+@keyframes cc-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .enter,
+  .enter-fade,
+  .sweep-in,
+  .reveal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

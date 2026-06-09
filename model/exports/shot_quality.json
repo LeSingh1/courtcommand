@@ -1,0 +1,24 @@
+{
+  "intercept": 0.0,
+  "shot_type_base": {
+    "rim": -0.15111,
+    "floater": -0.73358,
+    "midrange": -0.91863,
+    "catch3": -1.26283,
+    "pullup3": -1.63177,
+    "stepback3": -1.73913
+  },
+  "coef": {
+    "defender_dist": 0.156589,
+    "shot_clock": 0.038491,
+    "touch_time": -0.116153,
+    "dribbles": -0.053796,
+    "catch_and_shoot": 0.273033
+  },
+  "metrics": {
+    "auc": 0.7033,
+    "logloss": 0.6268,
+    "acc": 0.6471,
+    "n": 80000
+  }
+}

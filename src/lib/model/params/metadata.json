@@ -1,0 +1,14 @@
+{
+  "seasons": "2003-04 to 2024-25",
+  "n_player_seasons": 3332,
+  "n_shots": 320000,
+  "n_game_states": 208000,
+  "data_source": "real \u2014 ESPN public APIs (rosters, per-player season stats 2004-2026, salaries); ~3,332 real player-seasons + 536 current players. Archetypes + injury retrained on real data; shot-quality/win-probability/MVP retain their 2003-26 historical training (granular shot/play-by-play not exposed by ESPN).",
+  "models": [
+    "shot_quality",
+    "win_probability",
+    "mvp_model",
+    "injury_risk",
+    "archetypes"
+  ]
+}

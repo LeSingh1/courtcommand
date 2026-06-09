@@ -1,0 +1,11 @@
+# CourtCommand ML training pipeline — pinned dependencies
+# Install:  pip install -r model/requirements.txt
+# (or use the bundled venv: python3 -m venv model/.venv && model/.venv/bin/pip install -r model/requirements.txt)
+numpy==2.4.6
+pandas==3.0.3
+scikit-learn==1.9.0
+joblib==1.5.3
+# transitive (pinned for reproducibility)
+scipy==1.17.1
+threadpoolctl==3.6.0
+python-dateutil==2.9.0.post0
