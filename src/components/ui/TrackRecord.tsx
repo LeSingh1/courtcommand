@@ -4,9 +4,9 @@ import { useMemo, useState } from "react";
 import { Check, X } from "lucide-react";
 import {
   trackRecord,
-  isAwardSeason,
   type AwardSeason,
   type ProjSeason,
+  type SeriesSeason,
 } from "@/lib/model/backtests";
 
 /**
@@ -15,6 +15,18 @@ import {
  * the model learning. Self-contained: pass the tool slug. CSS-driven (reliable,
  * always visible, reduced-motion safe).
  */
+function fmtAccuracy(tr: NonNullable<ReturnType<typeof trackRecord>>): string {
+  const a = tr.accuracy;
+  if (a == null) return "";
+  if (tr.kind === "projection") return `±${a}`;
+  if (tr.kind === "series") {
+    if (tr.unit === "corr") return (a / 100).toFixed(2);
+    if (tr.unit === "games") return a.toFixed(1);
+    return `${a}%`;
+  }
+  return `${a}%`;
+}
+
 export function TrackRecord({ slug, accent = "#E0561F" }: { slug: string; accent?: string }) {
   const tr = trackRecord(slug);
   if (!tr) return null;
@@ -36,7 +48,7 @@ export function TrackRecord({ slug, accent = "#E0561F" }: { slug: string; accent
         {tr.accuracy != null && (
           <div className="text-right">
             <div className="scoreboard text-2xl" style={{ color: accent }}>
-              {tr.kind === "projection" ? tr.accuracy : `${tr.accuracy}${tr.kind === "metric" && tr.accuracy < 12 ? "" : "%"}`}
+              {fmtAccuracy(tr)}
             </div>
             <div className="kicker">{tr.metric}</div>
           </div>
@@ -52,6 +64,15 @@ export function TrackRecord({ slug, accent = "#E0561F" }: { slug: string; accent
         )}
         {tr.kind === "projection" && tr.seasons && (
           <ProjectionView seasons={tr.seasons as ProjSeason[]} accent={accent} />
+        )}
+        {tr.kind === "series" && tr.seasons && (
+          <SeriesView
+            seasons={tr.seasons as SeriesSeason[]}
+            accent={accent}
+            label={tr.seriesLabel ?? "Model validation by season"}
+            betterHigh={tr.betterHigh ?? true}
+            unit={tr.unit ?? "corr"}
+          />
         )}
         {tr.kind === "calibration" && tr.calibration && (
           <CalibrationView buckets={tr.calibration} accent={accent} />
@@ -190,6 +211,35 @@ function ProjectionView({ seasons, accent }: { seasons: ProjSeason[]; accent: st
       </div>
       <div className="stat-num mt-1 flex justify-between text-[10px] text-[var(--text-faint)]">
         <span>{seasons[0]?.season}</span>
+        <span>{seasons.at(-1)?.season}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Series: predicted vs actual, season by season ---------------- */
+function SeriesView({ seasons, accent, label, betterHigh, unit }: { seasons: SeriesSeason[]; accent: string; label: string; betterHigh: boolean; unit: string }) {
+  const max = Math.max(...seasons.map((s) => Math.abs(s.value)), 0.001);
+  const fmtVal = (v: number) => (unit === "corr" ? v.toFixed(2) : unit === "games" ? `${v.toFixed(1)}g` : `${Math.round(v)}%`);
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="kicker">{label}</span>
+        <span className="stat-num text-[11px] text-[var(--text-faint)]">{betterHigh ? "higher is better" : "lower is better"}</span>
+      </div>
+      <div className="flex h-24 items-end gap-1">
+        {seasons.map((s) => (
+          <div key={s.year} className="group relative flex-1" title={`${s.season}: ${fmtVal(s.value)} (n=${s.n})`}>
+            <div
+              className="grow-x w-full"
+              style={{ height: `${Math.max(4, (Math.abs(s.value) / max) * 100)}%`, background: accent, opacity: 0.6, transformOrigin: "bottom" }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="stat-num mt-1 flex justify-between text-[10px] text-[var(--text-faint)]">
+        <span>{seasons[0]?.season}</span>
+        <span>real predicted-vs-actual, each season</span>
         <span>{seasons.at(-1)?.season}</span>
       </div>
     </div>

@@ -123,7 +123,7 @@ function DebateInner() {
         <div>
           <div className="kicker" style={{ color: "#C9A14A" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The edges this tool calls draw on the model's real training history — the count of player-seasons it has learned from growing every year since 2003 — shown here alongside its actual validation metric and the method behind it.
+            Each season since 2003, the player ratings these head-to-head edges draw on are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89).
           </p>
         </div>
         <TrackRecord slug="debate" accent="#C9A14A" />

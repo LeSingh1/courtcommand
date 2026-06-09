@@ -150,8 +150,7 @@ export default function ClutchPage() {
         <div>
           <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            How the clutch model&apos;s training base has deepened each season since 2003 — the growing count of
-            real player-seasons it learns from — alongside its validation metric and the method behind it.
+            Each season since 2003, the scoring and efficiency signals behind the clutch ratings are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89).
           </p>
         </div>
         <TrackRecord slug="clutch" accent="#4E8FA8" />

@@ -345,12 +345,22 @@ export function awardRace(kind: AwardKind): AwardRow[] {
   }).filter((x) => x.raw > -100);
   scored.sort((a, b) => b.raw - a.raw);
   const top = scored.slice(0, 8);
-  const sum = top.reduce((s, x) => s + Math.max(0, x.raw), 0) || 1;
-  return top.map((x) => ({
-    player: x.player,
-    share: Math.round((Math.max(0, x.raw) / sum) * 100),
-    odds: Math.round((Math.max(0, x.raw) / sum) * 100),
-  }));
+  // Real award voting concentrates on the frontrunner — it is not a linear
+  // split of a raw score. Convert raw scores to z-scores within the candidate
+  // field, then softmax: a clear favorite pulls away, a genuine toss-up stays
+  // tight. Temperature T controls how sharply the leader separates.
+  const raws = top.map((x) => x.raw);
+  const mean = raws.reduce((a, b) => a + b, 0) / raws.length;
+  const std = Math.sqrt(raws.reduce((a, b) => a + (b - mean) ** 2, 0) / raws.length) || 1;
+  const T = 0.8;
+  const exps = top.map((x) => Math.exp((x.raw - mean) / std / T));
+  const z = exps.reduce((a, b) => a + b, 0) || 1;
+  const shares = exps.map((e) => (e / z) * 100);
+  // round to whole percents but keep the total at 100
+  const rounded = shares.map((s) => Math.round(s));
+  const drift = 100 - rounded.reduce((a, b) => a + b, 0);
+  if (rounded.length) rounded[0] += drift;
+  return top.map((x, i) => ({ player: x.player, share: rounded[i], odds: rounded[i] }));
 }
 
 // ---------------- Scouting Report ----------------

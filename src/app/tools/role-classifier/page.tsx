@@ -167,7 +167,7 @@ export default function RoleClassifierPage() {
         <div>
           <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            This traces the real player-seasons the role classifier has learned from, growing year by year from 2003 to today, alongside the validation metric and method used to check how cleanly it sorts players into archetypes.
+            Each season since 2003, the bars show how often a player's assigned on-court archetype actually held the following year — stable about 70% of the time, the consistency the classifier is graded on.
           </p>
         </div>
         <TrackRecord slug="role-classifier" accent="#4E8FA8" />

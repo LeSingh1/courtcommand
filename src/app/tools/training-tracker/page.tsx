@@ -247,7 +247,7 @@ export default function TrainingTrackerPage() {
         <div>
           <div className="kicker" style={{ color: "#B0688E" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            How the workload model&apos;s training data has deepened year by year — the count of real player-seasons it draws on, growing from 2003 to today — alongside its measured validation accuracy and the method behind it.
+            Each season since 2003, the bars show how close the workload-to-availability model came to the games players actually logged the next year — within about 14 games on average.
           </p>
         </div>
         <TrackRecord slug="training-tracker" accent="#B0688E" />

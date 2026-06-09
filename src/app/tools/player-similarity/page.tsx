@@ -184,7 +184,7 @@ function SimilarityInner() {
       <div className="mt-8 space-y-3">
         <div>
           <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">The chart below traces the real player-seasons feeding the similarity model — growing each year since 2003 as its training pool deepens — alongside the validation metric and method we use to measure comparison quality.</p>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the multi-stat profile the model matches comps on is checked against what those players actually produced the next year — the bars show that season-by-season correlation (about r=0.89), the signal the similarity engine rides on.</p>
         </div>
         <TrackRecord slug="player-similarity" accent="#4E8FA8" />
       </div>

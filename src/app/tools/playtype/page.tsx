@@ -237,7 +237,7 @@ export default function PlayTypePage() {
         <div>
           <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The panel below traces how much real play-type data the model has learned from — the count of labeled player-seasons growing each year since 2003 — alongside its measured validation accuracy and the method behind it.
+            The model's possession classifier is checked against ESPN's own play-type labels on real plays — it agrees about 90% of the time — shown alongside the training data that has grown every season since 2003.
           </p>
         </div>
         <TrackRecord slug="playtype" accent="#5FA97E" />

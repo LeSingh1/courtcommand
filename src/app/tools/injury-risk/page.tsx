@@ -124,8 +124,7 @@ export default function InjuryRiskPage() {
         <div>
           <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            How the model's training base has grown — the count of real player-seasons deepening
-            each year since 2003 — alongside its validation metric and the method used to measure it.
+            Each season since 2003, the bars show how close the workload model's projected availability came to the games players actually logged the following year — within about 14 games on average.
           </p>
         </div>
         <TrackRecord slug="injury-risk" accent="#E0561F" />

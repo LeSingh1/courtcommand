@@ -299,9 +299,7 @@ export default function LineupOptimizerPage() {
         <div>
           <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The count of real player-seasons behind the lineup model has grown every year since 2003,
-            and the panel reports how much data now feeds its spacing and fit scoring alongside the
-            validation metric and method used to check it.
+            Each season since 2003, the player-impact ratings behind the lineup scoring are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89).
           </p>
         </div>
         <TrackRecord slug="lineup-optimizer" accent="#5FA97E" />

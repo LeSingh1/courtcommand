@@ -211,8 +211,7 @@ export default function UnderratedPage() {
         <div>
           <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            How the underrated-value model was trained: the count of real player-seasons it learned
-            from, deepening every year since 2003, alongside its validation metric and method.
+            Each season since 2003, the bars show what share of the players the model flagged as the best value (high production, low pay) actually held or improved their production the next year — about 78% across the span.
           </p>
         </div>
         <TrackRecord slug="underrated" accent="#4E8FA8" />

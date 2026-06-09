@@ -221,9 +221,7 @@ export default function ContractValuePage() {
         <div>
           <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            This panel traces the model&apos;s real training history, showing the count of player-seasons it
-            learned from growing each year since 2003, alongside the validation metric and method used to
-            check its surplus-value estimates.
+            Each season since 2003, the production rating a contract is judged against is tested against what the player actually produced the following year — the bars show that year-over-year persistence (about r=0.89), the signal surplus value is built on.
           </p>
         </div>
         <TrackRecord slug="contract-value" accent="#4E8FA8" />

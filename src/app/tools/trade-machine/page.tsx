@@ -202,7 +202,7 @@ export default function TradeMachinePage() {
       <div className="mt-8 space-y-3">
         <div>
           <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">The data behind the deal-grading model: real player-seasons counted each year from 2003 to today, showing how its training set deepens over time, alongside the model's validation metric and the method used to measure it.</p>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the player-rating model these deals are graded on is tested against what players actually produced the next year — the bars show that year-over-year correlation (about r=0.89).</p>
         </div>
         <TrackRecord slug="trade-machine" accent="#5FA97E" />
       </div>

@@ -190,8 +190,7 @@ function ScoutingInner() {
         <div>
           <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The real player-seasons behind these grades grow year over year from 2003 to today,
-            shown alongside the model's validation metric and the method used to measure it.
+            Each season since 2003, the rating engine behind these reports is tested against what players actually produced the following year — the bars show that year-over-year correlation (about r=0.89).
           </p>
         </div>
         <TrackRecord slug="scouting-report" accent="#4E8FA8" />

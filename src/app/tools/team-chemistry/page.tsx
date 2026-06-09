@@ -217,9 +217,7 @@ export default function TeamChemistryPage() {
         <div>
           <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            This traces the chemistry model's training history — the count of real
-            player-seasons it learned from growing each year since 2003 — alongside its
-            validation metric and how that score was measured.
+            Each season since 2003, the player ratings behind the fit scoring are tested against what those players actually produced the following year — the bars show that year-over-year correlation (about r=0.89).
           </p>
         </div>
         <TrackRecord slug="team-chemistry" accent="#5FA97E" />

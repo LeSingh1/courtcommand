@@ -231,11 +231,7 @@ export default function PickAndRollPage() {
       <div className="mt-8 space-y-3">
         <div>
           <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            How the model behind these pick-and-roll grades was trained — the count of real
-            player-seasons it learned from growing each year since 2003, alongside its validation
-            metric and method.
-          </p>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the playmaking and finishing ratings behind these grades are tested against what those players produced the following year — the bars show that year-over-year correlation (about r=0.89).</p>
         </div>
         <TrackRecord slug="pick-and-roll" accent="#5FA97E" />
       </div>
