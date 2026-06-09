@@ -259,3 +259,39 @@ export function detectHighlights(durationMin = 12): HighlightClip[] {
   }
   return clips.sort((a, b) => b.confidence - a.confidence);
 }
+
+// ---------------- Grade a REAL shot ----------------
+import type { RealShot } from "@/lib/data/shots";
+
+export interface RealShotGrade {
+  result: ShotQualityResult;
+  context: ShotInput;
+  verdict: string;
+}
+
+// Grade an actual NBA shot with the trained model. Tracking features that
+// aren't in public play-by-play (defender distance, shot clock, touch time)
+// are estimated from the shot type and whether it was assisted — clearly an
+// estimate; everything else (type, location, outcome) is real.
+export function gradeRealShot(shot: RealShot): RealShotGrade {
+  const shotType = shot.shotType as ShotType;
+  const catchAndShoot = shot.assisted || shotType === "catch3";
+  const context: ShotInput = {
+    shotType,
+    defenderDist: catchAndShoot ? 5 : shotType === "rim" ? 2.5 : 3.5,
+    shotClock: 12,
+    touchTime: catchAndShoot ? 1 : 3,
+    dribbles: catchAndShoot ? 0 : 3,
+    isCatchAndShoot: catchAndShoot,
+    period: shot.period,
+  };
+  const result = shotQuality(context);
+  const q = result.qSQ;
+  let verdict: string;
+  if (shot.made && q >= 60) verdict = "Process and result agree — a quality look, and it dropped.";
+  else if (shot.made && q < 45) verdict = "Tough shot the model rated low — pure shot-making to bury it.";
+  else if (!shot.made && q >= 60) verdict = "A good look that rimmed out — process over result.";
+  else if (!shot.made) verdict = "Low-value look by the model — and it missed.";
+  else verdict = "An average-quality attempt that went down.";
+  return { result, context, verdict };
+}
