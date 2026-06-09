@@ -9,6 +9,7 @@ import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { Diverging } from "@/components/ui/Meter";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { debate } from "@/lib/engine/content";
@@ -117,6 +118,16 @@ function DebateInner() {
         </motion.div>
       )}
       </AnimatePresence>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#C9A14A" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            The edges this tool calls draw on the model's real training history — the count of player-seasons it has learned from growing every year since 2003 — shown here alongside its actual validation metric and the method behind it.
+          </p>
+        </div>
+        <TrackRecord slug="debate" accent="#C9A14A" />
+      </div>
     </ToolShell>
   );
 }

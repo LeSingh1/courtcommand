@@ -8,6 +8,7 @@ import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { underratedBoard } from "@/lib/engine/players";
 
@@ -205,6 +206,17 @@ export default function UnderratedPage() {
         </div>
         )}
       </Panel>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            How the underrated-value model was trained: the count of real player-seasons it learned
+            from, deepening every year since 2003, alongside its validation metric and method.
+          </p>
+        </div>
+        <TrackRecord slug="underrated" accent="#4E8FA8" />
+      </div>
     </ToolShell>
   );
 }

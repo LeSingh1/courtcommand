@@ -10,6 +10,7 @@ import { Meter } from "@/components/ui/Meter";
 import { Gauge } from "@/components/ui/Gauge";
 import { Badge } from "@/components/ui/Controls";
 import { Reveal } from "@/components/ui/Reveal";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { TEAMS, TEAM_MAP, playersByTeam } from "@/lib/data";
 import { teamChemistry, type ChemistryResult } from "@/lib/engine/teams";
@@ -211,6 +212,18 @@ export default function TeamChemistryPage() {
       )}
       </AnimatePresence>
       )}
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            This traces the chemistry model's training history — the count of real
+            player-seasons it learned from growing each year since 2003 — alongside its
+            validation metric and how that score was measured.
+          </p>
+        </div>
+        <TrackRecord slug="team-chemistry" accent="#5FA97E" />
+      </div>
     </ToolShell>
   );
 }

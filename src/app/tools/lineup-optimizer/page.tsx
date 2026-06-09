@@ -10,6 +10,7 @@ import { Gauge } from "@/components/ui/Gauge";
 import { Reveal } from "@/components/ui/Reveal";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { PLAYERS, TEAMS, playersByTeam } from "@/lib/data";
 import { bestLineup, scoreLineup, type LineupScore } from "@/lib/engine/teams";
@@ -292,6 +293,18 @@ export default function LineupOptimizerPage() {
           )}
           </AnimatePresence>
         </div>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            The count of real player-seasons behind the lineup model has grown every year since 2003,
+            and the panel reports how much data now feeds its spacing and fit scoring alongside the
+            validation metric and method used to check it.
+          </p>
+        </div>
+        <TrackRecord slug="lineup-optimizer" accent="#5FA97E" />
       </div>
     </ToolShell>
   );

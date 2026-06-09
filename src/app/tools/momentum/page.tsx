@@ -9,6 +9,7 @@ import { Segmented } from "@/components/ui/Controls";
 import { LineChart } from "@/components/ui/LineChart";
 import { Reveal } from "@/components/ui/Reveal";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { momentumGame, type MomentumEvent } from "@/lib/engine/teams";
 
@@ -208,6 +209,18 @@ export default function MomentumPage() {
         </motion.div>
       )}
       </AnimatePresence>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            How the momentum model's training base has grown — the real count of player-seasons it
+            learns from, deepening each year from 2003 to today — alongside its validation metric and
+            the method used to measure it.
+          </p>
+        </div>
+        <TrackRecord slug="momentum" accent="#5FA97E" />
+      </div>
     </ToolShell>
   );
 }

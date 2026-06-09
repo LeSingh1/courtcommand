@@ -8,6 +8,7 @@ import { ToolShell, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { PLAYERS, TEAMS, playersByTeam } from "@/lib/data";
 import { evaluateTrade, type TradeResult } from "@/lib/engine/teams";
@@ -196,6 +197,14 @@ export default function TradeMachinePage() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">The data behind the deal-grading model: real player-seasons counted each year from 2003 to today, showing how its training set deepens over time, alongside the model's validation metric and the method used to measure it.</p>
+        </div>
+        <TrackRecord slug="trade-machine" accent="#5FA97E" />
       </div>
     </ToolShell>
   );

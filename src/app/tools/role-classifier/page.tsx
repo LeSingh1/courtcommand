@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Boxes, X } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { roleClusters } from "@/lib/engine/players";
 import { spring, staggerParent, staggerItem } from "@/lib/motion";
@@ -161,6 +162,16 @@ export default function RoleClassifierPage() {
         </motion.div>
       )}
       </AnimatePresence>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            This traces the real player-seasons the role classifier has learned from, growing year by year from 2003 to today, alongside the validation metric and method used to check how cleanly it sorts players into archetypes.
+          </p>
+        </div>
+        <TrackRecord slug="role-classifier" accent="#4E8FA8" />
+      </div>
     </ToolShell>
   );
 }

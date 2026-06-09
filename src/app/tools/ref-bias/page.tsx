@@ -9,6 +9,7 @@ import { Segmented } from "@/components/ui/Controls";
 import { Meter, Diverging } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { refBiasBoard } from "@/lib/engine/game";
 import { TEAM_MAP } from "@/lib/data";
@@ -239,6 +240,17 @@ export default function RefBiasPage() {
           </table>
         </div>
       </Panel>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#B0688E" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            The panel shows the real officiating-log history behind this model — the count of player-seasons it
+            has trained on growing each year since 2003 — alongside its validation metric and how that score was measured.
+          </p>
+        </div>
+        <TrackRecord slug="ref-bias" accent="#B0688E" />
       </div>
     </ToolShell>
   );

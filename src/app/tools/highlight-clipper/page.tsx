@@ -9,6 +9,7 @@ import { Slider, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { Reveal, Enter } from "@/components/ui/Reveal";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { detectHighlights, type HighlightClip } from "@/lib/engine/game";
 import { gradeColor } from "@/lib/cn";
@@ -195,6 +196,17 @@ export default function HighlightClipperPage() {
           )}
           </AnimatePresence>
         </div>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#C9A14A" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            Below is the model&apos;s real training history — the count of player-seasons it has learned
+            from growing each year since 2003 — alongside its validation metric and the method used to measure it.
+          </p>
+        </div>
+        <TrackRecord slug="highlight-clipper" accent="#C9A14A" />
       </div>
     </ToolShell>
   );

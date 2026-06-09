@@ -8,6 +8,7 @@ import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { LineChart } from "@/components/ui/LineChart";
 import { Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { spring, staggerParent, staggerItem } from "@/lib/motion";
 import { getTool } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
@@ -108,6 +109,16 @@ export default function NewsSentimentPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#C9A14A" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            This traces the real data the sentiment model was trained on — the count of player-seasons growing each year since 2003 as coverage history deepened — alongside its validation metric and the method behind it.
+          </p>
+        </div>
+        <TrackRecord slug="news-sentiment" accent="#C9A14A" />
+      </div>
     </ToolShell>
   );
 }

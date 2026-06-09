@@ -9,6 +9,7 @@ import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { Gauge } from "@/components/ui/Gauge";
 import { Slider, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { injuryRisk } from "@/lib/engine/players";
 import { gradeColor, ACCENT_HEX } from "@/lib/cn";
@@ -117,6 +118,17 @@ export default function InjuryRiskPage() {
           )}
           </AnimatePresence>
         </div>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            How the model's training base has grown — the count of real player-seasons deepening
+            each year since 2003 — alongside its validation metric and the method used to measure it.
+          </p>
+        </div>
+        <TrackRecord slug="injury-risk" accent="#E0561F" />
       </div>
     </ToolShell>
   );

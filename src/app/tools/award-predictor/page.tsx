@@ -9,6 +9,7 @@ import { Segmented, Badge } from "@/components/ui/Controls";
 import { BarChart } from "@/components/ui/BarChart";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { awardRace, type AwardKind } from "@/lib/engine/players";
 
@@ -141,6 +142,18 @@ export default function AwardPredictorPage() {
           </Insight>
         </div>
       )}
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            Pick a season since 2003 to compare the model&apos;s projected MVP vote share against
+            the documented balloting, with a per-season table of its projected MVP versus the actual
+            winner — it has called 17 of 23 since 2003, retrained on each year&apos;s added data.
+          </p>
+        </div>
+        <TrackRecord slug="award-predictor" accent="#E0561F" />
+      </div>
     </ToolShell>
   );
 }

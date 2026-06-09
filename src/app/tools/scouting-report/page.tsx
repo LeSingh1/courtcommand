@@ -10,6 +10,7 @@ import { RadarChart } from "@/components/ui/RadarChart";
 import { Badge } from "@/components/ui/Controls";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { scoutingReport, type ScoutReport } from "@/lib/engine/players";
@@ -184,6 +185,17 @@ function ScoutingInner() {
         </motion.div>
         </AnimatePresence>
       )}
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            The real player-seasons behind these grades grow year over year from 2003 to today,
+            shown alongside the model's validation metric and the method used to measure it.
+          </p>
+        </div>
+        <TrackRecord slug="scouting-report" accent="#4E8FA8" />
+      </div>
     </ToolShell>
   );
 }

@@ -9,6 +9,7 @@ import { BarChart } from "@/components/ui/BarChart";
 import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { spring } from "@/lib/motion";
 
@@ -240,6 +241,16 @@ export default function TrainingTrackerPage() {
             )}
           </Panel>
         </div>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#B0688E" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            How the workload model&apos;s training data has deepened year by year — the count of real player-seasons it draws on, growing from 2003 to today — alongside its measured validation accuracy and the method behind it.
+          </p>
+        </div>
+        <TrackRecord slug="training-tracker" accent="#B0688E" />
       </div>
     </ToolShell>
   );

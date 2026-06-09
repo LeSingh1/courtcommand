@@ -9,6 +9,7 @@ import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { CourtChart } from "@/components/ui/CourtChart";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { Reveal } from "@/components/ui/Reveal";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { shotChart } from "@/lib/engine/game";
@@ -210,6 +211,18 @@ function ShotChartInner() {
           </Insight>
         </div>
       )}
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#C9A14A" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            A calibration check on the make-probability model: predicted make% lined up against
+            what 3,062 real shots actually converted, broken out by shot type and zone, drawn from
+            training data that has grown every season since 2003.
+          </p>
+        </div>
+        <TrackRecord slug="shot-chart" accent="#C9A14A" />
+      </div>
     </ToolShell>
   );
 }

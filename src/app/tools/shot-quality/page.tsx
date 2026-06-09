@@ -9,6 +9,7 @@ import { Gauge } from "@/components/ui/Gauge";
 import { Segmented, Slider, Field } from "@/components/ui/Controls";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
 import { CourtChart } from "@/components/ui/CourtChart";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { shotQuality, type ShotType, type ShotQualityResult } from "@/lib/engine/game";
 import { gradeColor } from "@/lib/cn";
@@ -235,6 +236,18 @@ export default function ShotQualityPage() {
           </div>
         </div>
       )}
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            A calibration view: the model&apos;s predicted make% against what 3,062 real NBA shots
+            actually converted, broken out by shot type and zone, drawn from training data that has
+            grown every season since 2003.
+          </p>
+        </div>
+        <TrackRecord slug="shot-quality" accent="#E0561F" />
+      </div>
     </ToolShell>
   );
 }

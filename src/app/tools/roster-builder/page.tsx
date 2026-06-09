@@ -10,6 +10,7 @@ import { Gauge } from "@/components/ui/Gauge";
 import { Badge } from "@/components/ui/Controls";
 import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { PLAYERS, SALARY_CAP } from "@/lib/data";
 import { scoreLineup, type LineupScore } from "@/lib/engine/teams";
@@ -245,6 +246,16 @@ export default function RosterBuilderPage() {
             </Reveal>
           )}
         </div>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            The panel traces how the lineup-scoring model's training data has deepened year over year — the count of real player-seasons it learned from growing from 2003 to today — alongside its real validation metric and the method behind it.
+          </p>
+        </div>
+        <TrackRecord slug="roster-builder" accent="#5FA97E" />
       </div>
     </ToolShell>
   );

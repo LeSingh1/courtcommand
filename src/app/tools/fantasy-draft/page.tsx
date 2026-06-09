@@ -9,6 +9,7 @@ import { Segmented } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { fantasyBoard, type PuntCategory } from "@/lib/engine/content";
 import { gradeColor } from "@/lib/cn";
@@ -182,6 +183,18 @@ export default function FantasyDraftPage() {
       </Panel>
       </motion.div>
       </AnimatePresence>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            Each bar shows how far the model's next-season scoring projection missed players' actual
+            PPG the following year — averaging about ±2.4 PPG — validated against the real training
+            data that has grown every season since 2003.
+          </p>
+        </div>
+        <TrackRecord slug="fantasy-draft" accent="#E0561F" />
+      </div>
     </ToolShell>
   );
 }

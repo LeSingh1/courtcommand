@@ -6,6 +6,7 @@ import { Brain, Check, X, RotateCcw, ArrowRight } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Gauge } from "@/components/ui/Gauge";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { QUIZ } from "@/lib/engine/content";
 import { gradeColor } from "@/lib/cn";
@@ -210,6 +211,16 @@ export default function IqQuizPage() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#B0688E" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            The panel traces the basketball-IQ model's real training history — the count of actual player-seasons it has learned from growing each year since 2003 — alongside the validation metric and method used to check it.
+          </p>
+        </div>
+        <TrackRecord slug="iq-quiz" accent="#B0688E" />
       </div>
     </ToolShell>
   );

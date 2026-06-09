@@ -9,6 +9,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { TEAMS, TEAM_MAP, playersByTeam } from "@/lib/data";
 import { gameRecap, type BoxLine } from "@/lib/engine/game";
@@ -198,6 +199,17 @@ export default function GameRecapPage() {
             </Insight>
           )}
         </div>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#C9A14A" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            The recap writer is built on real player-season data that deepens each year from 2003 to today — the panel
+            below shows that growing season count along with the model's validation metric and how it was measured.
+          </p>
+        </div>
+        <TrackRecord slug="game-recap" accent="#C9A14A" />
       </div>
     </ToolShell>
   );

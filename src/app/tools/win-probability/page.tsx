@@ -8,6 +8,7 @@ import { Slider, Segmented, Field } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { LineChart } from "@/components/ui/LineChart";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { winProbability, winProbCurve } from "@/lib/engine/game";
 
@@ -184,6 +185,18 @@ export default function WinProbabilityPage() {
               : "Time and margin still leave room for swings."}
           </Insight>
         </div>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            This traces the win-probability model's training history — the count of real
+            player-seasons it has learned from growing each year since 2003 — alongside the
+            validation metric and method used to check the curve.
+          </p>
+        </div>
+        <TrackRecord slug="win-probability" accent="#E0561F" />
       </div>
     </ToolShell>
   );

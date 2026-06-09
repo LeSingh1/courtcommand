@@ -8,6 +8,7 @@ import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Badge, Segmented } from "@/components/ui/Controls";
 import { Reveal } from "@/components/ui/Reveal";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import {
   simulateBracket,
@@ -308,6 +309,18 @@ export default function MarchMadnessPage() {
         </motion.div>
       )}
       </AnimatePresence>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            The actual NCAA champion for every season since 2003 — from Syracuse in 2003 through
+            the most recent title run — forming the historical ground truth the bracket simulation
+            is trained on and validated against.
+          </p>
+        </div>
+        <TrackRecord slug="march-madness" accent="#E0561F" />
+      </div>
     </ToolShell>
   );
 }

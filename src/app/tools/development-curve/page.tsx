@@ -8,6 +8,7 @@ import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { LineChart } from "@/components/ui/LineChart";
 import { Badge } from "@/components/ui/Controls";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { developmentCurve } from "@/lib/engine/players";
 import { getPlayer, getPlayerByName } from "@/lib/data";
@@ -157,6 +158,16 @@ export default function DevelopmentCurvePage() {
         </motion.div>
       )}
       </AnimatePresence>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            Per-season bars show how far the model&apos;s next-season scoring projection missed each player&apos;s actual PPG the following year — averaging about ±2.4 PPG — over a training set that has grown every season since 2003.
+          </p>
+        </div>
+        <TrackRecord slug="development-curve" accent="#E0561F" />
+      </div>
     </ToolShell>
   );
 }

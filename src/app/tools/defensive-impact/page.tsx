@@ -6,6 +6,7 @@ import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { defenseBoard } from "@/lib/engine/players";
 import { gradeColor } from "@/lib/cn";
@@ -194,6 +195,18 @@ export default function DefensiveImpactPage() {
         </Insight>
       </div>
       )}
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            How the defensive model deepened over time — the count of real player-seasons it trained
+            on growing each year from 2003 to today, alongside the validation metric and method used
+            to test it.
+          </p>
+        </div>
+        <TrackRecord slug="defensive-impact" accent="#4E8FA8" />
+      </div>
     </ToolShell>
   );
 }

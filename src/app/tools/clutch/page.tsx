@@ -9,6 +9,7 @@ import { Segmented } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { clutchBoard } from "@/lib/engine/players";
 import { gradeColor } from "@/lib/cn";
@@ -143,6 +144,17 @@ export default function ClutchPage() {
           </table>
         </div>
       </Panel>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            How the clutch model&apos;s training base has deepened each season since 2003 — the growing count of
+            real player-seasons it learns from — alongside its validation metric and the method behind it.
+          </p>
+        </div>
+        <TrackRecord slug="clutch" accent="#4E8FA8" />
       </div>
     </ToolShell>
   );

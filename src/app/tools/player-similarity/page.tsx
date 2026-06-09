@@ -10,6 +10,7 @@ import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { RadarChart } from "@/components/ui/RadarChart";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { getPlayer } from "@/lib/data";
 import { similarPlayers, radarValues, RADAR_AXES, type SimResult } from "@/lib/engine/players";
@@ -179,6 +180,14 @@ function SimilarityInner() {
         </motion.div>
       )}
       </AnimatePresence>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">The chart below traces the real player-seasons feeding the similarity model — growing each year since 2003 as its training pool deepens — alongside the validation metric and method we use to measure comparison quality.</p>
+        </div>
+        <TrackRecord slug="player-similarity" accent="#4E8FA8" />
+      </div>
     </ToolShell>
   );
 }

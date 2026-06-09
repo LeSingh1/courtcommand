@@ -9,6 +9,7 @@ import { Meter } from "@/components/ui/Meter";
 import { Badge } from "@/components/ui/Controls";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Reveal } from "@/components/ui/Reveal";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { pickAndRoll, type PnRResult } from "@/lib/engine/teams";
@@ -226,6 +227,18 @@ export default function PickAndRollPage() {
         </motion.div>
       )}
       </AnimatePresence>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            How the model behind these pick-and-roll grades was trained — the count of real
+            player-seasons it learned from growing each year since 2003, alongside its validation
+            metric and method.
+          </p>
+        </div>
+        <TrackRecord slug="pick-and-roll" accent="#5FA97E" />
+      </div>
     </ToolShell>
   );
 }

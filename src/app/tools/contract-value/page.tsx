@@ -9,6 +9,7 @@ import { Segmented, Badge } from "@/components/ui/Controls";
 import { Diverging } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { contractBoard, type ContractRow } from "@/lib/engine/players";
 
@@ -214,6 +215,18 @@ export default function ContractValuePage() {
           <b>{bestBargain.player.name}</b> to <b>{worstOverpay.player.name}</b> spans{" "}
           <b>${(bestBargain.surplus - worstOverpay.surplus).toFixed(1)}M</b> of surplus value.
         </Insight>
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <div>
+          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
+            This panel traces the model&apos;s real training history, showing the count of player-seasons it
+            learned from growing each year since 2003, alongside the validation metric and method used to
+            check its surplus-value estimates.
+          </p>
+        </div>
+        <TrackRecord slug="contract-value" accent="#4E8FA8" />
       </div>
     </ToolShell>
   );
