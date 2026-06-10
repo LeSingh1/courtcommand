@@ -260,47 +260,8 @@ export function playTypeMix(p: Player): PlayTypeMix[] {
     .sort((a, b) => b.freq - a.freq);
 }
 
-// ---------------- Momentum (synthetic play-by-play) ----------------
-export interface MomentumEvent {
-  minute: number;
-  margin: number;
-  event?: string;
-  type?: "run" | "timeout" | "sub";
-}
-
-export function momentumGame(seed = 7): { events: MomentumEvent[]; runs: { team: string; pts: number; at: number }[] } {
-  // deterministic pseudo-random walk with named swing events
-  const events: MomentumEvent[] = [];
-  const runs: { team: string; pts: number; at: number }[] = [];
-  let margin = 0;
-  let s = seed;
-  const rnd = () => {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
-  const labels = [
-    "10-0 home run",
-    "Timeout stops the bleeding",
-    "Star checks back in",
-    "Back-to-back triples",
-    "8-2 road answer",
-    "And-1 at the rim",
-  ];
-  for (let m = 0; m <= 48; m++) {
-    const swing = Math.round((rnd() - 0.45) * 6);
-    margin += swing;
-    const ev: MomentumEvent = { minute: m, margin };
-    if (Math.abs(swing) >= 4) {
-      ev.type = "run";
-      ev.event = labels[m % labels.length];
-      runs.push({ team: swing > 0 ? "HOME" : "AWAY", pts: Math.abs(swing) + 4, at: m });
-    } else if (m % 12 === 0 && m > 0) {
-      ev.type = "timeout";
-      ev.event = "Quarter break";
-    }
-    events.push(ev);
-  }
-  return { events, runs };
-}
+// Momentum now reconstructs real scoring runs from the playoff shot sequence
+// (lib/data/shots#gameMomentum); the old synthetic random-walk generator was
+// removed when that tool was reworked onto real data.
 
 export { SALARY_CAP, FIRST_APRON, SECOND_APRON, LUXURY_TAX };

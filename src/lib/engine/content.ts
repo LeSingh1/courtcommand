@@ -190,46 +190,9 @@ export function debate(idA: string, idB: string, lens: "offense" | "defense" | "
   return { a: { player: a, points: makeCase(a, b) }, b: { player: b, points: makeCase(b, a) }, verdict, edge: Math.round(edge) };
 }
 
-// ---------------- News Sentiment ----------------
-export interface SentimentPoint {
-  week: string;
-  score: number; // -100..100
-  volume: number;
-}
-export interface SentimentResult {
-  series: SentimentPoint[];
-  current: number;
-  trend: "rising" | "cooling" | "steady";
-  headlines: { text: string; tone: number }[];
-}
-export function newsSentiment(p: Player): SentimentResult {
-  let s = p.name.length * 7 + Math.round(p.ppg);
-  const rnd = () => ((s = (s * 9301 + 49297) % 233280), s / 233280);
-  const series: SentimentPoint[] = [];
-  let cur = (p.starPower - 50) * 0.8;
-  for (let w = 1; w <= 10; w++) {
-    cur = clamp(cur + (rnd() - 0.5) * 36, -90, 90);
-    series.push({ week: `W${w}`, score: Math.round(cur), volume: Math.round(30 + rnd() * 70) });
-  }
-  const current = series[series.length - 1].score;
-  const prev = series[series.length - 3].score;
-  const trend = current - prev > 8 ? "rising" : current - prev < -8 ? "cooling" : "steady";
-  const pos = [
-    `${p.name} is playing the best ball of the season`,
-    `Analysts praise ${p.name}'s two-way leap`,
-    `${p.name} carries ${p.team} to a statement win`,
-  ];
-  const neg = [
-    `Questions mount about ${p.name}'s shot selection`,
-    `${p.name}'s availability sparks load-management debate`,
-    `${p.team} offense stalls when ${p.name} sits`,
-  ];
-  const headlines = series.slice(-4).map((pt) => ({
-    text: pt.score >= 0 ? pos[pt.volume % pos.length] : neg[pt.volume % neg.length],
-    tone: pt.score,
-  }));
-  return { series, current, trend, headlines };
-}
+// News Sentiment lives in src/app/tools/news-sentiment — it now derives a real
+// per-game momentum signal from the playoff shot data (lib/data/shots#playerForm)
+// rather than a synthetic series, so no engine helper is needed here.
 
 // ---------------- RecruitRank ----------------
 export interface RecruitInput {

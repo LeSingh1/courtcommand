@@ -227,6 +227,88 @@ export function highlightReel(shots: RealShot[], n = 28): HighlightClip[] {
     .slice(0, n);
 }
 
+// ---- Real per-game form / narrative momentum from the playoff shots ----
+// Replaces fabricated "media sentiment" with a momentum signal built from a
+// player's actual game-by-game playoff production. Every number is counted
+// directly from the play-by-play; nothing here is randomly generated.
+export interface FormGame {
+  gameId: string;
+  game: string;
+  opp: string;
+  date: string;
+  pts: number;
+  fgm: number;
+  fga: number;
+  fg3m: number;
+  fg3a: number;
+  efg: number;
+  score: number; // -100..100 vs the player's own playoff baseline
+}
+export interface PlayerForm {
+  games: FormGame[];
+  current: number;
+  trend: "rising" | "cooling" | "steady";
+  avgPts: number;
+  peak: FormGame | null;
+  headlines: { text: string; tone: number }[];
+}
+
+export function playerForm(shots: RealShot[], espnId: number): PlayerForm | null {
+  const mine = shots.filter((s) => s.espnId === espnId);
+  if (mine.length < 6) return null;
+  const team = mine[0].team;
+  const byGame = new Map<string, FormGame>();
+  for (const s of mine) {
+    let g = byGame.get(s.gameId);
+    if (!g) {
+      const opp =
+        (s.game || "")
+          .split(/\s+vs\s+|\s+@\s+/)
+          .map((t) => t.trim())
+          .find((t) => t && t !== team) || "";
+      g = { gameId: s.gameId, game: s.game, opp, date: s.date, pts: 0, fgm: 0, fga: 0, fg3m: 0, fg3a: 0, efg: 0, score: 0 };
+      byGame.set(s.gameId, g);
+    }
+    g.fga++;
+    if (s.value === 3) g.fg3a++;
+    if (s.made) {
+      g.fgm++;
+      g.pts += s.value;
+      if (s.value === 3) g.fg3m++;
+    }
+  }
+  const games = [...byGame.values()].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  for (const g of games) g.efg = g.fga ? (g.fgm + 0.5 * g.fg3m) / g.fga : 0;
+  // Baseline = the player's own playoff mean/std of points (field-goal points).
+  const pts = games.map((g) => g.pts);
+  const mean = pts.reduce((a, b) => a + b, 0) / pts.length;
+  const std = Math.sqrt(pts.reduce((a, b) => a + (b - mean) ** 2, 0) / pts.length) || 1;
+  const meanEfg = games.reduce((a, g) => a + g.efg, 0) / games.length;
+  for (const g of games) {
+    const zPts = (g.pts - mean) / std;
+    g.score = Math.round(Math.max(-100, Math.min(100, zPts * 34 + (g.efg - meanEfg) * 110)));
+  }
+  const current = games.at(-1)?.score ?? 0;
+  const prior = games.length >= 3 ? ((games.at(-2)?.score ?? 0) + (games.at(-3)?.score ?? 0)) / 2 : games[0].score;
+  const trend = current - prior > 12 ? "rising" : current - prior < -12 ? "cooling" : "steady";
+  const peak = [...games].sort((a, b) => b.pts - a.pts)[0] ?? null;
+  const headlines = [...games]
+    .slice(-4)
+    .reverse()
+    .map((g) => ({
+      text: `vs ${g.opp || "opp"} — ${g.pts} pts on ${g.fgm}/${g.fga} FG${g.fg3a ? `, ${g.fg3m}/${g.fg3a} 3PT` : ""}`,
+      tone: g.score,
+    }));
+  return { games, current, trend, avgPts: Math.round(mean * 10) / 10, peak, headlines };
+}
+
+// Players who actually appear in the playoff shot set (for restricting pickers).
+export function shotPlayerIds(shots: RealShot[], minShots = 6): Set<number> {
+  const m = new Map<number, number>();
+  for (const s of shots) m.set(s.espnId, (m.get(s.espnId) ?? 0) + 1);
+  return new Set([...m.entries()].filter(([, c]) => c >= minShots).map(([id]) => id));
+}
+
 export function clutchLeaders(shots: RealShot[], minAtt = 6): ClutchLeader[] {
   const m = new Map<number, ClutchLeader>();
   for (const s of shots) {

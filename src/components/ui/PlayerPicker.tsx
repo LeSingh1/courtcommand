@@ -15,6 +15,7 @@ export function PlayerPicker({
   exclude = [],
   accent = "#E0561F",
   ariaLabel,
+  pool: poolProp,
 }: {
   value?: Player | null;
   onChange: (p: Player | null) => void;
@@ -22,6 +23,8 @@ export function PlayerPicker({
   exclude?: string[];
   accent?: string;
   ariaLabel?: string;
+  /** Optional candidate pool; defaults to the full player set. */
+  pool?: Player[];
 }) {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -30,12 +33,12 @@ export function PlayerPicker({
 
   const results = useMemo(() => {
     const s = q.trim().toLowerCase();
-    const pool = PLAYERS.filter((p) => !exclude.includes(p.id));
+    const pool = (poolProp ?? PLAYERS).filter((p) => !exclude.includes(p.id));
     if (!s) return pool.slice(0, 8);
     return pool
       .filter((p) => p.name.toLowerCase().includes(s) || p.team.toLowerCase().includes(s))
       .slice(0, 8);
-  }, [q, exclude]);
+  }, [q, exclude, poolProp]);
 
   if (value) {
     const team = TEAM_MAP[value.team];
