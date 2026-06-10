@@ -46,7 +46,7 @@ export default function ToolsPage() {
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto" role="group" aria-label="Filter by category">
           {["All", ...CATEGORIES].map((c) => {
             const active = cat === c;
-            const color = c === "All" ? "#C8F23F" : categoryColor(c);
+            const color = c === "All" ? "#E9A23B" : categoryColor(c);
             return (
               <button
                 key={c}
@@ -54,7 +54,7 @@ export default function ToolsPage() {
                 aria-pressed={active}
                 className={cn(
                   "cursor-pointer whitespace-nowrap rounded-full border px-3.5 py-2 text-sm transition",
-                  active ? "text-[#0e1402] font-medium" : "border-white/10 bg-white/[0.03] text-white/60 hover:text-white",
+                  active ? "text-[var(--accent-ink)] font-medium" : "border-white/10 bg-white/[0.03] text-white/60 hover:text-white",
                 )}
                 style={active ? { background: color, borderColor: color } : undefined}
               >

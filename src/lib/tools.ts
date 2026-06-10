@@ -315,17 +315,18 @@ export const CATEGORIES = [
   "Player Tools",
 ] as const;
 
-// Volt Court per-category accents — saturated but soft on the cool dark field.
+// Night Amber per-category accents — chroma-matched dusty tones that share one
+// temperature, so panels never fight each other for attention.
 export const CATEGORY_COLOR: Record<string, string> = {
-  Prediction: "#C8F23F", // volt
-  "Player Analysis": "#5ED4F0", // ice cyan
-  "Team & Strategy": "#5FD49A", // mint
-  "Content & Media": "#E8C463", // warm gold
-  "Player Tools": "#F07AA8", // signal pink
+  Prediction: "#E9A23B", // amber signal
+  "Player Analysis": "#9FB6C4", // dusty silver-blue
+  "Team & Strategy": "#A3B79A", // dusty sage
+  "Content & Media": "#CBB280", // dusty gold
+  "Player Tools": "#C98A78", // dusty rose
 };
 
 export function categoryColor(category: string): string {
-  return CATEGORY_COLOR[category] ?? "#C8F23F";
+  return CATEGORY_COLOR[category] ?? "#E9A23B";
 }
 
 export function getTool(slug: string): ToolMeta | undefined {

@@ -5,13 +5,13 @@ export function cn(...parts: Array<string | false | null | undefined>): string {
 export type Accent = "ember" | "cyan" | "gold" | "mint" | "rose";
 
 // One restrained accent across the whole product (no per-tool rainbow).
-const A = "#E0561F";
+const A = "#E9A23B";
 
 const ACCENT_ENTRY = {
   hex: A,
-  text: "text-[#E0561F]",
-  bg: "bg-[#E0561F]",
-  ring: "ring-[#E0561F]/30",
+  text: "text-[#E9A23B]",
+  bg: "bg-[#E9A23B]",
+  ring: "ring-[#E9A23B]/30",
   glow: "",
   grad: "",
 };
@@ -26,16 +26,16 @@ export const ACCENT: Record<Accent, typeof ACCENT_ENTRY> = {
 
 // Professional, restrained data palette for charts/series (not decorative).
 export const ACCENT_HEX = A;
-export const STEEL = "#7E8CA0";
-export const PALETTE = [A, "#7E8CA0", "#B7B7BD", "#C9A14A", "#5FA97E"];
+export const STEEL = "#8A8273";
+export const PALETTE = [A, "#8A8273", "#B7B7BD", "#CBB280", "#A3B79A"];
 
 // Muted, semantic grade scale (conveys meaning, not vibrance).
 export function gradeColor(score: number): string {
-  if (score >= 75) return "#5FA97E"; // strong
+  if (score >= 75) return "#A3B79A"; // strong
   if (score >= 60) return "#9FB07A"; // good
-  if (score >= 45) return "#C9A14A"; // average
+  if (score >= 45) return "#CBB280"; // average
   if (score >= 30) return "#C57A47"; // weak
-  return "#BF5B4E"; // poor
+  return "#C98A78"; // poor
 }
 
 export function letterGrade(score: number): string {

@@ -11,20 +11,20 @@ const config: Config = {
       colors: {
         // neutral surfaces aligned to the CSS variables
         ink: {
-          900: "#0a0d12",
-          800: "#10141b",
-          700: "#161c26",
-          600: "#1d2530",
-          500: "#26303e",
-          400: "#344052",
+          900: "#0e0d0b",
+          800: "#15130f",
+          700: "#1c1915",
+          600: "#242019",
+          500: "#2e2920",
+          400: "#3c352a",
         },
         // legacy accent keys collapsed to the restrained palette
-        ember: { DEFAULT: "#c8f23f", soft: "#d6f56b", deep: "#a8d420", glow: "#c8f23f" },
-        cyan: { DEFAULT: "#5ed4f0", soft: "#8de2f5", deep: "#3eb8d8" },
-        gold: { DEFAULT: "#e8c463", deep: "#cda83f" },
-        mint: "#5fd49a",
-        rose: "#f0697a",
-        accent: "#c8f23f",
+        ember: { DEFAULT: "#e9a23b", soft: "#f0b765", deep: "#c9831f", glow: "#e9a23b" },
+        cyan: { DEFAULT: "#9fb6c4", soft: "#b8cad5", deep: "#829aa9" },
+        gold: { DEFAULT: "#cbb280", deep: "#b09659" },
+        mint: "#a3b79a",
+        rose: "#c98a78",
+        accent: "#e9a23b",
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],

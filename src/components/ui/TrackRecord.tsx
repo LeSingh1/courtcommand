@@ -27,7 +27,7 @@ function fmtAccuracy(tr: NonNullable<ReturnType<typeof trackRecord>>): string {
   return `${a}%`;
 }
 
-export function TrackRecord({ slug, accent = "#C8F23F" }: { slug: string; accent?: string }) {
+export function TrackRecord({ slug, accent = "#E9A23B" }: { slug: string; accent?: string }) {
   const tr = trackRecord(slug);
   if (!tr) return null;
 
@@ -156,7 +156,7 @@ function AwardsView({ races, seasons, accent }: { races: { year: number; season:
               </div>
               <div className="space-y-1">
                 <Bar value={c.modelShare} color={accent} label="model" />
-                <Bar value={c.actualShare} color="#5FD49A" label="actual" />
+                <Bar value={c.actualShare} color="#A3B79A" label="actual" />
               </div>
             </div>
           ))}
@@ -179,9 +179,9 @@ function AwardsView({ races, seasons, accent }: { races: { year: number; season:
                   <td className="py-1.5 pr-2 text-[var(--text-muted)]">{s.actual}</td>
                   <td className="py-1.5 text-right">
                     {s.correct ? (
-                      <Check size={13} className="ml-auto" style={{ color: "#5FD49A" }} />
+                      <Check size={13} className="ml-auto" style={{ color: "#A3B79A" }} />
                     ) : (
-                      <X size={13} className="ml-auto" style={{ color: "#F0697A" }} />
+                      <X size={13} className="ml-auto" style={{ color: "#C98A78" }} />
                     )}
                   </td>
                 </tr>
@@ -266,7 +266,7 @@ function CalibrationView({ buckets, accent }: { buckets: { bucket: string; obser
               </span>
             </div>
             <Bar value={b.predicted} color={accent} label="model" />
-            <Bar value={b.observed} color="#5FD49A" label="observed" />
+            <Bar value={b.observed} color="#A3B79A" label="observed" />
           </div>
         ))}
       </div>

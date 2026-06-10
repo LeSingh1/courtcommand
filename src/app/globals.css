@@ -8,17 +8,17 @@
   --font-sans: "Instrument Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* Volt Court — cool blue-black darks, volt-green signal */
-  --bg: #0a0d12;
-  --surface: #10141b;
-  --surface-2: #161c26;
-  --line: rgba(148, 170, 200, 0.1);
-  --line-strong: rgba(148, 170, 200, 0.2);
-  --text: #edf1f7;
-  --text-muted: #9aa7b8;
-  --text-faint: #66748a;
-  --accent: #c8f23f;
-  --accent-ink: #0e1402;
+  /* Night Amber — warm cinematic darks, one amber signal, dusty support tones */
+  --bg: #0e0d0b;
+  --surface: #15130f;
+  --surface-2: #1c1915;
+  --line: rgba(231, 213, 184, 0.09);
+  --line-strong: rgba(231, 213, 184, 0.18);
+  --text: #f2ede4;
+  --text-muted: #a89f90;
+  --text-faint: #6e675b;
+  --accent: #e9a23b;
+  --accent-ink: #1a1006;
 
   --radius: 14px;
   --radius-sm: 9px;
@@ -124,7 +124,7 @@ body {
 .btn-ember:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 32px -12px rgba(200, 242, 63, 0.45);
+  box-shadow: 0 10px 32px -12px rgba(233, 162, 59, 0.45);
 }
 .btn-accent:active,
 .btn-ember:active {

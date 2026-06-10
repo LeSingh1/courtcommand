@@ -13,7 +13,7 @@ export function PlayerPicker({
   onChange,
   placeholder = "Search a player…",
   exclude = [],
-  accent = "#C8F23F",
+  accent = "#E9A23B",
   ariaLabel,
   pool: poolProp,
 }: {
