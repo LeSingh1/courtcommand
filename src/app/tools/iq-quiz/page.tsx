@@ -6,7 +6,6 @@ import { Brain, Check, X, RotateCcw, ArrowRight } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Gauge } from "@/components/ui/Gauge";
-import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { QUIZ } from "@/lib/engine/content";
 import { gradeColor } from "@/lib/cn";
@@ -215,12 +214,14 @@ export default function IqQuizPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#B0688E" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#B0688E" }}>Data &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The panel traces the basketball-IQ model's real training history — the count of actual player-seasons it has learned from growing each year since 2003 — alongside the validation metric and method used to check it.
+            These scenarios are hand-authored basketball decisions — spacing, help rotations,
+            pick-and-roll coverages, and late-clock reads — each graded against a single coaching-standard
+            answer with a written rationale. It is a knowledge check built from real on-court principles,
+            not a trained model, so there is no learned prediction or validation metric behind it.
           </p>
         </div>
-        <TrackRecord slug="iq-quiz" accent="#B0688E" />
       </div>
     </ToolShell>
   );

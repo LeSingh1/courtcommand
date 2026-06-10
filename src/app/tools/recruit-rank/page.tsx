@@ -9,7 +9,6 @@ import { Slider, Field, TextInput, Segmented } from "@/components/ui/Controls";
 import { Gauge } from "@/components/ui/Gauge";
 import { RadarChart } from "@/components/ui/RadarChart";
 import { Reveal } from "@/components/ui/Reveal";
-import { TrackRecord } from "@/components/ui/TrackRecord";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
 import { getTool, categoryColor } from "@/lib/tools";
 import { recruitRank, type RecruitInput, type RecruitResult } from "@/lib/engine/content";
@@ -242,12 +241,15 @@ export default function RecruitRankPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#B0688E" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#B0688E" }}>Data &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            This traces how the model's training data has deepened since 2003 — the count of real player-seasons it learns from growing each year — alongside its validation metric and the method behind it.
+            RecruitRank scores the stat line you enter through a fixed, transparent formula —
+            production weighted by position, size, and level of competition, then mapped to a star
+            tier and percentile band. There is no private scouting database or recruiting feed behind
+            it: every output is a deterministic projection of the inputs above, meant as a structured
+            evaluation framework rather than a real national ranking.
           </p>
         </div>
-        <TrackRecord slug="recruit-rank" accent="#B0688E" />
       </div>
     </ToolShell>
   );

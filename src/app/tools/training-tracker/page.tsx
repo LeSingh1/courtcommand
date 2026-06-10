@@ -9,7 +9,6 @@ import { BarChart } from "@/components/ui/BarChart";
 import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
-import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { spring } from "@/lib/motion";
 
@@ -245,12 +244,14 @@ export default function TrainingTrackerPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#B0688E" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#B0688E" }}>Data &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            Each season since 2003, the bars show how close the workload-to-availability model came to the games players actually logged the next year — within about 14 games on average.
+            This is a personal planning tool: every chart and total is computed directly from the
+            sessions you log above — volume by type, weekly load, and balance across shooting,
+            conditioning, strength, and skills. There is no external dataset or prediction model
+            involved; it organizes your own inputs into a readable training picture.
           </p>
         </div>
-        <TrackRecord slug="training-tracker" accent="#B0688E" />
       </div>
     </ToolShell>
   );

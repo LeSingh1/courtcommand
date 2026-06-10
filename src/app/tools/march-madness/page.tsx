@@ -312,11 +312,13 @@ export default function MarchMadnessPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#E0561F" }}>Track record &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The actual NCAA champion for every season since 2003 — from Syracuse in 2003 through
-            the most recent title run — forming the historical ground truth the bracket simulation
-            is trained on and validated against.
+            The actual NCAA champion for every season since 2003 — from Syracuse in 2003 through the
+            most recent title run — is the historical ground truth the bracket model is graded against.
+            The field&rsquo;s teams and seeds are real; their efficiency, strength-of-schedule, and form
+            ratings are representative season-grade inputs (no live ratings feed is bundled offline),
+            so the bracket is a transparent what-if, not a published forecast.
           </p>
         </div>
         <TrackRecord slug="march-madness" accent="#E0561F" />
