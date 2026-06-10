@@ -61,7 +61,7 @@ export default function IqQuizPage() {
             {QUIZ.map((_, i) => (
               <div
                 key={i}
-                className="h-2 w-7 rounded-none transition-colors duration-300"
+                className="h-2 w-7 rounded-lg transition-colors duration-300"
                 style={{
                   backgroundColor:
                     i === step ? ACCENT : i < step ? `${ACCENT}66` : "rgba(255,255,255,0.12)",
@@ -100,7 +100,7 @@ export default function IqQuizPage() {
                   onClick={reset}
                   whileTap={{ scale: 0.96 }}
                   transition={spring.snappy}
-                  className="mt-7 flex items-center gap-2 rounded-none px-5 py-3 text-sm font-semibold transition"
+                  className="mt-7 flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition"
                   style={{ background: ACCENT, color: "var(--accent-ink)" }}
                 >
                   <RotateCcw size={16} /> Retake quiz
@@ -147,7 +147,7 @@ export default function IqQuizPage() {
                         disabled={answered}
                         whileTap={answered ? undefined : { scale: 0.98 }}
                         transition={spring.snappy}
-                        className={`flex items-center justify-between rounded-none border ${border} ${bg} px-4 py-3.5 text-left text-sm text-white/85 transition ${
+                        className={`flex items-center justify-between rounded-lg border ${border} ${bg} px-4 py-3.5 text-left text-sm text-white/85 transition ${
                           !answered ? "hover:border-white/25 hover:bg-white/[0.05]" : ""
                         }`}
                         style={
@@ -158,7 +158,7 @@ export default function IqQuizPage() {
                       >
                         <span className="flex items-center gap-3">
                           <span
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-none text-[11px] font-bold"
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold"
                             style={{
                               background: markColor ? markColor : "rgba(255,255,255,0.07)",
                               color: markColor ? "#0a0c11" : "rgba(255,255,255,0.6)",
@@ -192,7 +192,7 @@ export default function IqQuizPage() {
                         onClick={next}
                         whileTap={{ scale: 0.96 }}
                         transition={spring.snappy}
-                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm font-semibold transition"
+                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition"
                         style={{ background: ACCENT, color: "var(--accent-ink)" }}
                       >
                       {isLast ? "See results" : "Next scenario"}

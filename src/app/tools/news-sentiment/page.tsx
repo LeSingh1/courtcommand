@@ -213,7 +213,7 @@ function FormView({ player, result }: { player: Player; result: PlayerForm }) {
               return (
                 <motion.div key={`${h.text}-${i}`} variants={staggerItem}>
                   <div
-                    className="rounded-none border-l-2 bg-white/[0.02] py-2 pl-3 pr-2"
+                    className="rounded-lg border-l-2 bg-white/[0.02] py-2 pl-3 pr-2"
                     style={{ borderColor: pos ? POS : NEG }}
                   >
                     <p className="text-sm leading-snug text-white/80">{h.text}</p>

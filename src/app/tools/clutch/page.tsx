@@ -92,7 +92,7 @@ export default function ClutchPage() {
                   whileHover={{ y: -3 }}
                   whileTap={{ scale: 0.97 }}
                   transition={spring.snappy}
-                  className="glass relative overflow-hidden rounded-none p-5"
+                  className="glass relative overflow-hidden rounded-lg p-5"
                 >
                   <div className="flex items-center justify-between">
                     <span className="display text-4xl text-white/15">#{i + 1}</span>

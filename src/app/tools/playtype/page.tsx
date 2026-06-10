@@ -119,7 +119,7 @@ export default function PlayTypePage() {
                 }
               >
                 {/* stacked frequency bar */}
-                <div className="mb-5 flex h-9 w-full overflow-hidden rounded-none">
+                <div className="mb-5 flex h-9 w-full overflow-hidden rounded-lg">
                   {mix.map((m) => (
                     <div
                       key={m.type}
@@ -134,7 +134,7 @@ export default function PlayTypePage() {
                   {mix.map((m) => (
                     <Reveal key={m.type}>
                       <div
-                        className="flex items-center gap-3 rounded-none border p-3"
+                        className="flex items-center gap-3 rounded-lg border p-3"
                         style={{
                           borderColor: m === primary ? `${ACCENT}44` : "rgba(255,255,255,0.06)",
                           background: m === primary ? `${ACCENT}0d` : "transparent",

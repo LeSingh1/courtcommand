@@ -105,7 +105,7 @@ export default function ShotQualityPage() {
                   <button
                     key={s.value}
                     onClick={() => setShotType(s.value)}
-                    className="cursor-pointer rounded-none px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E0561F]"
+                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E0561F]"
                     style={
                       shotType === s.value
                         ? { background: "#E0561F", color: "#160600" }
@@ -125,7 +125,7 @@ export default function ShotQualityPage() {
               onClick={run}
               whileTap={{ scale: 0.96 }}
               transition={spring.snappy}
-              className="btn-ember w-full rounded-none py-3 text-sm"
+              className="btn-ember w-full rounded-lg py-3 text-sm"
             >
               Grade this shot
             </motion.button>

@@ -92,7 +92,7 @@ export default function GameRecapPage() {
               <p className="text-[11px] text-rose">Pick two different teams.</p>
             )}
 
-            <div className="rounded-none border border-white/[0.07] bg-white/[0.02] p-3">
+            <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3">
               <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">Auto star lines</div>
               <div className="space-y-1.5">
                 {[...homeStars, ...awayStars].map((s) => {
@@ -116,7 +116,7 @@ export default function GameRecapPage() {
               onClick={generate}
               whileTap={{ scale: 0.96 }}
               transition={spring.snappy}
-              className="btn-ember w-full rounded-none py-3 text-sm"
+              className="btn-ember w-full rounded-lg py-3 text-sm"
             >
               Generate recap
             </motion.button>
@@ -142,7 +142,7 @@ export default function GameRecapPage() {
               </Reveal>
 
               {/* score line */}
-              <div className="my-5 flex items-center gap-4 rounded-none border border-white/[0.07] bg-white/[0.02] p-4">
+              <div className="my-5 flex items-center gap-4 rounded-lg border border-white/[0.07] bg-white/[0.02] p-4">
                 <ScoreSide abbr={awayTeam} score={awayScore} win={awayScore > homeScore} />
                 <span className="stat-num text-sm text-white/30">@</span>
                 <ScoreSide abbr={homeTeam} score={homeScore} win={homeScore > awayScore} />
@@ -158,8 +158,8 @@ export default function GameRecapPage() {
 
               {/* player of the game */}
               <Reveal>
-                <div className="mt-6 flex items-center gap-4 rounded-none border border-[#C9A14A33] bg-[#C9A14A0d] p-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-none bg-[#C9A14A22]">
+                <div className="mt-6 flex items-center gap-4 rounded-lg border border-[#C9A14A33] bg-[#C9A14A0d] p-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#C9A14A22]">
                     <Trophy size={22} className="text-gold" />
                   </div>
                   <div className="flex flex-1 items-center gap-3">
@@ -220,7 +220,7 @@ function TeamSelect({ value, onChange }: { value: string; onChange: (v: string) 
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-none border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition focus:border-white/25"
+      className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition focus:border-white/25"
     >
       {TEAMS.map((t) => (
         <option key={t.abbr} value={t.abbr} className="bg-[#0a0c11] text-white">
@@ -237,7 +237,7 @@ function ScoreInput({ value, onChange }: { value: number; onChange: (v: number) 
       type="number"
       value={value}
       onChange={(e) => onChange(Math.max(0, parseInt(e.target.value || "0", 10)))}
-      className="stat-num w-full rounded-none border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition focus:border-white/25"
+      className="stat-num w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition focus:border-white/25"
     />
   );
 }

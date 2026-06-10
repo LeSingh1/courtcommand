@@ -77,7 +77,7 @@ export default function LineupOptimizerPage() {
                   setSelected([]);
                   setOptimized(null);
                 }}
-                className="w-full cursor-pointer rounded-none border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none"
+                className="w-full cursor-pointer rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none"
               >
                 <option value="" className="bg-ink-800">
                   All tracked players ({PLAYERS.length})
@@ -102,14 +102,14 @@ export default function LineupOptimizerPage() {
                     key={p.id}
                     onClick={() => toggle(p.id)}
                     aria-pressed={sel}
-                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-none border p-2 text-left transition"
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg border p-2 text-left transition"
                     style={{
                       borderColor: sel ? `${ACCENT}66` : "rgba(255,255,255,0.06)",
                       background: sel ? `${ACCENT}12` : "transparent",
                     }}
                   >
                     <div
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-none border"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border"
                       style={{
                         borderColor: sel ? ACCENT : "rgba(255,255,255,0.2)",
                         background: sel ? ACCENT : "transparent",
@@ -139,7 +139,7 @@ export default function LineupOptimizerPage() {
             disabled={pool.length < 5}
             whileTap={{ scale: 0.96 }}
             transition={spring.snappy}
-            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-none px-4 py-3 text-sm font-semibold text-[#0a0c11] transition disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-[#0a0c11] transition disabled:cursor-not-allowed disabled:opacity-40"
             style={{ background: ACCENT }}
           >
             <Zap size={16} />
@@ -197,7 +197,7 @@ export default function LineupOptimizerPage() {
                   title={liveScore ? "Custom five (live)" : "Optimal five"}
                   right={
                     <span
-                      className="stat-num rounded-none px-2 py-0.5 text-xs font-bold"
+                      className="stat-num rounded-lg px-2 py-0.5 text-xs font-bold"
                       style={{
                         background: `${gradeColor(shown.overall)}1f`,
                         color: gradeColor(shown.overall),
@@ -211,7 +211,7 @@ export default function LineupOptimizerPage() {
                     {shown.five.map((p, i) => {
                       return (
                         <Reveal key={p.id} delay={i * 0.06}>
-                          <div className="flex items-center gap-3 rounded-none border border-white/[0.07] bg-white/[0.02] p-3">
+                          <div className="flex items-center gap-3 rounded-lg border border-white/[0.07] bg-white/[0.02] p-3">
                             <PlayerAvatar player={p} size={40} />
                             <div className="min-w-0 flex-1">
                               <div className="truncate text-sm font-semibold text-white">

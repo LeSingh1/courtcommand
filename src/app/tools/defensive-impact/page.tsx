@@ -69,7 +69,7 @@ export default function DefensiveImpactPage() {
       {isAnalyzing ? (
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="glass skeleton h-[148px] rounded-none p-5 animate-pulse" />
+            <div key={i} className="glass skeleton h-[148px] rounded-lg p-5 animate-pulse" />
           ))}
         </div>
       ) : board.length === 0 ? (
@@ -86,7 +86,7 @@ export default function DefensiveImpactPage() {
                 className="enter lift"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
-                <div className="glass rounded-none p-5">
+                <div className="glass rounded-lg p-5">
                   <div className="flex items-center justify-between">
                     <span className="display text-4xl text-white/15">#{i + 1}</span>
                     <Shield size={20} style={{ color: gradeColor(r.defScore) }} />

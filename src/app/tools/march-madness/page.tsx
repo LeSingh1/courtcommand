@@ -42,14 +42,14 @@ function TeamRow({
 }) {
   return (
     <div
-      className="flex items-center gap-2 rounded-none px-2 py-1.5 transition"
+      className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition"
       style={{
         background: isWinner ? `${accent}14` : "transparent",
         opacity: isWinner ? 1 : 0.5,
       }}
     >
       <span
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-none text-[9px] font-bold"
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg text-[9px] font-bold"
         style={{ background: team.color, color: chipInk(team.color) }}
       >
         {team.seed}
@@ -140,7 +140,7 @@ export default function MarchMadnessPage() {
             onClick={run}
             whileTap={{ scale: 0.96 }}
             transition={spring.snappy}
-            className="rounded-none px-5 py-2.5 text-sm font-semibold transition"
+            className="rounded-lg px-5 py-2.5 text-sm font-semibold transition"
             style={{ background: ACCENT, color: "#120802" }}
           >
             {result ? "Re-simulate Tournament" : "Simulate Tournament"}
@@ -171,7 +171,7 @@ export default function MarchMadnessPage() {
           {/* champion banner */}
           <Reveal>
             <div
-              className="glass relative flex flex-col items-center overflow-hidden rounded-none border px-6 py-8 text-center"
+              className="glass relative flex flex-col items-center overflow-hidden rounded-lg border px-6 py-8 text-center"
               style={{ borderColor: `${ACCENT}33` }}
             >
               <div>
@@ -183,7 +183,7 @@ export default function MarchMadnessPage() {
               <div className="display mt-1 text-4xl text-white">{result.champion.name}</div>
               <div className="mt-2 flex items-center gap-2 text-xs text-white/55">
                 <span
-                  className="flex h-6 w-6 items-center justify-center rounded-none text-[10px] font-bold"
+                  className="flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-bold"
                   style={{ background: result.champion.color, color: chipInk(result.champion.color) }}
                 >
                   {result.champion.seed}
@@ -211,7 +211,7 @@ export default function MarchMadnessPage() {
                       return (
                         <Reveal key={gi} delay={gi * 0.05}>
                           <div
-                            className="glass rounded-none border border-transparent p-2.5"
+                            className="glass rounded-lg border border-transparent p-2.5"
                             style={game.upset ? { borderColor: `${ACCENT}40` } : undefined}
                           >
                             <TeamRow team={game.a} prob={game.aProb} isWinner={aWins} accent={ACCENT} />
@@ -247,14 +247,14 @@ export default function MarchMadnessPage() {
                 return (
                   <div
                     key={o.team.name}
-                    className="flex items-center gap-2.5 rounded-none px-2 py-1.5"
+                    className="flex items-center gap-2.5 rounded-lg px-2 py-1.5"
                     style={{ background: isChamp ? `${ACCENT}14` : "transparent" }}
                   >
                     <span className="stat-num w-6 shrink-0 text-[11px] text-white/45">
                       {i + 1}
                     </span>
                     <span
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-none text-[9px] font-bold"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg text-[9px] font-bold"
                       style={{ background: o.team.color, color: chipInk(o.team.color) }}
                     >
                       {o.team.seed}
@@ -286,9 +286,9 @@ export default function MarchMadnessPage() {
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             {NCAA_FIELD.map((t, i) => (
               <Reveal key={t.name} delay={i * 0.03}>
-                <div className="flex items-center gap-2.5 rounded-none border border-white/10 bg-white/[0.03] p-3">
+                <div className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.03] p-3">
                   <span
-                    className="flex h-8 w-8 items-center justify-center rounded-none text-xs font-bold"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
                     style={{ background: t.color, color: chipInk(t.color) }}
                   >
                     {t.seed}

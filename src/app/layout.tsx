@@ -1,29 +1,20 @@
 import type { Metadata } from "next";
-import { Fraunces, Saira_Condensed, Archivo, IBM_Plex_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/chrome/SiteHeader";
 import { SiteFooter } from "@/components/chrome/SiteFooter";
 import { CommandBarProvider } from "@/components/command/CommandBarProvider";
 
-// Editorial serif with real character — headlines + italic accents.
-const display = Fraunces({
+// Contemporary grotesque with real character — headlines + big numerals.
+const display = Bricolage_Grotesque({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-display",
   display: "swap",
 });
 
-// Condensed, sporty figures — scoreboard numbers + section indices.
-const condensed = Saira_Condensed({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-condensed",
-  display: "swap",
-});
-
-// Clean grotesque for UI and body.
-const sans = Archivo({
+// Clean, warm sans for UI and body copy.
+const sans = Instrument_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
@@ -58,11 +49,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${display.variable} ${condensed.variable} ${sans.variable} ${mono.variable}`}
-    >
+    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body className="min-h-screen antialiased">
+        <div className="scroll-progress" aria-hidden />
         <CommandBarProvider>
           <SiteHeader />
           <main className="relative">{children}</main>

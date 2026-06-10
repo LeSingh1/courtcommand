@@ -116,7 +116,7 @@ function SimilarityInner() {
                       whileHover={{ y: -3 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => setActive(i)}
-                      className="flex w-full items-center gap-3 rounded-none border p-3 text-left transition"
+                      className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition"
                       style={{
                         borderColor: i === active ? `${accent}55` : "rgba(255,255,255,0.07)",
                         background: i === active ? `${accent}0f` : "transparent",

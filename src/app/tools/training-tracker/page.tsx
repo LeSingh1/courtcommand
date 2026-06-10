@@ -74,7 +74,7 @@ export default function TrainingTrackerPage() {
       {/* Top stat strip */}
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <Reveal>
-          <div className="glass rounded-none p-5">
+          <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
               <Flame size={16} style={{ color: ACCENT }} />
               <span className="text-xs uppercase tracking-wide">Day streak</span>
@@ -84,7 +84,7 @@ export default function TrainingTrackerPage() {
           </div>
         </Reveal>
         <Reveal delay={0.06}>
-          <div className="glass rounded-none p-5">
+          <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
               <Target size={16} style={{ color: "#C9A14A" }} />
               <span className="text-xs uppercase tracking-wide">Total reps</span>
@@ -96,7 +96,7 @@ export default function TrainingTrackerPage() {
           </div>
         </Reveal>
         <Reveal delay={0.12}>
-          <div className="glass rounded-none p-5">
+          <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
               <Clock size={16} style={{ color: TIME }} />
               <span className="text-xs uppercase tracking-wide">Total minutes</span>
@@ -134,7 +134,7 @@ export default function TrainingTrackerPage() {
                 disabled={saving}
                 whileTap={{ scale: 0.96 }}
                 transition={spring.snappy}
-                className="flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm font-semibold transition cursor-pointer hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold transition cursor-pointer hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
                 style={{ background: ACCENT, color: "#15080f" }}
               >
                 {saving ? (
@@ -220,7 +220,7 @@ export default function TrainingTrackerPage() {
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={spring.soft}
-                  className="flex items-center justify-between rounded-none border border-white/[0.06] bg-white/[0.02] px-4 py-3"
+                  className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
                     <span className="stat-num w-8 text-xs font-semibold text-white/40">{s.day}</span>

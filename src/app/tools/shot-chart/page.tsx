@@ -191,7 +191,7 @@ function ShotChartInner() {
                 <Panel title="Best & worst zones">
                   <div className="space-y-3">
                     <Reveal>
-                      <div className="flex items-center justify-between rounded-none border border-[#E0561F33] bg-[#E0561F0f] p-3">
+                      <div className="flex items-center justify-between rounded-lg border border-[#E0561F33] bg-[#E0561F0f] p-3">
                         <div className="flex items-center gap-2.5">
                           <Flame size={16} className="text-ember" />
                           <div>
@@ -206,7 +206,7 @@ function ShotChartInner() {
                       </div>
                     </Reveal>
                     <Reveal delay={0.06}>
-                      <div className="flex items-center justify-between rounded-none border border-[#7E8CA033] bg-[#7E8CA00f] p-3">
+                      <div className="flex items-center justify-between rounded-lg border border-[#7E8CA033] bg-[#7E8CA00f] p-3">
                         <div className="flex items-center gap-2.5">
                           <Snowflake size={16} className="text-cyan" />
                           <div>

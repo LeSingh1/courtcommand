@@ -42,7 +42,7 @@ export default function UnderratedPage() {
               accent={ACCENT}
               onChange={setMaxSalary}
             />
-            <div className="rounded-none border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
               Showing <b className="text-white">{board.length}</b> players under{" "}
               <b style={{ color: ACCENT }}>${maxSalary}M</b>. Score blends true shooting, BPM, on-court
               net, cheapness, and low-usage &ldquo;under-the-radar&rdquo; value.
@@ -76,7 +76,7 @@ export default function UnderratedPage() {
       {analyzing ? (
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="glass rounded-none p-5">
+            <div key={i} className="glass rounded-lg p-5">
               <div className="text-[10px] uppercase tracking-wider text-white/35">
                 Scanning the cap sheet…
               </div>
@@ -106,7 +106,7 @@ export default function UnderratedPage() {
                 whileHover={{ y: -3 }}
                 transition={spring.snappy}
               >
-                <div className="glass rounded-none p-5">
+                <div className="glass rounded-lg p-5">
                   <div className="flex items-center justify-between">
                     <span className="display text-4xl text-white/15">#{i + 1}</span>
                     <Gem size={20} style={{ color: ACCENT }} />
@@ -129,7 +129,7 @@ export default function UnderratedPage() {
                     {r.reasons.map((reason) => (
                       <span
                         key={reason}
-                        className="rounded-none px-2 py-0.5 text-[10px] font-medium"
+                        className="rounded-lg px-2 py-0.5 text-[10px] font-medium"
                         style={{ background: `${ACCENT}1f`, color: ACCENT }}
                       >
                         {reason}
@@ -153,7 +153,7 @@ export default function UnderratedPage() {
             {[0, 1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 rounded-none border border-white/[0.06] bg-white/[0.02] p-3"
+                className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
               >
                 <div className="h-8 w-8 bg-white/[0.04]" />
                 <div className="h-3 w-32 bg-white/[0.04]" />
@@ -167,7 +167,7 @@ export default function UnderratedPage() {
             return (
               <div
                 key={r.player.id}
-                className="flex flex-wrap items-center gap-3 rounded-none border border-white/[0.06] bg-white/[0.02] p-3 transition hover:bg-white/[0.04]"
+                className="flex flex-wrap items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 transition hover:bg-white/[0.04]"
               >
                 <span className="stat-num w-6 text-center text-sm text-white/35">{i + 1}</span>
                 <PlayerAvatar player={r.player} size={32} />
@@ -189,7 +189,7 @@ export default function UnderratedPage() {
                   {r.reasons.map((reason, ri) => (
                     <span
                       key={reason}
-                      className={`rounded-none border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/55 ${
+                      className={`rounded-lg border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/55 ${
                         ri === 0 ? "" : "hidden sm:inline-block"
                       }`}
                     >

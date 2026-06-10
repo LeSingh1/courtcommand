@@ -67,9 +67,9 @@ export default function TeamChemistryPage() {
         </div>
         <div>
           <div className="mb-1.5 text-xs font-medium text-white/60">Destination team</div>
-          <div className="flex items-center gap-3 rounded-none border border-white/10 bg-white/[0.04] px-3 py-[7px]">
+          <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-[7px]">
             <span
-              className="flex h-9 w-9 items-center justify-center rounded-none text-xs font-bold text-white"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold text-white"
               style={{ background: tm?.color }}
             >
               {tm?.abbr}
@@ -197,7 +197,7 @@ export default function TeamChemistryPage() {
                     {roster.map((p) => (
                       <span
                         key={p.id}
-                        className="flex items-center gap-2 rounded-none border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-xs text-white/75"
+                        className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-2.5 py-1.5 text-xs text-white/75"
                       >
                         <span className="stat-num text-[10px] text-white/40">{p.pos}</span>
                         {p.name}

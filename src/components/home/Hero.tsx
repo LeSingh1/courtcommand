@@ -62,7 +62,7 @@ export function Hero() {
 
           <button
             onClick={open}
-            className="enter group flex items-center gap-3 border border-[var(--line-strong)] bg-[var(--surface)] px-4 py-4 text-left transition-colors hover:border-[var(--accent)]"
+            className="enter group flex items-center gap-3 rounded-2xl border border-[var(--line-strong)] bg-[var(--surface)] px-4 py-4 text-left transition-colors hover:border-[var(--accent)]"
             style={{ animationDelay: "0.65s" }}
           >
             <Search size={17} className="shrink-0 text-[var(--text-faint)] transition-colors group-hover:text-[var(--accent)]" strokeWidth={1.75} />

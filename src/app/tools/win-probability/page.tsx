@@ -202,7 +202,7 @@ export default function WinProbabilityPage() {
                       key={`${e.t}-${i}`}
                       whileHover={{ y: -3 }}
                       transition={spring.snappy}
-                      className="enter flex items-center gap-2.5 rounded-none border border-white/[0.07] bg-white/[0.03] px-3 py-2"
+                      className="enter flex items-center gap-2.5 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2"
                       style={{ animationDelay: `${i * 40}ms` }}
                     >
                       <span

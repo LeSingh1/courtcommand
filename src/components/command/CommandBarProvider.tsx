@@ -83,7 +83,7 @@ export function CommandBarProvider({ children }: { children: React.ReactNode }) 
                   placeholder="Ask anything… “Find underrated 3&D wings under $15M”"
                   className="flex-1 bg-transparent text-[15px] text-white outline-none placeholder:text-white/35"
                 />
-                <kbd className="hidden items-center gap-1 rounded-none border border-white/15 bg-white/5 px-1.5 py-0.5 text-[10px] text-white/45 sm:flex">
+                <kbd className="hidden items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-1.5 py-0.5 text-[10px] text-white/45 sm:flex">
                   ESC
                 </kbd>
                 <button onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white">
@@ -100,7 +100,7 @@ export function CommandBarProvider({ children }: { children: React.ReactNode }) 
                         <button
                           key={ex}
                           onClick={() => setQ(ex)}
-                          className="flex items-center gap-2.5 rounded-none px-2.5 py-2 text-left text-sm text-white/65 transition hover:bg-white/[0.06] hover:text-white"
+                          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-white/65 transition hover:bg-white/[0.06] hover:text-white"
                         >
                           <Search size={14} className="text-white/30" />
                           {ex}
@@ -125,10 +125,10 @@ export function CommandBarProvider({ children }: { children: React.ReactNode }) 
                           transition={{ duration: 0.22, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
                           whileHover={{ x: 2 }}
                           whileTap={{ scale: 0.99 }}
-                          className="group flex w-full items-center gap-3 rounded-none px-2.5 py-2.5 text-left hover:bg-white/[0.06]"
+                          className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left hover:bg-white/[0.06]"
                         >
                           <div
-                            className="flex h-9 w-9 items-center justify-center rounded-none"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg"
                             style={{ background: `${accent.hex}22`, color: accent.hex }}
                           >
                             <Icon size={17} />
@@ -161,7 +161,7 @@ export function CommandBarProvider({ children }: { children: React.ReactNode }) 
                       <button
                         key={t.slug}
                         onClick={() => go(`/tools/${t.slug}`)}
-                        className="flex w-full items-center gap-3 rounded-none px-2.5 py-2.5 text-left hover:bg-white/[0.06]"
+                        className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left hover:bg-white/[0.06]"
                       >
                         <span className="text-sm text-white">{t.name}</span>
                       </button>

@@ -57,7 +57,7 @@ export default function AwardPredictorPage() {
         >
           {/* frontrunner card */}
           <motion.div
-            className="glass rounded-none p-6"
+            className="glass rounded-lg p-6"
             style={{ boxShadow: `inset 0 0 0 1px ${ACCENT}30` }}
             whileHover={{ y: -3 }}
             transition={spring.snappy}

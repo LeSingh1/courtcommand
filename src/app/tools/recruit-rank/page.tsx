@@ -102,7 +102,7 @@ export default function RecruitRankPage() {
               onClick={run}
               whileTap={{ scale: 0.96 }}
               transition={spring.snappy}
-              className="w-full rounded-none py-3 text-sm font-semibold transition"
+              className="w-full rounded-lg py-3 text-sm font-semibold transition"
               style={{ background: ACCENT, color: "#0a0c11" }}
             >
               Generate profile
@@ -134,7 +134,7 @@ export default function RecruitRankPage() {
             >
               {/* Recruiting card */}
               <Reveal>
-                <div className="glass relative overflow-hidden rounded-none p-6">
+                <div className="glass relative overflow-hidden rounded-lg p-6">
                   <div className="relative grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
                     <div className="flex flex-col items-center">
                       <Gauge value={result.grade} color={ACCENT} label="Grade" />
@@ -165,12 +165,12 @@ export default function RecruitRankPage() {
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-2">
                         <span
-                          className="stat-num rounded-none px-3 py-1 text-xs font-bold"
+                          className="stat-num rounded-lg px-3 py-1 text-xs font-bold"
                           style={{ background: `${ACCENT}1f`, color: ACCENT, border: `1px solid ${ACCENT}33` }}
                         >
                           #{result.nationalRank} nationally
                         </span>
-                        <span className="rounded-none border border-[var(--line)] bg-white/[0.06] px-3 py-1 text-xs text-white/70">
+                        <span className="rounded-lg border border-[var(--line)] bg-white/[0.06] px-3 py-1 text-xs text-white/70">
                           Comp: {result.comp}
                         </span>
                       </div>
@@ -198,9 +198,9 @@ export default function RecruitRankPage() {
                       <Reveal key={a.label} delay={i * 0.05}>
                         <div className="flex items-center gap-3">
                           <span className="w-24 shrink-0 text-xs text-white/60">{a.label}</span>
-                          <div className="h-2 flex-1 overflow-hidden rounded-none bg-white/[0.06]">
+                          <div className="h-2 flex-1 overflow-hidden rounded-lg bg-white/[0.06]">
                             <div
-                              className="h-full rounded-none"
+                              className="h-full rounded-lg"
                               style={{ width: `${a.value}%`, background: ACCENT }}
                             />
                           </div>

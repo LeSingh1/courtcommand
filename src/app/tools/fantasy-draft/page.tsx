@@ -38,7 +38,7 @@ function ZCell({ z }: { z: number }) {
   const color = z >= 0 ? gradeColor(50 + z * 15) : "#BF5B4E";
   return (
     <span
-      className="stat-num inline-flex h-7 w-12 items-center justify-center rounded-none text-[11px] font-semibold"
+      className="stat-num inline-flex h-7 w-12 items-center justify-center rounded-lg text-[11px] font-semibold"
       style={{ background: `${color}1c`, color, border: `1px solid ${color}30` }}
     >
       {z > 0 ? "+" : ""}
@@ -96,7 +96,7 @@ export default function FantasyDraftPage() {
               <motion.div
                 whileHover={{ y: -3 }}
                 transition={spring.snappy}
-                className="glass relative overflow-hidden rounded-none p-5"
+                className="glass relative overflow-hidden rounded-lg p-5"
               >
                 <div className="flex items-center justify-between">
                   <span className="display text-4xl text-white/15">#{i + 1}</span>

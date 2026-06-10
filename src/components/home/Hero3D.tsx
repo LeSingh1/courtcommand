@@ -12,9 +12,9 @@ import shotsRaw from "./heroShots.json";
 type S = { x: number; y: number; m: number; v: number; d: number };
 const SHOTS = shotsRaw as S[];
 
-const EMBER = "#e0561f";
-const STEEL = "#7e8ca0";
-const HAIR = "#34343a";
+const EMBER = "#c8f23f";
+const STEEL = "#6e84a3";
+const HAIR = "#2a3442";
 const PX = 42; // court px per world unit
 const RIM_Y = 2.3; // ~10 ft at this scale
 
@@ -214,7 +214,7 @@ export default function Hero3D({ className }: { className?: string }) {
         gl={{ alpha: true, antialias: true, powerPreference: "low-power" }}
         style={{ pointerEvents: "none" }}
       >
-        <fog attach="fog" args={["#0a0a0b", 11, 30]} />
+        <fog attach="fog" args={["#0a0d12", 11, 30]} />
         <Scene />
       </Canvas>
     </div>

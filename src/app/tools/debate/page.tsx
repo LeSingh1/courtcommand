@@ -145,7 +145,7 @@ function DebateCard({
     <motion.div
       whileHover={{ y: -3 }}
       transition={spring.snappy}
-      className="glass rounded-none p-5"
+      className="glass rounded-lg p-5"
       style={{ boxShadow: leading ? `inset 0 0 0 1px ${accent}44` : undefined }}
     >
       <div className="mb-4 flex items-center gap-3">

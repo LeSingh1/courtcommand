@@ -65,7 +65,7 @@ export default function RosterBuilderPage() {
               <span className="stat-num text-xs text-white/45">{picks.length}/5 signed</span>
             }
           >
-            <div className="mb-4 flex items-center gap-2 rounded-none border border-white/10 bg-white/[0.04] px-3 py-2.5">
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5">
               <Search size={15} className="text-white/40" />
               <input
                 value={q}
@@ -87,14 +87,14 @@ export default function RosterBuilderPage() {
                     disabled={disabled}
                     whileTap={disabled ? undefined : { scale: 0.97 }}
                     transition={spring.snappy}
-                    className="flex cursor-pointer items-center gap-2.5 rounded-none border p-2.5 text-left transition focus-visible:border-white/40 focus-visible:outline-none disabled:cursor-default disabled:opacity-35"
+                    className="flex cursor-pointer items-center gap-2.5 rounded-lg border p-2.5 text-left transition focus-visible:border-white/40 focus-visible:outline-none disabled:cursor-default disabled:opacity-35"
                     style={{
                       borderColor: sel ? `${ACCENT}66` : "rgba(255,255,255,0.06)",
                       background: sel ? `${ACCENT}12` : "transparent",
                     }}
                   >
                     <div
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-none border"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border"
                       style={{
                         borderColor: sel ? ACCENT : "rgba(255,255,255,0.2)",
                         background: sel ? ACCENT : "transparent",
@@ -153,7 +153,7 @@ export default function RosterBuilderPage() {
                 {roster.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between gap-2 rounded-none bg-white/[0.03] px-2.5 py-1.5 text-xs"
+                    className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5 text-xs"
                   >
                     <span className="flex min-w-0 items-center gap-2 text-white/80">
                       <PlayerAvatar player={p} size={24} />
@@ -181,7 +181,7 @@ export default function RosterBuilderPage() {
                 title="Roster rating"
                 right={
                   <span
-                    className="stat-num rounded-none px-2 py-0.5 text-xs font-bold"
+                    className="stat-num rounded-lg px-2 py-0.5 text-xs font-bold"
                     style={{
                       background: `${gradeColor(score.overall)}1f`,
                       color: gradeColor(score.overall),

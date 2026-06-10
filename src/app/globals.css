@@ -3,21 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --font-display: "Fraunces", Georgia, serif;
-  --font-condensed: "Saira Condensed", "Arial Narrow", sans-serif;
-  --font-sans: "Archivo", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-condensed: var(--font-display);
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --bg: #0a0a0b;
-  --surface: #121214;
-  --surface-2: #17171a;
-  --line: rgba(255, 255, 255, 0.09);
-  --line-strong: rgba(255, 255, 255, 0.16);
-  --text: #ededee;
-  --text-muted: #9a9aa0;
-  --text-faint: #6c6c72;
-  --accent: #e0561f;
-  --accent-ink: #120802;
+  /* Volt Court — cool blue-black darks, volt-green signal */
+  --bg: #0a0d12;
+  --surface: #10141b;
+  --surface-2: #161c26;
+  --line: rgba(148, 170, 200, 0.1);
+  --line-strong: rgba(148, 170, 200, 0.2);
+  --text: #edf1f7;
+  --text-muted: #9aa7b8;
+  --text-faint: #66748a;
+  --accent: #c8f23f;
+  --accent-ink: #0e1402;
+
+  --radius: 14px;
+  --radius-sm: 9px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
@@ -44,23 +48,24 @@ body {
 /* ---------- Typography ---------- */
 .display {
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 700;
   font-optical-sizing: auto;
-  line-height: 1.0;
-  letter-spacing: -0.02em;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
 }
 .display-italic {
   font-family: var(--font-display);
   font-style: italic;
-  font-weight: 400;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .scoreboard {
-  font-family: var(--font-condensed);
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
-  line-height: 0.9;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
 }
 
 .stat-num {
@@ -85,13 +90,23 @@ body {
 .glass {
   background: var(--surface);
   border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.glass {
+  background: rgba(16, 20, 27, 0.66);
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
 }
 .glass-strong {
-  background: var(--surface-2);
+  background: rgba(22, 28, 38, 0.82);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
   border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 .hairline {
   border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 
 /* ---------- Buttons ---------- */
@@ -101,25 +116,30 @@ body {
   color: var(--accent-ink);
   font-weight: 600;
   border: 1px solid var(--accent);
-  transition: background 0.18s var(--ease-out), transform 0.12s var(--ease-out);
+  border-radius: 999px;
+  transition: filter 0.18s var(--ease-out), transform 0.16s var(--ease-spring),
+    box-shadow 0.2s var(--ease-out);
 }
 .btn-accent:hover,
 .btn-ember:hover {
-  background: #ef6326;
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 32px -12px rgba(200, 242, 63, 0.45);
 }
 .btn-accent:active,
 .btn-ember:active {
   transform: scale(0.97);
 }
 .btn-ghost {
-  background: transparent;
+  background: rgba(148, 170, 200, 0.06);
   border: 1px solid var(--line-strong);
   color: var(--text);
+  border-radius: 999px;
   transition: border-color 0.18s var(--ease-out), background 0.18s var(--ease-out), transform 0.12s var(--ease-out);
 }
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(148, 170, 200, 0.12);
+  border-color: rgba(200, 242, 63, 0.5);
 }
 .btn-ghost:active {
   transform: scale(0.97);
@@ -139,16 +159,17 @@ body {
   background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a2f;
+  background: #232c3a;
   border: 3px solid var(--bg);
+  border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a41;
+  background: #31405a;
 }
 
 ::selection {
-  background: rgba(224, 86, 31, 0.28);
-  color: #fff;
+  background: rgba(200, 242, 63, 0.85);
+  color: #0e1402;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -348,39 +369,67 @@ body::after {
   }
 }
 
-/* ---------- Card hover: corner ticks + color sweep ---------- */
+/* ---------- Card hover: soft accent ring + ambient shadow ---------- */
 .card-frame {
   position: relative;
+  border-radius: var(--radius);
+  transition: border-color 0.24s var(--ease-out), box-shadow 0.28s var(--ease-out);
 }
-.card-frame::before,
-.card-frame::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--card-accent, var(--accent));
-  opacity: 0;
-  transition: opacity 0.22s var(--ease-out), transform 0.22s var(--ease-out);
-  pointer-events: none;
+.card-frame:hover {
+  border-color: color-mix(in srgb, var(--card-accent, var(--accent)) 55%, transparent);
+  box-shadow: 0 18px 48px -22px color-mix(in srgb, var(--card-accent, var(--accent)) 38%, transparent);
 }
-.card-frame::before {
-  top: -1px;
-  left: -1px;
-  border-right: 0;
-  border-bottom: 0;
-  transform: translate(4px, 4px);
+
+/* ---------- Scroll choreography ---------- */
+@supports (animation-timeline: scroll()) {
+  .scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 90;
+    background: var(--accent);
+    transform-origin: left;
+    animation: cc-sweep linear both;
+    animation-timeline: scroll(root);
+    pointer-events: none;
+  }
 }
-.card-frame::after {
-  bottom: -1px;
-  right: -1px;
-  border-left: 0;
-  border-top: 0;
-  transform: translate(-4px, -4px);
+
+@keyframes cc-rise-left {
+  from {
+    opacity: 0;
+    transform: translateX(-26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-.card-frame:hover::before,
-.card-frame:hover::after {
-  opacity: 1;
-  transform: none;
+@keyframes cc-rise-scale {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal-left {
+      animation: cc-rise-left linear both;
+      animation-timeline: view();
+      animation-range: entry 2% cover 24%;
+    }
+    .reveal-scale {
+      animation: cc-rise-scale linear both;
+      animation-timeline: view();
+      animation-range: entry 2% cover 26%;
+    }
+  }
 }
 
 /* Page transition wrapper (CSS — robust, ends visible) */

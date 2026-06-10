@@ -91,7 +91,7 @@ export default function ContractValuePage() {
         ].map(({ label, row, accent, Icon }, i) => {
           return (
             <Reveal key={label} delay={i * 0.08}>
-              <motion.div whileHover={{ y: -3 }} transition={spring.snappy} className="glass relative overflow-hidden rounded-none p-5">
+              <motion.div whileHover={{ y: -3 }} transition={spring.snappy} className="glass relative overflow-hidden rounded-lg p-5">
                 <div className="flex items-center justify-between">
                   <span className="eyebrow" style={{ color: accent }}>
                     {label}
@@ -189,7 +189,7 @@ export default function ContractValuePage() {
                     </td>
                     <td className="py-2.5 pr-2 text-right">
                       <span
-                        className="stat-num rounded-none px-2 py-0.5 text-xs font-bold"
+                        className="stat-num rounded-lg px-2 py-0.5 text-xs font-bold"
                         style={{
                           background: `${VERDICT_COLOR[r.verdict]}1f`,
                           color: VERDICT_COLOR[r.verdict],

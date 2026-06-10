@@ -92,7 +92,7 @@ export default function DevelopmentCurvePage() {
                   <span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} /> Projected PER
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-4 rounded-none" style={{ background: `${ACCENT}30` }} /> Range (lo–hi)
+                  <span className="h-2 w-4 rounded-lg" style={{ background: `${ACCENT}30` }} /> Range (lo–hi)
                 </span>
                 <span className="stat-num">x-axis: age</span>
               </div>

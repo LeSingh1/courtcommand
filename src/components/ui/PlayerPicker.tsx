@@ -44,7 +44,7 @@ export function PlayerPicker({
     const team = TEAM_MAP[value.team];
     return (
       <div
-        className="flex items-center gap-3 rounded-none border border-white/10 bg-white/[0.04] px-3 py-2.5"
+        className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5"
         style={{ boxShadow: `inset 0 0 0 1px ${accent}22` }}
       >
         <PlayerAvatar player={value} size={38} />
@@ -56,7 +56,7 @@ export function PlayerPicker({
         </div>
         <button
           onClick={() => onChange(null)}
-          className="rounded-none p-1 text-white/40 transition hover:bg-white/10 hover:text-white"
+          className="rounded-lg p-1 text-white/40 transition hover:bg-white/10 hover:text-white"
           aria-label="Clear"
         >
           <X size={16} />
@@ -67,7 +67,7 @@ export function PlayerPicker({
 
   return (
     <div ref={ref} className="relative">
-      <div className="flex items-center gap-2 rounded-none border border-white/10 bg-white/[0.04] px-3 py-2.5 focus-within:border-white/25">
+      <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 focus-within:border-white/25">
         <Search size={16} className="text-white/40" />
         <input
           value={q}
@@ -108,7 +108,7 @@ export function PlayerPicker({
                 }}
                 onMouseEnter={() => setActive(i)}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-none px-2.5 py-2 text-left transition",
+                  "flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition",
                   i === active ? "bg-white/[0.08]" : "hover:bg-white/[0.05]",
                 )}
               >

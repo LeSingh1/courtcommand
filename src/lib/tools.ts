@@ -315,17 +315,17 @@ export const CATEGORIES = [
   "Player Tools",
 ] as const;
 
-// Restrained, muted per-category accents — a little color, kept sophisticated.
+// Volt Court per-category accents — saturated but soft on the cool dark field.
 export const CATEGORY_COLOR: Record<string, string> = {
-  Prediction: "#E0561F", // ember
-  "Player Analysis": "#4E8FA8", // muted teal-blue
-  "Team & Strategy": "#5FA97E", // sage green
-  "Content & Media": "#C9A14A", // gold
-  "Player Tools": "#B0688E", // muted mauve
+  Prediction: "#C8F23F", // volt
+  "Player Analysis": "#5ED4F0", // ice cyan
+  "Team & Strategy": "#5FD49A", // mint
+  "Content & Media": "#E8C463", // warm gold
+  "Player Tools": "#F07AA8", // signal pink
 };
 
 export function categoryColor(category: string): string {
-  return CATEGORY_COLOR[category] ?? "#E0561F";
+  return CATEGORY_COLOR[category] ?? "#C8F23F";
 }
 
 export function getTool(slug: string): ToolMeta | undefined {

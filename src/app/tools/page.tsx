@@ -32,8 +32,8 @@ export default function ToolsPage() {
         route there by asking.
       </p>
 
-      <div className="sticky top-16 z-20 mt-8 flex flex-col gap-3 rounded-none border border-white/[0.06] bg-ink-900/70 py-3 backdrop-blur-xl sm:flex-row sm:items-center">
-        <label className="flex items-center gap-2 rounded-none border border-white/10 bg-white/[0.04] px-3 py-2 focus-within:border-white/25 focus-within:ring-1 focus-within:ring-white/15 sm:w-64">
+      <div className="sticky top-16 z-20 mt-8 flex flex-col gap-3 rounded-lg border border-white/[0.06] bg-ink-900/70 py-3 backdrop-blur-xl sm:flex-row sm:items-center">
+        <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 focus-within:border-white/25 focus-within:ring-1 focus-within:ring-white/15 sm:w-64">
           <Search size={15} className="text-white/40" />
           <input
             value={q}

@@ -45,9 +45,9 @@ export default function RoleClassifierPage() {
           <button
             key={c.role}
             onClick={() => setActiveRole(c.role)}
-            className="inline-flex items-center gap-2 rounded-none border border-[var(--line)] bg-white/[0.03] px-3 py-1 text-xs text-white/65 transition hover:bg-white/[0.06]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--line)] bg-white/[0.03] px-3 py-1 text-xs text-white/65 transition hover:bg-white/[0.06]"
           >
-            <span className="h-2 w-2 rounded-none" style={{ background: c.color }} />
+            <span className="h-2 w-2 rounded-lg" style={{ background: c.color }} />
             {c.role}
             <span className="stat-num text-white/40">{c.players.length}</span>
           </button>
@@ -69,18 +69,18 @@ export default function RoleClassifierPage() {
             whileTap={{ scale: 0.97 }}
             transition={spring.snappy}
             onClick={() => setActiveRole(c.role)}
-            className="glass group relative flex h-full w-full flex-col overflow-hidden rounded-none p-5 text-left"
+            className="glass group relative flex h-full w-full flex-col overflow-hidden rounded-lg p-5 text-left"
             style={{ boxShadow: activeRole === c.role ? `0 0 0 1px ${c.color}66` : undefined }}
           >
               <div className="flex items-center justify-between">
                 <span
-                  className="flex h-9 w-9 items-center justify-center rounded-none"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg"
                   style={{ background: `${c.color}1f` }}
                 >
-                  <span className="h-3 w-3 rounded-none" style={{ background: c.color }} />
+                  <span className="h-3 w-3 rounded-lg" style={{ background: c.color }} />
                 </span>
                 <span
-                  className="stat-num rounded-none px-2 py-0.5 text-[11px] font-bold"
+                  className="stat-num rounded-lg px-2 py-0.5 text-[11px] font-bold"
                   style={{ background: `${c.color}1f`, color: c.color }}
                 >
                   {c.players.length}
@@ -93,7 +93,7 @@ export default function RoleClassifierPage() {
                   return (
                     <span
                       key={p.id}
-                      className="inline-flex items-center gap-1 rounded-none bg-white/[0.04] py-0.5 pl-0.5 pr-2 text-[10px] text-white/70"
+                      className="inline-flex items-center gap-1 rounded-lg bg-white/[0.04] py-0.5 pl-0.5 pr-2 text-[10px] text-white/70"
                     >
                       <PlayerAvatar player={p} size={16} rounded />
                       {p.name}
@@ -101,7 +101,7 @@ export default function RoleClassifierPage() {
                   );
                 })}
                 {c.players.length > 5 && (
-                  <span className="inline-flex items-center rounded-none bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/45">
+                  <span className="inline-flex items-center rounded-lg bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/45">
                     +{c.players.length - 5} more
                   </span>
                 )}
@@ -126,7 +126,7 @@ export default function RoleClassifierPage() {
               right={
                 <button
                   onClick={() => setActiveRole(null)}
-                  className="rounded-none p-1 text-white/40 transition hover:bg-white/10 hover:text-white"
+                  className="rounded-lg p-1 text-white/40 transition hover:bg-white/10 hover:text-white"
                   aria-label="Close"
                 >
                   <X size={16} />
@@ -139,7 +139,7 @@ export default function RoleClassifierPage() {
                   return (
                     <div
                       key={p.id}
-                      className="flex items-center gap-3 rounded-none border border-white/[0.06] bg-white/[0.02] p-3"
+                      className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
                     >
                       <PlayerAvatar player={p} size={40} />
                       <div className="min-w-0 flex-1">

@@ -123,7 +123,7 @@ export default function MomentumPage() {
                       initial={{ opacity: 0, x: 8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                      className="flex items-center gap-3 rounded-none border border-white/[0.06] bg-white/[0.02] p-3"
+                      className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: `${clr}1f` }}>
                         <Flame size={15} style={{ color: clr }} />
