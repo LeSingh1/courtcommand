@@ -8,8 +8,8 @@ export function SiteFooter() {
       <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8">
         <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div>
-            <div className="text-lg font-bold tracking-tight text-[var(--text)]">
-              COURT<span className="text-[var(--accent)]">COMMAND</span>
+            <div className="display text-xl tracking-tight text-[var(--text)]">
+              Court<span className="text-[var(--accent)]">Command</span>
             </div>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--text-muted)]">
               A basketball intelligence terminal. Thirty rigorous NBA analytics instruments in one

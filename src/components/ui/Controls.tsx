@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 
 export function Badge({
   children,
-  color = "#E0561F",
+  color = "#C8F23F",
   soft = true,
   className,
 }: {
@@ -36,7 +36,7 @@ export function Segmented<T extends string>({
   options,
   value,
   onChange,
-  accent = "#E0561F",
+  accent = "#C8F23F",
 }: {
   options: { label: string; value: T }[];
   value: T;
@@ -82,7 +82,7 @@ export function Slider({
   step = 1,
   unit = "",
   onChange,
-  accent = "#E0561F",
+  accent = "#C8F23F",
 }: {
   label: string;
   value: number;

@@ -32,8 +32,8 @@ export default function ToolsPage() {
         route there by asking.
       </p>
 
-      <div className="sticky top-16 z-20 mt-8 flex flex-col gap-3 rounded-lg border border-white/[0.06] bg-ink-900/70 py-3 backdrop-blur-xl sm:flex-row sm:items-center">
-        <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 focus-within:border-white/25 focus-within:ring-1 focus-within:ring-white/15 sm:w-64">
+      <div className="sticky top-[74px] z-20 mt-8 flex flex-col gap-3 rounded-2xl border border-white/[0.06] bg-ink-900/70 p-3 backdrop-blur-xl sm:flex-row sm:items-center">
+        <label className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 focus-within:border-white/25 focus-within:ring-1 focus-within:ring-white/15 sm:w-64">
           <Search size={15} className="text-white/40" />
           <input
             value={q}
@@ -46,15 +46,15 @@ export default function ToolsPage() {
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto" role="group" aria-label="Filter by category">
           {["All", ...CATEGORIES].map((c) => {
             const active = cat === c;
-            const color = c === "All" ? "#E0561F" : categoryColor(c);
+            const color = c === "All" ? "#C8F23F" : categoryColor(c);
             return (
               <button
                 key={c}
                 onClick={() => setCat(c)}
                 aria-pressed={active}
                 className={cn(
-                  "cursor-pointer whitespace-nowrap border px-3.5 py-2 text-sm transition",
-                  active ? "text-[var(--accent-ink)]" : "border-white/10 bg-white/[0.03] text-white/60 hover:text-white",
+                  "cursor-pointer whitespace-nowrap rounded-full border px-3.5 py-2 text-sm transition",
+                  active ? "text-[#0e1402] font-medium" : "border-white/10 bg-white/[0.03] text-white/60 hover:text-white",
                 )}
                 style={active ? { background: color, borderColor: color } : undefined}
               >

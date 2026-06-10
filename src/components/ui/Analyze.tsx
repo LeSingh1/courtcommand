@@ -40,7 +40,7 @@ export function useAnalyze(steps: string[], duration = 1100) {
 export function AnalyzeOverlay({
   steps,
   stepIdx,
-  accent = "#E0561F",
+  accent = "#C8F23F",
 }: {
   steps: string[];
   stepIdx: number;

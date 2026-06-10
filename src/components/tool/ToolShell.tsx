@@ -41,8 +41,8 @@ export function ToolShell({
       <div className="enter mb-10 flex flex-col gap-6 border-b border-[var(--line)] pb-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-start gap-4">
           <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center border"
-            style={{ borderColor: `${color}55`, color }}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border"
+            style={{ borderColor: `${color}40`, background: `${color}16`, color }}
           >
             <Icon size={22} strokeWidth={1.75} />
           </div>
@@ -78,7 +78,7 @@ export function ToolShell({
 
       <div className="mt-16 border-t border-[var(--line)] pt-5 text-xs text-[var(--text-faint)]">
         Computed by the CourtCommand engine. Connect a live NBA feed in{" "}
-        <code className="border border-[var(--line)] px-1 py-0.5 text-[var(--text-muted)]">
+        <code className="rounded-md border border-[var(--line)] px-1.5 py-0.5 text-[var(--text-muted)]">
           /src/lib/engine
         </code>
         .
@@ -100,7 +100,7 @@ export function Panel({
 }) {
   return (
     <div
-      className={`border border-[var(--line)] bg-[var(--surface)] p-5 transition-colors duration-200 hover:border-[var(--line-strong)] ${className ?? ""}`}
+      className={`rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 transition-colors duration-200 hover:border-[var(--line-strong)] ${className ?? ""}`}
     >
       {(title || right) && (
         <div className="mb-4 flex items-center justify-between border-b border-[var(--line)] pb-3">
@@ -121,9 +121,9 @@ function ModelTag({ slug }: { slug: string }) {
   const model = getToolModel(slug);
   if (!model) return null;
   return (
-    <div className="mt-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-[11px]">
+    <div className="mt-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-1.5 text-[11px]">
       <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-[var(--accent)]">
-        <span className="inline-block h-1.5 w-1.5 bg-[var(--accent)]" />
+        <span className="blink inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
         Trained model
       </span>
       <span className="text-[var(--text-muted)]">{model.kind}</span>
@@ -141,7 +141,7 @@ export function Insight({
   accent?: string;
 }) {
   return (
-    <div className="border border-[var(--line)] bg-[var(--surface)] p-4 pl-5">
+    <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 pl-5">
       <div className="border-l-2 pl-4" style={{ borderColor: accent ?? "var(--accent)" }}>
         <div className="kicker mb-1.5">Read</div>
         <div className="text-sm leading-relaxed text-[var(--text-muted)]">{children}</div>
