@@ -257,7 +257,7 @@ function SimilarityInner() {
                 <RadarChart
                   axes={RADAR_AXES}
                   series={[
-                    { name: player.name, color: "#00E07F", values: radarValues(player) },
+                    { name: player.name, color: "#4D8DFF", values: radarValues(player) },
                     ...(comp ? [{ name: comp.name, color: accent, values: radarValues(comp) }] : []),
                   ]}
                 />

@@ -319,15 +319,15 @@ export const CATEGORIES = [
 // tiny scale (dots, labels) on index surfaces and as the single accent of a
 // tool's own page — never as washes, so they cannot collide.
 export const CATEGORY_COLOR: Record<string, string> = {
-  Prediction: "#00E07F", // court green (the signal)
+  Prediction: "#4D8DFF", // court blue (the signal)
   "Player Analysis": "#41C7E0", // electric cyan
-  "Team & Strategy": "#6FA8FF", // electric blue
+  "Team & Strategy": "#8E7CFF", // electric violet
   "Content & Media": "#D7BC6A", // quiet gold
-  "Player Tools": "#9D8CFF", // electric violet
+  "Player Tools": "#F25C8C", // signal pink
 };
 
 export function categoryColor(category: string): string {
-  return CATEGORY_COLOR[category] ?? "#00E07F";
+  return CATEGORY_COLOR[category] ?? "#4D8DFF";
 }
 
 export function getTool(slug: string): ToolMeta | undefined {

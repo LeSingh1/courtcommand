@@ -20,13 +20,13 @@ import {
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const EMBER = "#00E07F";
+const EMBER = "#4D8DFF";
 
 // Mirrors CourtChart.heatColor exactly (>=0.58, >=0.50, >=0.44, >=0.38, else).
 const LEGEND = [
-  { label: "Hot · 58%+ eFG", color: "#00E07F" },
+  { label: "Hot · 58%+ eFG", color: "#4D8DFF" },
   { label: "Warm · 50–57%", color: "#D7BC6A" },
-  { label: "Neutral · 44–49%", color: "#9FB07A" },
+  { label: "Neutral · 44–49%", color: "#41C7E0" },
   { label: "Cool · 38–43%", color: "#8E96A4" },
   { label: "Cold · <38%", color: "#6B6E78" },
 ];
@@ -207,7 +207,7 @@ function ShotChartInner() {
                 {view === "shots" && (
                   <div className="mt-4 flex items-center gap-4 border-t border-white/[0.06] pt-3 text-[11px] text-white/50">
                     <span className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#00E07F" }} /> Make
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#4D8DFF" }} /> Make
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span
@@ -224,7 +224,7 @@ function ShotChartInner() {
                 <Panel title="Best & worst zones">
                   <div className="space-y-3">
                     <Reveal>
-                      <div className="flex items-center justify-between rounded-lg border border-[#00E07F33] bg-[#00E07F0f] p-3">
+                      <div className="flex items-center justify-between rounded-lg border border-[#4D8DFF33] bg-[#4D8DFF0f] p-3">
                         <div className="flex items-center gap-2.5">
                           <Flame size={16} className="text-ember" />
                           <div>

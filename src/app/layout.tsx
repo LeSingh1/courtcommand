@@ -1,33 +1,14 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { SiteHeader } from "@/components/chrome/SiteHeader";
 import { SiteFooter } from "@/components/chrome/SiteFooter";
 import { CommandBarProvider } from "@/components/command/CommandBarProvider";
 
-// Contemporary grotesque with real character — headlines + big numerals.
-const display = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-// Clean, warm sans for UI and body copy.
-const sans = Instrument_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-// Tabular mono for data and labels.
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-mono",
-  display: "swap",
-});
+// One family everywhere — Geist for display, UI, and body (weight carries the
+// hierarchy), Geist Mono for data. Single-family type is what makes the whole
+// app read as one voice.
 
 export const metadata: Metadata = {
   title: "CourtCommand — Basketball Intelligence",
@@ -49,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="min-h-screen antialiased">
         <div className="scroll-progress" aria-hidden />
         <CommandBarProvider>

@@ -12,7 +12,7 @@ import { QUIZ, quizResults } from "@/lib/engine/content";
 import { gradeColor } from "@/lib/cn";
 
 const ACCENT = "#F4647D"; // category color for "Player Tools"
-const GREEN = "#2BD68B"; // correct answer
+const GREEN = "#4D8DFF"; // correct answer
 const WRONG = "#D7BC6A"; // muted negative tint for incorrect reads
 
 export default function IqQuizPage() {

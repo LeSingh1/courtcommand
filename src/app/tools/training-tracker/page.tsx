@@ -36,8 +36,8 @@ interface Session {
 const TYPE_COLOR: Record<SessionType, string> = {
   Shooting: "#D7BC6A",
   Conditioning: "#41C7E0",
-  Strength: "#00E07F",
-  Skills: "#2BD68B",
+  Strength: "#4D8DFF",
+  Skills: "#4D8DFF",
 };
 
 const SEED: Session[] = [
@@ -234,7 +234,7 @@ export default function TrainingTrackerPage() {
                 <Meter
                   value={balance}
                   max={100}
-                  color="#2BD68B"
+                  color="#4D8DFF"
                   label="Skill balance — spread of minutes across session types"
                   valueLabel={`${balance} / 100`}
                 />

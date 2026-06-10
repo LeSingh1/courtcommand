@@ -256,7 +256,7 @@ export default function DefensiveImpactPage() {
           <b>{bestRim.rimProtect}</b> rim score), walling off the paint and holding opponents to{" "}
           <b>{bestRim.oppFg}%</b> at the rim.
         </Insight>
-        <Insight accent="#2BD68B">
+        <Insight accent="#4D8DFF">
           <b>{bestPerimeter.player.name}</b> is the top perimeter stopper (
           <b>{bestPerimeter.perimeter}</b> perimeter score) — disruptive hands and point-of-attack
           containment.

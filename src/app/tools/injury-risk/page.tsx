@@ -17,15 +17,15 @@ import { gradeColor, ACCENT_HEX } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
 const OVERALL_COLOR: Record<string, string> = {
-  low: "#2BD68B",
+  low: "#4D8DFF",
   med: "#D7BC6A",
   high: "#F4647D",
 };
 
 const BAND_COLOR: Record<string, string> = {
-  Low: "#2BD68B",
+  Low: "#4D8DFF",
   Moderate: "#D7BC6A",
-  Elevated: "#00E07F",
+  Elevated: "#4D8DFF",
   High: "#F4647D",
 };
 
@@ -167,13 +167,13 @@ export default function InjuryRiskPage() {
                         </ul>
                       </div>
                       <div>
-                        <div className="kicker mb-2" style={{ color: "#2BD68B" }}>
+                        <div className="kicker mb-2" style={{ color: "#4D8DFF" }}>
                           Recommendations
                         </div>
                         <ul className="space-y-1.5">
                           {workload.recommendations.map((r) => (
                             <li key={r} className="flex items-start gap-2 text-sm text-white/70">
-                              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#2BD68B]" />
+                              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#4D8DFF]" />
                               {r}
                             </li>
                           ))}
@@ -195,12 +195,12 @@ export default function InjuryRiskPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#00E07F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#4D8DFF" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the bars show how close the workload model's projected availability came to the games players actually logged the following year — within about 14 games on average.
           </p>
         </div>
-        <TrackRecord slug="injury-risk" accent="#00E07F" />
+        <TrackRecord slug="injury-risk" accent="#4D8DFF" />
       </div>
     </ToolShell>
   );

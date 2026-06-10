@@ -72,7 +72,7 @@ export default function ShotQualityPage() {
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Segmented
-          accent="#00E07F"
+          accent="#4D8DFF"
           value={mode}
           onChange={setMode}
           options={[
@@ -105,10 +105,10 @@ export default function ShotQualityPage() {
                   <button
                     key={s.value}
                     onClick={() => setShotType(s.value)}
-                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#00E07F]"
+                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#4D8DFF]"
                     style={
                       shotType === s.value
-                        ? { background: "#00E07F", color: "#03130a" }
+                        ? { background: "#4D8DFF", color: "#061129" }
                         : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" }
                     }
                   >
@@ -180,7 +180,7 @@ export default function ShotQualityPage() {
                               <div
                                 className="absolute top-0 h-full"
                                 style={{
-                                  background: pos ? "#2BD68B" : "#F4647D",
+                                  background: pos ? "#4D8DFF" : "#F4647D",
                                   width: `${Math.min(50, Math.abs(d.impact) * 400)}%`,
                                   left: pos ? "50%" : `${50 - Math.min(50, Math.abs(d.impact) * 400)}%`,
                                 }}
@@ -189,7 +189,7 @@ export default function ShotQualityPage() {
                           </div>
                           <span
                             className="stat-num flex w-14 items-center justify-end gap-1 text-xs font-semibold"
-                            style={{ color: pos ? "#2BD68B" : "#F4647D" }}
+                            style={{ color: pos ? "#4D8DFF" : "#F4647D" }}
                           >
                             {pos ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                             {pos ? "+" : ""}
@@ -214,7 +214,7 @@ export default function ShotQualityPage() {
                       result.risk_factors.map((r) => (
                         <span
                           key={r}
-                          className="rounded-lg border border-[#00E07F44] bg-[#00E07F14] px-2.5 py-1 text-[11px] font-medium text-[#00E07F]"
+                          className="rounded-lg border border-[#4D8DFF44] bg-[#4D8DFF14] px-2.5 py-1 text-[11px] font-medium text-[#4D8DFF]"
                         >
                           {r}
                         </span>
@@ -230,7 +230,7 @@ export default function ShotQualityPage() {
                   (clock ≤ 4s, defender &lt; 3 ft, 5+ dribbles, touch ≥ 5s, step-back/pull-up threes).
                 </p>
               </Panel>
-              <Insight accent="#00E07F">
+              <Insight accent="#4D8DFF">
                 A {result.rating.toLowerCase()} worth <b>{result.expPoints} expected points</b>. The
                 biggest factor was <b>{result.drivers[0]?.label.toLowerCase() ?? "the shot context"}</b>. League-average
                 halfcourt shots sit near 1.04 pts/shot — this look {result.expPoints >= 1.04 ? "beats" : "trails"} that
@@ -271,14 +271,14 @@ export default function ShotQualityPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#00E07F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#4D8DFF" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             A calibration view: the model&apos;s predicted make% against what 3,062 real NBA shots
             actually converted, broken out by shot type and zone, drawn from training data that has
             grown every season since 2003.
           </p>
         </div>
-        <TrackRecord slug="shot-quality" accent="#00E07F" />
+        <TrackRecord slug="shot-quality" accent="#4D8DFF" />
       </div>
     </ToolShell>
   );

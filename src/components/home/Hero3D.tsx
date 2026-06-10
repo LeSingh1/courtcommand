@@ -12,7 +12,7 @@ import shotsRaw from "./heroShots.json";
 type S = { x: number; y: number; m: number; v: number; d: number };
 const SHOTS = shotsRaw as S[];
 
-const EMBER = "#00e07f";
+const EMBER = "#4d8dff";
 const STEEL = "#3f4046";
 const HAIR = "#232327";
 const PX = 42; // court px per world unit

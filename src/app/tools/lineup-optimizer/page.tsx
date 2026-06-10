@@ -24,7 +24,7 @@ import {
 import { gradeColor, letterGrade } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
-const ACCENT = "#2BD68B";
+const ACCENT = "#4D8DFF";
 
 export default function LineupOptimizerPage() {
   const tool = getTool("lineup-optimizer")!;
@@ -270,13 +270,13 @@ export default function LineupOptimizerPage() {
                         label="Defense"
                         valueLabel={`${shown.defense}`}
                         value={shown.defense}
-                        color="#2BD68B"
+                        color="#4D8DFF"
                       />
                       <Meter
                         label="Scoring"
                         valueLabel={`${shown.scoring}`}
                         value={shown.scoring}
-                        color="#00E07F"
+                        color="#4D8DFF"
                       />
                       <Meter
                         label="Playmaking"
@@ -322,14 +322,14 @@ export default function LineupOptimizerPage() {
                   )}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <div className="kicker mb-2" style={{ color: "#2BD68B" }}>
+                      <div className="kicker mb-2" style={{ color: "#4D8DFF" }}>
                         Strengths
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {shown.strengths.map((s) => (
                           <span
                             key={s}
-                            className="rounded-lg border border-[#2BD68B]/30 bg-[#2BD68B]/10 px-2 py-1 text-xs text-[#2BD68B]"
+                            className="rounded-lg border border-[#4D8DFF]/30 bg-[#4D8DFF]/10 px-2 py-1 text-xs text-[#4D8DFF]"
                           >
                             {s}
                           </span>
@@ -378,12 +378,12 @@ export default function LineupOptimizerPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#2BD68B" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#4D8DFF" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the player-impact ratings behind the lineup scoring are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89). Goal presets only reweight the five sub-scores (spacing, defense, scoring, playmaking, balance); the underlying ratings are identical for every goal.
           </p>
         </div>
-        <TrackRecord slug="lineup-optimizer" accent="#2BD68B" />
+        <TrackRecord slug="lineup-optimizer" accent="#4D8DFF" />
       </div>
     </ToolShell>
   );

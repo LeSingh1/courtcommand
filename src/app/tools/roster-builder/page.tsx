@@ -17,7 +17,7 @@ import { scoreLineup, type LineupScore } from "@/lib/engine/teams";
 import { contractBreakdown } from "@/lib/engine/value";
 import { gradeColor, letterGrade, STEEL } from "@/lib/cn";
 
-const ACCENT = "#2BD68B";
+const ACCENT = "#4D8DFF";
 
 export default function RosterBuilderPage() {
   const tool = getTool("roster-builder")!;
@@ -243,8 +243,8 @@ export default function RosterBuilderPage() {
                   <Gauge value={score.overall} label="Overall" color={gradeColor(score.overall)} />
                 </div>
                 <div className="mt-5 space-y-3.5">
-                  <Meter label="Offense" valueLabel={`${score.scoring}`} value={score.scoring} color="#00E07F" />
-                  <Meter label="Defense" valueLabel={`${score.defense}`} value={score.defense} color="#2BD68B" />
+                  <Meter label="Offense" valueLabel={`${score.scoring}`} value={score.scoring} color="#4D8DFF" />
+                  <Meter label="Defense" valueLabel={`${score.defense}`} value={score.defense} color="#4D8DFF" />
                   <Meter label="Playmaking" valueLabel={`${score.playmaking}`} value={score.playmaking} color="#D7BC6A" />
                   <Meter label="Spacing" valueLabel={`${score.spacing}`} value={score.spacing} color={STEEL} />
                   <Meter label="Balance" valueLabel={`${score.balance}`} value={score.balance} color="#F4647D" />
@@ -298,12 +298,12 @@ export default function RosterBuilderPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#2BD68B" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#4D8DFF" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the player ratings behind the roster grades are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89).
           </p>
         </div>
-        <TrackRecord slug="roster-builder" accent="#2BD68B" />
+        <TrackRecord slug="roster-builder" accent="#4D8DFF" />
       </div>
     </ToolShell>
   );

@@ -46,7 +46,7 @@ export default function ToolsPage() {
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto" role="group" aria-label="Filter by category">
           {["All", ...CATEGORIES].map((c) => {
             const active = cat === c;
-            const color = c === "All" ? "#00E07F" : categoryColor(c);
+            const color = c === "All" ? "#4D8DFF" : categoryColor(c);
             return (
               <button
                 key={c}

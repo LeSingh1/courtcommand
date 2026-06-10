@@ -109,8 +109,8 @@ export function RealShots() {
                   onClick={() => setEspnId(sp.espnId)}
                   className="flex w-full items-center gap-2.5 border px-2.5 py-1.5 text-left transition"
                   style={{
-                    borderColor: sel ? "#00E07F66" : "transparent",
-                    background: sel ? "#00E07F12" : "transparent",
+                    borderColor: sel ? "#4D8DFF66" : "transparent",
+                    background: sel ? "#4D8DFF12" : "transparent",
                   }}
                 >
                   {p ? <PlayerAvatar player={p} size={26} /> : null}
@@ -132,13 +132,13 @@ export function RealShots() {
                   onClick={() => setShotId(s.id)}
                   className="flex w-full items-center gap-2.5 border px-2.5 py-2 text-left transition"
                   style={{
-                    borderColor: sel ? "#00E07F66" : "var(--line)",
-                    background: sel ? "#00E07F12" : "transparent",
+                    borderColor: sel ? "#4D8DFF66" : "var(--line)",
+                    background: sel ? "#4D8DFF12" : "transparent",
                   }}
                 >
                   <span
                     className="flex h-5 w-5 items-center justify-center"
-                    style={{ background: s.made ? "#2BD68B" : "transparent", border: s.made ? "none" : "1px solid #F4647D55" }}
+                    style={{ background: s.made ? "#4D8DFF" : "transparent", border: s.made ? "none" : "1px solid #F4647D55" }}
                   >
                     {s.made ? <Check size={12} className="text-[#0a0a0b]" /> : <X size={11} className="text-[#F4647D]" />}
                   </span>
@@ -209,12 +209,12 @@ export function RealShots() {
                     <div
                       className="border p-3"
                       style={{
-                        borderColor: shot.made ? "#2BD68B55" : "#F4647D55",
-                        background: shot.made ? "#2BD68B0f" : "#F4647D0f",
+                        borderColor: shot.made ? "#4D8DFF55" : "#F4647D55",
+                        background: shot.made ? "#4D8DFF0f" : "#F4647D0f",
                       }}
                     >
                       <div className="kicker mb-1">Reality</div>
-                      <div className="scoreboard text-2xl" style={{ color: shot.made ? "#2BD68B" : "#F4647D" }}>
+                      <div className="scoreboard text-2xl" style={{ color: shot.made ? "#4D8DFF" : "#F4647D" }}>
                         {shot.made ? "MADE" : "MISS"}
                       </div>
                       <div className="text-[11px] text-[var(--text-faint)]">{shot.value} points</div>
@@ -223,7 +223,7 @@ export function RealShots() {
                 </Panel>
               </div>
 
-              <Insight accent="#00E07F">{grade.verdict}</Insight>
+              <Insight accent="#4D8DFF">{grade.verdict}</Insight>
 
               {/* animated replay */}
               <Panel title="Shot replay">

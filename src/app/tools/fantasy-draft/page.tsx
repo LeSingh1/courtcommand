@@ -319,7 +319,7 @@ export default function FantasyDraftPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#00E07F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#4D8DFF" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each bar shows how far the model's next-season scoring projection missed players' actual
             PPG the following year — averaging about ±2.4 PPG — validated against the real training
@@ -328,7 +328,7 @@ export default function FantasyDraftPage() {
             position scarcity, and a games-played/age availability proxy — no randomness anywhere.
           </p>
         </div>
-        <TrackRecord slug="fantasy-draft" accent="#00E07F" />
+        <TrackRecord slug="fantasy-draft" accent="#4D8DFF" />
       </div>
     </ToolShell>
   );

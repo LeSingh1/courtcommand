@@ -430,10 +430,10 @@ export function pickAndRoll(handler: Player, roller: Player): PnRResult {
     short_roll_efficiency,
     tactical_explanation,
     breakdown: [
-      { label: "Handler creation", value: clamp(handlerScore, 0, 100), color: "#00E07F" },
+      { label: "Handler creation", value: clamp(handlerScore, 0, 100), color: "#4D8DFF" },
       { label: "Roll-man finishing", value: clamp(rollerScore, 0, 100), color: "#6B6E78" },
       { label: "Spacing gravity", value: clamp(handler.tpp * 200 - 20, 0, 100), color: "#D7BC6A" },
-      { label: "Ball security", value: clamp(100 - turnoverRate * 4, 0, 100), color: "#2BD68B" },
+      { label: "Ball security", value: clamp(100 - turnoverRate * 4, 0, 100), color: "#4D8DFF" },
     ],
   };
 }
@@ -470,11 +470,11 @@ export function playTypeMix(p: Player): PlayTypeMix[] {
   const g = p.pos === "PG" || p.pos === "SG";
   const big = p.pos === "C" || p.pos === "PF";
   const raw: { type: string; w: number; ppp: number; color: string }[] = [
-    { type: "Pick & Roll", w: g ? 28 + p.apg : 10, ppp: 0.92 + p.apg * 0.01, color: "#00E07F" },
-    { type: "Isolation", w: p.usg > 28 ? 18 : 8, ppp: 0.86 + (p.tsp - 0.55) * 0.5, color: "#00E07F" },
+    { type: "Pick & Roll", w: g ? 28 + p.apg : 10, ppp: 0.92 + p.apg * 0.01, color: "#4D8DFF" },
+    { type: "Isolation", w: p.usg > 28 ? 18 : 8, ppp: 0.86 + (p.tsp - 0.55) * 0.5, color: "#4D8DFF" },
     { type: "Spot Up", w: p.shotThree * 30 + 8, ppp: 0.98 + (p.tpp - 0.35) * 0.6, color: "#6B6E78" },
     { type: "Transition", w: 12 + p.spg * 3, ppp: 1.12 + p.starPower * 0.001, color: "#D7BC6A" },
-    { type: "Post Up", w: big ? 16 + p.rpg * 0.6 : 3, ppp: 0.9 + (p.tsp - 0.55) * 0.4, color: "#2BD68B" },
+    { type: "Post Up", w: big ? 16 + p.rpg * 0.6 : 3, ppp: 0.9 + (p.tsp - 0.55) * 0.4, color: "#4D8DFF" },
     { type: "Cut", w: big ? 12 : 7, ppp: 1.18, color: "#F4647D" },
     { type: "Handoff", w: 6 + p.apg * 0.4, ppp: 0.95, color: "#6B6E78" },
   ];

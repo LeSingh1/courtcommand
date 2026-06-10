@@ -7,7 +7,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { TOOLS, CATEGORIES, categoryColor } from "@/lib/tools";
 import { HomePreviews } from "@/components/home/HomePreviews";
 
-const BETTING_GREEN = "#2BD68B";
+const BETTING_GREEN = "#4D8DFF";
 
 // Oversized hollow numeral that anchors each section like a magazine spread.
 function SectionMark({ n, kicker, title }: { n: string; kicker: string; title: string }) {

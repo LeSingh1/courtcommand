@@ -28,8 +28,8 @@ import {
   type ConfidenceTier,
 } from "@/lib/engine/betting";
 
-// Ember accent (= var(--accent) #00e07f), the sanctioned Prediction-category color.
-const EMERALD = "#00E07F";
+// Ember accent (= var(--accent) #4d8dff), the sanctioned Prediction-category color.
+const EMERALD = "#4D8DFF";
 
 // Betting isn't registered in tools.ts (it's not a public /tools entry), so we
 // describe it locally to drive the shared ToolShell header (breadcrumb + Share).
@@ -48,7 +48,7 @@ const BETTING_TOOL: ToolMeta = {
 const ODDS_LABEL: Record<OddsType, string> = { standard: "Standard", demon: "Demon", goblin: "Goblin" };
 
 // Muted semantic colors for confidence tiers (match the gradeColor palette).
-const TIER_COLOR: Record<ConfidenceTier, string> = { A: "#2BD68B", B: "#D7BC6A", C: "#D7BC6A" };
+const TIER_COLOR: Record<ConfidenceTier, string> = { A: "#4D8DFF", B: "#D7BC6A", C: "#D7BC6A" };
 
 export default function BettingPage() {
   const [market, setMarket] = useState<Market | "ALL">("ALL");

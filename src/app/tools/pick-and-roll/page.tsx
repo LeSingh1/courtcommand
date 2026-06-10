@@ -17,7 +17,7 @@ import { gradeColor } from "@/lib/cn";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const ACCENT = "#00E07F";
+const ACCENT = "#4D8DFF";
 const LEAGUE_AVG = 1.0;
 // Mirrors the engine's clamp(turnoverRate, 6, 22) ceiling in pickAndRoll().
 const TURNOVER_CEILING = 22;
@@ -231,7 +231,7 @@ export default function PickAndRollPage() {
                 value={result.turnoverRate}
                 suffix="%"
                 decimals={1}
-                color={result.turnoverRate <= 12 ? "#2BD68B" : "#F4647D"}
+                color={result.turnoverRate <= 12 ? "#4D8DFF" : "#F4647D"}
                 invert
               />
               <StatCard
@@ -253,10 +253,10 @@ export default function PickAndRollPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#2BD68B" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#4D8DFF" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the playmaking and finishing ratings behind these grades are tested against what those players produced the following year — the bars show that year-over-year correlation (about r=0.89).</p>
         </div>
-        <TrackRecord slug="pick-and-roll" accent="#2BD68B" />
+        <TrackRecord slug="pick-and-roll" accent="#4D8DFF" />
       </div>
     </ToolShell>
   );

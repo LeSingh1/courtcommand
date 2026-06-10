@@ -21,7 +21,7 @@ const sum = (ps: Player[], k: (p: Player) => number) => ps.reduce((a, p) => a + 
 
 function ovrColor(o: number): string {
   if (o >= 90) return "#D7BC6A";
-  if (o >= 80) return "#2BD68B";
+  if (o >= 80) return "#4D8DFF";
   if (o >= 72) return "#41C7E0";
   return "#6B6E78";
 }
@@ -202,10 +202,10 @@ export default function TradeMachinePage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#2BD68B" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#4D8DFF" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the player-rating model these deals are graded on is tested against what players actually produced the next year — the bars show that year-over-year correlation (about r=0.89). Contract risk is an estimate: it projects remaining years on age-30+ deals from player age, since contract-length data isn't ingested. Fit is positional balance of the post-trade roster (100 = even across all five spots).</p>
         </div>
-        <TrackRecord slug="trade-machine" accent="#2BD68B" />
+        <TrackRecord slug="trade-machine" accent="#4D8DFF" />
       </div>
     </ToolShell>
   );
@@ -338,7 +338,7 @@ function TeamPanel({
         </div>
         {incoming.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-[var(--line)] pt-2">
-            <span className="kicker text-[#2BD68B]">Gets</span>
+            <span className="kicker text-[#4D8DFF]">Gets</span>
             {incoming.map((p) => (
               <span key={p.id} className="flex items-center gap-1 text-[11px] text-white/70">
                 <PlayerAvatar player={p} size={14} /> {p.name}
@@ -398,7 +398,7 @@ function OvrBadge({ ovr }: { ovr: number }) {
 /* ---------------- Verdict banner ---------------- */
 function VerdictBanner({ result, teams }: { result: TradeResult; teams: string[] }) {
   const ok = result.legal;
-  const color = ok ? "#2BD68B" : "#F4647D";
+  const color = ok ? "#4D8DFF" : "#F4647D";
   return (
     <div className="relative flex flex-col gap-3 overflow-hidden border px-5 py-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: `${color}55`, background: `${color}10` }}>
       <div className="flex items-center gap-3">
@@ -431,7 +431,7 @@ function AfterTrade({
   sends: Player[];
 }) {
   const c = side.team.color;
-  const gradeC = side.talentDelta > 5 ? "#2BD68B" : side.talentDelta < -5 ? "#F4647D" : "#D7BC6A";
+  const gradeC = side.talentDelta > 5 ? "#4D8DFF" : side.talentDelta < -5 ? "#F4647D" : "#D7BC6A";
   const offDelta = r1(sum(receives, (p) => p.offImpact) - sum(sends, (p) => p.offImpact));
   const defDelta = r1(sum(receives, (p) => p.defImpact) - sum(sends, (p) => p.defImpact));
   return (
@@ -494,7 +494,7 @@ function Cell({ label, value }: { label: string; value: string }) {
 
 // Post-trade positional balance (0-100) with the change vs the current roster.
 function FitRow({ score, delta }: { score: number; delta: number }) {
-  const deltaC = delta > 0 ? "#2BD68B" : delta < 0 ? "#F4647D" : "#6B6E78";
+  const deltaC = delta > 0 ? "#4D8DFF" : delta < 0 ? "#F4647D" : "#6B6E78";
   return (
     <div className="flex items-center gap-3">
       <span className="w-14 text-xs text-white/60">Fit</span>
@@ -517,7 +517,7 @@ function FitRow({ score, delta }: { score: number; delta: number }) {
   );
 }
 
-const RISK_COLOR: Record<string, string> = { Low: "#2BD68B", Med: "#D7BC6A", High: "#F4647D" };
+const RISK_COLOR: Record<string, string> = { Low: "#4D8DFF", Med: "#D7BC6A", High: "#F4647D" };
 
 function ContractRiskRow({ risk }: { risk: TradeResult["sides"][number]["contract_risk"] }) {
   const c = RISK_COLOR[risk.level];
@@ -536,7 +536,7 @@ function ContractRiskRow({ risk }: { risk: TradeResult["sides"][number]["contrac
 
 function ImpactMeter({ label, delta }: { label: string; delta: number }) {
   const pos = delta >= 0;
-  const color = pos ? "#2BD68B" : "#F4647D";
+  const color = pos ? "#4D8DFF" : "#F4647D";
   const w = Math.min(50, Math.abs(delta) * 1.1);
   return (
     <div className="flex items-center gap-3">

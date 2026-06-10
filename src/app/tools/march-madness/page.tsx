@@ -184,7 +184,7 @@ export default function MarchMadnessPage() {
             whileTap={{ scale: 0.96 }}
             transition={spring.snappy}
             className="rounded-lg px-5 py-2.5 text-sm font-semibold transition"
-            style={{ background: ACCENT, color: "#03130a" }}
+            style={{ background: ACCENT, color: "#061129" }}
           >
             {result ? "Re-simulate Tournament" : "Simulate Tournament"}
           </motion.button>
@@ -445,7 +445,7 @@ export default function MarchMadnessPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#00E07F" }}>Track record &amp; method</div>
+          <div className="kicker" style={{ color: "#4D8DFF" }}>Track record &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             The actual NCAA champion for every season since 2003 — from Syracuse in 2003 through the
             most recent title run — is the historical ground truth the bracket model is graded against.
@@ -457,7 +457,7 @@ export default function MarchMadnessPage() {
             the listed inputs.
           </p>
         </div>
-        <TrackRecord slug="march-madness" accent="#00E07F" />
+        <TrackRecord slug="march-madness" accent="#4D8DFF" />
       </div>
     </ToolShell>
   );

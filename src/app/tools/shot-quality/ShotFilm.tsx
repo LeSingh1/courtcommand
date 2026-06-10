@@ -21,9 +21,9 @@ import {
   type RealClip,
 } from "@/lib/data/clips";
 
-const ACCENT = "#00E07F";
+const ACCENT = "#4D8DFF";
 const MISS = "#F4647D";
-const MADE = "#2BD68B";
+const MADE = "#4D8DFF";
 
 const DEFAULT_PLAYER =
   REAL_CLIPS.find((c) => c.id === DEFAULT_CLIP_ID)?.player ?? CLIP_PLAYERS[0]?.player ?? "";

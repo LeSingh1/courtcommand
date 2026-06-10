@@ -43,9 +43,9 @@ export function CourtChart({
   height?: number;
 }) {
   const heatColor = (efg: number) => {
-    if (efg >= 0.58) return "#00E07F";
+    if (efg >= 0.58) return "#4D8DFF";
     if (efg >= 0.5) return "#D7BC6A";
-    if (efg >= 0.44) return "#9FB07A";
+    if (efg >= 0.44) return "#41C7E0";
     if (efg >= 0.38) return "#8E96A4";
     return "#6B6E78";
   };
@@ -83,7 +83,7 @@ export function CourtChart({
             cx={s.x}
             cy={s.y}
             r={s.r ?? 4}
-            fill={s.made ? "#00E07F" : "none"}
+            fill={s.made ? "#4D8DFF" : "none"}
             stroke={s.made ? "none" : "#6B6E78"}
             strokeWidth={s.made ? 0 : 1.4}
           />

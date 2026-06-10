@@ -3,12 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  /* GeistSans/GeistMono register --font-geist-sans / --font-geist-mono on <html>. */
+  --font-display: var(--font-geist-sans), system-ui, sans-serif;
   --font-condensed: var(--font-display);
-  --font-sans: "Instrument Sans", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* Court Mono — true-neutral black ramp, one electric court-green signal.
+  /* Court Mono — true-neutral black ramp, one court-blue signal.
      Zero temperature cast anywhere: grays are pure, color lives in the data. */
   --bg: #0a0a0b;
   --surface: #121214;
@@ -18,8 +19,8 @@
   --text: #f4f4f5;
   --text-muted: #9b9ba3;
   --text-faint: #63636b;
-  --accent: #00e07f;
-  --accent-ink: #03130a;
+  --accent: #4d8dff;
+  --accent-ink: #061129;
 
   --radius: 14px;
   --radius-sm: 9px;
@@ -47,25 +48,26 @@ body {
 }
 
 /* ---------- Typography ---------- */
+/* One family, hierarchy by weight. No italics anywhere — emphasis is weight
+   and the accent color, the way Linear/Vercel-grade interfaces do it. */
 .display {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-optical-sizing: auto;
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
 }
 .display-italic {
   font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.045em;
 }
 
 .scoreboard {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   line-height: 0.95;
 }
 
@@ -118,7 +120,7 @@ body {
 .btn-ember:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 32px -12px rgba(0, 224, 127, 0.4);
+  box-shadow: 0 10px 32px -12px rgba(77, 141, 255, 0.4);
 }
 .btn-accent:active,
 .btn-ember:active {
@@ -133,7 +135,7 @@ body {
 }
 .btn-ghost:hover {
   background: rgba(148, 170, 200, 0.12);
-  border-color: rgba(200, 242, 63, 0.5);
+  border-color: rgba(77, 141, 255, 0.55);
 }
 .btn-ghost:active {
   transform: scale(0.97);
@@ -162,8 +164,8 @@ body {
 }
 
 ::selection {
-  background: rgba(0, 224, 127, 0.85);
-  color: #03130a;
+  background: rgba(77, 141, 255, 0.9);
+  color: #061129;
 }
 
 .no-scrollbar::-webkit-scrollbar {

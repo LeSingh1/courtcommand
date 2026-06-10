@@ -18,7 +18,7 @@ import { contractBreakdown } from "@/lib/engine/value";
 import type { Player } from "@/lib/types";
 
 const RISK_COLOR: Record<string, string> = {
-  Low: "#2BD68B",
+  Low: "#4D8DFF",
   Med: "#D7BC6A",
   High: "#F4647D",
 };
@@ -26,12 +26,12 @@ const RISK_COLOR: Record<string, string> = {
 type Filter = "all" | "Bargain" | "Fair" | "Overpaid";
 
 const VERDICT_COLOR: Record<ContractRow["verdict"], string> = {
-  Bargain: "#2BD68B",
+  Bargain: "#4D8DFF",
   Fair: "#D7BC6A",
   Overpaid: "#F4647D",
 };
 
-const POS = "#2BD68B";
+const POS = "#4D8DFF";
 const NEG = "#F4647D";
 
 export default function ContractValuePage() {
@@ -78,14 +78,14 @@ export default function ContractValuePage() {
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Insight accent="#2BD68B">
+        <Insight accent="#4D8DFF">
           <b>{bestBargain.player.name}</b> is the league&apos;s best value — producing{" "}
           <b>${bestBargain.produced}M</b> on a <b>${bestBargain.player.salary}M</b> deal for{" "}
           <b className="text-mint">+${bestBargain.surplus}M</b> of surplus. Production is modeled
           from win value, availability, and the age curve.
         </Insight>
         <Segmented
-          accent="#2BD68B"
+          accent="#4D8DFF"
           value={filter}
           onChange={setFilter}
           options={[

@@ -19,12 +19,12 @@ const config: Config = {
           400: "#34343a",
         },
         // legacy accent keys collapsed to the restrained palette
-        ember: { DEFAULT: "#00e07f", soft: "#4deca3", deep: "#00b868", glow: "#00e07f" },
+        ember: { DEFAULT: "#4d8dff", soft: "#7faeff", deep: "#2e6be6", glow: "#4d8dff" },
         cyan: { DEFAULT: "#41c7e0", soft: "#7fd9eb", deep: "#2aa4bb" },
         gold: { DEFAULT: "#d7bc6a", deep: "#b89c45" },
-        mint: "#2bd68b",
+        mint: "#4d8dff",
         rose: "#f4647d",
-        accent: "#00e07f",
+        accent: "#4d8dff",
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],

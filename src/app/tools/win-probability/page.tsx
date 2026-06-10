@@ -279,7 +279,7 @@ export default function WinProbabilityPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#00E07F" }}>
+          <div className="kicker" style={{ color: "#4D8DFF" }}>
             Data &amp; method
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">

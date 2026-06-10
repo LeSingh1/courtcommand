@@ -16,7 +16,7 @@ import { gameRecap, type BoxLine } from "@/lib/engine/game";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const EMBER = "#00E07F";
+const EMBER = "#4D8DFF";
 
 const HEADLINE_LABELS: Record<string, string> = {
   straight: "Straight",
@@ -150,10 +150,10 @@ export default function GameRecapPage() {
                   <button
                     key={o.style}
                     onClick={() => setHeadlineIdx(i)}
-                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#00E07F]"
+                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#4D8DFF]"
                     style={
                       i === headlineIdx
-                        ? { background: EMBER, color: "#03130a" }
+                        ? { background: EMBER, color: "#061129" }
                         : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" }
                     }
                   >
