@@ -147,7 +147,7 @@ function ShiftCard({
 }) {
   return (
     <div className="glass rounded-lg p-3">
-      <div className="text-[10px] uppercase tracking-widest text-white/40">{title}</div>
+      <div className="text-[10px] text-white/40">{title}</div>
       {shift ? (
         <>
           <div className="stat-num mt-1 text-2xl font-bold" style={{ color }}>
@@ -203,7 +203,7 @@ function FormView({ player, result }: { player: Player; result: PlayerForm }) {
             />
           </div>
           <div
-            className="mt-2 flex justify-between text-[10px] uppercase tracking-wider text-white/35"
+            className="mt-2 flex justify-between text-[10px] text-white/35"
             style={{ paddingLeft: `${(36 / 560) * 100}%`, paddingRight: `${(36 / 560) * 100}%` }}
           >
             <span>Below his baseline</span>
@@ -228,7 +228,7 @@ function FormView({ player, result }: { player: Player; result: PlayerForm }) {
 
       <div className="space-y-6">
         <Panel className="flex flex-col items-center justify-center py-7 text-center">
-          <div className="text-[10px] uppercase tracking-widest text-white/40">Current momentum</div>
+          <div className="text-[10px] text-white/40">Current momentum</div>
           <div className="stat-num my-2 text-5xl font-bold" style={{ color: currentColor }}>
             {result.current > 0 ? "+" : ""}
             {result.current}

@@ -91,7 +91,7 @@ function DebateInner() {
             <DebateCard side={result.a} accent={GOLD} leading={result.edge > 0} />
 
             <div className="flex flex-col items-center justify-center gap-3">
-              <div className="text-[10px] uppercase tracking-widest text-white/40">Edge</div>
+              <div className="text-[10px] text-white/40">Edge</div>
               <div
                 className="stat-num text-3xl font-bold"
                 style={{ color: result.edge >= 0 ? GOLD : TEAL }}
@@ -123,7 +123,7 @@ function DebateInner() {
                 <span className="scoreboard text-4xl" style={{ color: GOLD }}>
                   {result.confidence_score}
                 </span>
-                <span className="mb-1 text-[10px] uppercase tracking-wide text-white/40">
+                <span className="mb-1 text-[10px] text-white/40">
                   / 95 max
                 </span>
               </div>

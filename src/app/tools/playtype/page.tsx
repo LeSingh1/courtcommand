@@ -198,7 +198,7 @@ export default function PlayTypePage() {
                     </Reveal>
                   ))}
                 </div>
-                <div className="mt-3 flex justify-end gap-[58px] pr-1 text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+                <div className="mt-3 flex justify-end gap-[58px] pr-1 text-[10px] text-[var(--text-faint)]">
                   <span>freq</span>
                   <span>ppp</span>
                 </div>
@@ -211,7 +211,7 @@ export default function PlayTypePage() {
               <Panel title="Offensive identity">
                 <div className="space-y-4">
                   <div>
-                    <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+                    <div className="text-[10px] text-[var(--text-faint)]">
                       Bread & butter
                     </div>
                     <div className="mt-1 flex items-center gap-2">
@@ -222,7 +222,7 @@ export default function PlayTypePage() {
                   </div>
                   {bestEff && (
                     <div>
-                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+                      <div className="text-[10px] text-[var(--text-faint)]">
                         Most efficient
                       </div>
                       <div className="mt-1 flex items-center gap-2">
@@ -239,14 +239,14 @@ export default function PlayTypePage() {
                   )}
                   {mode === "player" && player ? (
                     <div>
-                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+                      <div className="text-[10px] text-[var(--text-faint)]">
                         Archetype
                       </div>
                       <div className="mt-1 text-sm text-[var(--text-muted)]">{player.archetype}</div>
                     </div>
                   ) : (
                     <div>
-                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+                      <div className="text-[10px] text-[var(--text-faint)]">
                         Blend
                       </div>
                       <div className="mt-1 text-sm text-[var(--text-muted)]">
@@ -255,7 +255,7 @@ export default function PlayTypePage() {
                     </div>
                   )}
                   <div>
-                    <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+                    <div className="text-[10px] text-[var(--text-faint)]">
                       Label confidence
                     </div>
                     <div className="mt-1 text-xs leading-relaxed text-[var(--text-faint)]">

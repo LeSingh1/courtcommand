@@ -26,8 +26,8 @@ export function Meter({
           <span className="stat-num text-[var(--text)]">{valueLabel}</span>
         </div>
       )}
-      <div className="w-full overflow-hidden bg-[rgba(255,255,255,0.06)]" style={{ height }}>
-        <div className="grow-x h-full" style={{ width: `${pct}%`, background: color }} />
+      <div className="w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]" style={{ height }}>
+        <div className="grow-x h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
       </div>
     </div>
   );

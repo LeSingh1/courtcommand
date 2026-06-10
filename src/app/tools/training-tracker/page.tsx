@@ -89,7 +89,7 @@ export default function TrainingTrackerPage() {
           <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
               <Flame size={16} style={{ color: ACCENT }} />
-              <span className="text-xs uppercase tracking-wide">Active days</span>
+              <span className="text-xs">Active days</span>
             </div>
             <AnimatedNumber value={activeDays} className="scoreboard mt-2 block text-5xl" />
             <p className="mt-1 text-xs text-white/45">
@@ -101,7 +101,7 @@ export default function TrainingTrackerPage() {
           <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
               <Target size={16} style={{ color: "#D7BC6A" }} />
-              <span className="text-xs uppercase tracking-wide">Total reps</span>
+              <span className="text-xs">Total reps</span>
             </div>
             <span style={{ color: "#D7BC6A" }}>
               <AnimatedNumber value={totalReps} className="scoreboard mt-2 block text-5xl" />
@@ -113,7 +113,7 @@ export default function TrainingTrackerPage() {
           <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
               <Clock size={16} style={{ color: TIME }} />
-              <span className="text-xs uppercase tracking-wide">Total minutes</span>
+              <span className="text-xs">Total minutes</span>
             </div>
             <span style={{ color: TIME }}>
               <AnimatedNumber value={totalMinutes} suffix=" min" className="scoreboard mt-2 block text-5xl" />

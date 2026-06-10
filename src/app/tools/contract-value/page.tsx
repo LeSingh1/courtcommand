@@ -127,7 +127,7 @@ export default function ContractValuePage() {
                       {row.surplus >= 0 ? "+" : ""}
                       ${row.surplus}M
                     </div>
-                    <div className="text-[10px] uppercase text-white/40">Surplus value</div>
+                    <div className="text-[10px] text-white/40">Surplus value</div>
                   </div>
                   <div className="stat-num text-right text-xs text-white/50">
                     <div>${row.produced}M produced</div>
@@ -180,7 +180,7 @@ export default function ContractValuePage() {
                   <div className="stat-num text-xl font-bold text-white">
                     {breakdown.productionPerDollar}
                   </div>
-                  <div className="mt-0.5 text-[10px] uppercase tracking-wide text-white/40">
+                  <div className="mt-0.5 text-[10px] text-white/40">
                     Production per $M
                   </div>
                 </div>
@@ -188,7 +188,7 @@ export default function ContractValuePage() {
                   <div className="stat-num text-xl font-bold text-white">
                     x{breakdown.ageCurveFactor}
                   </div>
-                  <div className="mt-0.5 text-[10px] uppercase tracking-wide text-white/40">
+                  <div className="mt-0.5 text-[10px] text-white/40">
                     Age-curve factor
                   </div>
                 </div>
@@ -196,7 +196,7 @@ export default function ContractValuePage() {
                   <div className="stat-num text-xl font-bold text-white">
                     x{breakdown.availability.factor}
                   </div>
-                  <div className="mt-0.5 text-[10px] uppercase tracking-wide text-white/40">
+                  <div className="mt-0.5 text-[10px] text-white/40">
                     Availability
                   </div>
                 </div>
@@ -220,7 +220,7 @@ export default function ContractValuePage() {
             <p className="text-sm text-[var(--text-muted)]">No players match this filter.</p>
             <button
               onClick={() => setFilter("all")}
-              className="border border-[var(--line)] px-3 py-1.5 text-xs uppercase tracking-wide text-white/70 transition hover:bg-white/[0.04]"
+              className="border border-[var(--line)] px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/[0.04]"
             >
               Clear filter
             </button>
@@ -229,7 +229,7 @@ export default function ContractValuePage() {
         <div key={filter} className="enter overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
+              <tr className="border-b border-white/10 text-left text-[11px] text-white/40">
                 <th className="py-2 pl-2 font-medium">#</th>
                 <th className="py-2 font-medium">Player</th>
                 <th className="py-2 text-right font-medium">Salary</th>

@@ -80,7 +80,7 @@ function TeamSelect({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[10px] uppercase tracking-wide text-white/40">
+      <span className="mb-1.5 block text-[10px] text-white/40">
         {label}
       </span>
       <select
@@ -225,7 +225,7 @@ export default function MarchMadnessPage() {
                 <div className="scoreboard text-3xl text-white">
                   {matchup.projected_score.a} – {matchup.projected_score.b}
                 </div>
-                <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">
+                <div className="mt-1 text-[10px] text-white/40">
                   Projected · ~70 possessions
                 </div>
               </div>
@@ -246,7 +246,7 @@ export default function MarchMadnessPage() {
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/[0.06] pt-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] uppercase tracking-wide text-white/40">
+                <span className="text-[10px] text-white/40">
                   Key factors
                 </span>
                 {matchup.key_factors.map((f) => (
@@ -257,7 +257,7 @@ export default function MarchMadnessPage() {
                 ))}
               </div>
               <div className="flex min-w-[180px] flex-1 items-center gap-2">
-                <span className="text-[10px] uppercase tracking-wide text-white/40">
+                <span className="text-[10px] text-white/40">
                   Upset risk
                 </span>
                 <div className="w-24">
@@ -349,7 +349,7 @@ export default function MarchMadnessPage() {
                           >
                             <TeamRow team={game.a} prob={game.aProb} isWinner={aWins} accent={ACCENT} />
                             <div className="my-0.5 flex items-center justify-center">
-                              <span className="text-[9px] uppercase tracking-widest text-white/35">
+                              <span className="text-[9px] text-white/35">
                                 vs
                               </span>
                             </div>

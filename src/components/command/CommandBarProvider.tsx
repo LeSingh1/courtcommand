@@ -138,7 +138,7 @@ export function CommandBarProvider({ children }: { children: React.ReactNode }) 
                               <span className="text-sm font-medium text-white">{m.tool.name}</span>
                               {i === 0 && (
                                 <span
-                                  className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase"
+                                  className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
                                   style={{ background: `${accent.hex}22`, color: accent.hex }}
                                 >
                                   Best match

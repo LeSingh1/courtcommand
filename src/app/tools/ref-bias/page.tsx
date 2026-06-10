@@ -56,7 +56,7 @@ export default function RefBiasPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[680px] text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
+                  <tr className="border-b border-white/10 text-left text-[11px] text-white/40">
                     <th className="py-2 pl-2 font-medium">#</th>
                     <th className="py-2 font-medium">Player</th>
                     <th className="py-2 font-medium">FT rate</th>

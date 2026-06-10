@@ -297,7 +297,7 @@ export default function LineupOptimizerPage() {
                 <Reveal delay={0.08}>
                   <Panel className="flex flex-col items-center justify-center">
                     <Gauge value={shown.overall} label="Overall" color={gradeColor(shown.overall)} />
-                    <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-white/35">
+                    <p className="mt-3 text-center text-[10px] text-white/35">
                       {LINEUP_GOALS.find((g) => g.value === goal)?.label} weights
                     </p>
                   </Panel>

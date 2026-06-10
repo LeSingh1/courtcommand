@@ -96,7 +96,7 @@ export default function PickAndRollPage() {
           <Panel className="min-h-[300px]">
             <div className="flex items-center gap-3 border-b border-[var(--line)] pb-3">
               <Workflow size={18} className="animate-pulse" style={{ color: ACCENT }} />
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <span className="text-xs font-semibold text-[var(--text-muted)]">
                 Grading the two-man game…
               </span>
             </div>
@@ -142,7 +142,7 @@ export default function PickAndRollPage() {
                       decimals={2}
                       className="stat-num text-6xl font-bold"
                     />
-                    <div className="mt-1 text-[11px] uppercase tracking-widest text-white/45">
+                    <div className="mt-1 text-[11px] text-white/45">
                       Points per possession
                     </div>
                   </div>
@@ -279,7 +279,7 @@ function StatCard({
 }) {
   return (
     <div className="border border-[var(--line)] bg-[var(--surface)] p-5 transition-colors duration-200 hover:border-[var(--line-strong)]">
-      <div className="text-[10px] uppercase tracking-widest text-white/45">{label}</div>
+      <div className="text-[10px] text-white/45">{label}</div>
       <AnimatedNumber
         value={value}
         decimals={decimals}

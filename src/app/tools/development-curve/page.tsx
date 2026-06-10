@@ -105,7 +105,7 @@ export default function DevelopmentCurvePage() {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[420px] text-sm">
                     <thead>
-                      <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
+                      <tr className="border-b border-white/10 text-left text-[11px] text-white/40">
                         <th className="py-2 pl-2 font-medium">Season</th>
                         <th className="py-2 text-right font-medium">Worst PPG</th>
                         <th className="py-2 text-right font-medium">Expected PPG</th>
@@ -147,20 +147,20 @@ export default function DevelopmentCurvePage() {
                 <div className="stat-num display text-3xl" style={{ color: ACCENT }}>
                   {result.peakAge}
                 </div>
-                <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">Peak age</div>
+                <div className="mt-1 text-[10px] text-white/40">Peak age</div>
                 {peak && (
                   <div className="stat-num mt-1 text-xs text-white/50">~{peak.proj} PER projected</div>
                 )}
               </Panel>
               <Panel className="text-center">
                 <div className="stat-num display text-3xl text-white">{now?.proj}</div>
-                <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">
+                <div className="mt-1 text-[10px] text-white/40">
                   Now (age {player.age})
                 </div>
                 <div className="stat-num mt-1 text-xs text-white/50">current PER</div>
               </Panel>
               <Panel className="flex h-full flex-col items-center justify-center text-center">
-                <div className="mb-1.5 text-[10px] uppercase tracking-wide text-white/40">Ceiling</div>
+                <div className="mb-1.5 text-[10px] text-white/40">Ceiling</div>
                 <Badge color={ACCENT}>{result.ceiling}</Badge>
               </Panel>
             </div>

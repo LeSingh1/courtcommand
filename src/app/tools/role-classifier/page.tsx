@@ -89,7 +89,7 @@ export default function RoleClassifierPage() {
                   />
                 </div>
                 <div className="mt-4">
-                  <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">
+                  <div className="mb-2 text-[10px] text-white/40">
                     Why this role — rules that fired
                   </div>
                   <ul className="space-y-1.5">
@@ -106,7 +106,7 @@ export default function RoleClassifierPage() {
                 </div>
               </div>
               <div>
-                <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">
+                <div className="mb-2 text-[10px] text-white/40">
                   Same-role players, closest star power
                 </div>
                 <div className="space-y-2.5">
@@ -126,7 +126,7 @@ export default function RoleClassifierPage() {
                         <div className="stat-num text-sm font-bold" style={{ color: cls.color }}>
                           {Math.round(p.starPower)}
                         </div>
-                        <div className="text-[9px] uppercase text-white/35">star pwr</div>
+                        <div className="text-[9px] text-white/35">star pwr</div>
                       </div>
                     </div>
                   ))}
@@ -256,7 +256,7 @@ export default function RoleClassifierPage() {
                         <div className="stat-num text-lg font-bold" style={{ color: active.color }}>
                           {p.ppg}
                         </div>
-                        <div className="text-[9px] uppercase text-white/35">PPG</div>
+                        <div className="text-[9px] text-white/35">PPG</div>
                       </div>
                     </div>
                   );

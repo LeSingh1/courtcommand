@@ -51,7 +51,7 @@ export function Gauge({
           {suffix}
         </span>
         {label && (
-          <span className="mt-0.5 text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+          <span className="mt-0.5 text-[10px] text-[var(--text-faint)]">
             {label}
           </span>
         )}

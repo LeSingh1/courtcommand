@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Award, Crown } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
@@ -45,16 +45,10 @@ export default function AwardPredictorPage() {
         <Segmented accent={ACCENT} value={kind} onChange={setKind} options={AWARDS} />
       </div>
 
-      <AnimatePresence mode="wait">
+      {/* CSS entrance (replays on key change) — content is never gated behind a
+          JS animation that can fail to fire. */}
       {leader ? (
-        <motion.div
-          key={kind}
-          className="grid gap-6 lg:grid-cols-[360px_1fr]"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={spring.soft}
-        >
+        <div key={kind} className="enter grid gap-6 lg:grid-cols-[360px_1fr]">
           {/* frontrunner card */}
           <motion.div
             className="glass rounded-lg p-6"
@@ -64,7 +58,7 @@ export default function AwardPredictorPage() {
           >
             <div className="flex items-center gap-2">
               <Crown size={18} style={{ color: ACCENT }} />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-white/55">
+              <span className="text-[11px] font-semibold text-white/55">
                 Frontrunner
               </span>
             </div>
@@ -82,7 +76,7 @@ export default function AwardPredictorPage() {
                 <div className="display text-5xl" style={{ color: ACCENT }}>
                   <AnimatedNumber value={leader.share} decimals={0} suffix="%" />
                 </div>
-                <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">
+                <div className="mt-1 text-[10px] text-white/40">
                   Projected vote share
                 </div>
               </div>
@@ -102,23 +96,16 @@ export default function AwardPredictorPage() {
               unit="%"
             />
           </Panel>
-        </motion.div>
+        </div>
       ) : (
-        <motion.div
-          key={`${kind}-empty`}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={spring.soft}
-        >
+        <div key={`${kind}-empty`} className="enter">
           <Panel title={`${kind} candidate field`}>
             <div className="py-10 text-center text-sm text-white/45">
               No qualifying {AWARD_FULL[kind]} candidates in the current pool.
             </div>
           </Panel>
-        </motion.div>
+        </div>
       )}
-      </AnimatePresence>
 
       {leader && runnerUp && (
         <div className="mt-6">

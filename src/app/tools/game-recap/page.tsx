@@ -101,7 +101,7 @@ export default function GameRecapPage() {
             )}
 
             <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3">
-              <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">Auto star lines</div>
+              <div className="mb-2 text-[10px] text-white/40">Auto star lines</div>
               <div className="space-y-1.5">
                 {[...homeStars, ...awayStars].map((s) => {
                   const sp = playerByName.get(s.name);
@@ -211,7 +211,7 @@ export default function GameRecapPage() {
                         <PlayerAvatar player={playerByName.get(recap.topPerformer.name)!} size={40} />
                       )}
                       <div>
-                        <div className="text-[10px] uppercase tracking-wider text-white/45">Player of the Game</div>
+                        <div className="text-[10px] text-white/45">Player of the Game</div>
                         <div className="font-semibold text-white">{recap.topPerformer.name}</div>
                       </div>
                     </div>
@@ -312,7 +312,7 @@ function StatCell({ value, label }: { value: number; label: string }) {
   return (
     <div>
       <div className="scoreboard text-xl text-white">{value}</div>
-      <div className="text-[9px] uppercase text-white/40">{label}</div>
+      <div className="text-[9px] text-white/40">{label}</div>
     </div>
   );
 }

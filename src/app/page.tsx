@@ -120,7 +120,7 @@ export default function HomePage() {
                 ].map((s) => (
                   <div key={s.l} className="bg-[var(--surface)] p-4 text-center">
                     <div className="scoreboard text-xl" style={{ color: BETTING_GREEN }}>{s.k}</div>
-                    <div className="mt-1 text-[10px] uppercase tracking-wide text-[var(--text-faint)]">{s.l}</div>
+                    <div className="mt-1 text-[10px] text-[var(--text-faint)]">{s.l}</div>
                   </div>
                 ))}
               </div>

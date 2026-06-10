@@ -45,7 +45,7 @@ function ScorePill({ label, value, invert }: { label: string; value: number; inv
   return (
     <div className="w-16">
       <div className="flex items-center justify-between">
-        <span className="text-[9px] uppercase text-white/35">{label}</span>
+        <span className="text-[9px] text-white/35">{label}</span>
         <span className="stat-num text-[11px] font-semibold" style={{ color }}>
           {value}
         </span>
@@ -151,7 +151,7 @@ export default function FantasyDraftPage() {
                   <PlayerAvatar player={r.player} size={40} />
                   <div className="min-w-0">
                     <div className="truncate font-semibold text-white">{r.player.name}</div>
-                    <div className="stat-num text-[10px] uppercase text-white/40">{r.player.pos}</div>
+                    <div className="stat-num text-[10px] text-white/40">{r.player.pos}</div>
                   </div>
                 </div>
                 <div className="mt-4 flex items-end justify-between">
@@ -159,11 +159,11 @@ export default function FantasyDraftPage() {
                     <div className="scoreboard text-4xl" style={{ color: GOLD }}>
                       {r.zScore}
                     </div>
-                    <div className="text-[10px] uppercase text-white/40">Total z-score</div>
+                    <div className="text-[10px] text-white/40">Total z-score</div>
                   </div>
                   <div className="w-20">
                     <Meter value={r.scarcity} color={GOLD} height={6} />
-                    <div className="mt-1 text-right text-[9px] uppercase text-white/35">
+                    <div className="mt-1 text-right text-[9px] text-white/35">
                       {r.scarcity} scarcity
                     </div>
                   </div>
@@ -264,7 +264,7 @@ export default function FantasyDraftPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
+              <tr className="border-b border-white/10 text-left text-[11px] text-white/40">
                 <th className="py-2 pl-2 font-medium">#</th>
                 <th className="py-2 font-medium">Player</th>
                 <th className="py-2 pr-2 text-right font-medium">Z</th>

@@ -88,7 +88,7 @@ function SimilarityInner() {
           <PlayerPicker value={player} onChange={setPlayer} accent={accent} placeholder="Pick a player to find twins…" />
         </div>
         <div>
-          <div className="mb-1.5 text-[10px] uppercase tracking-wider text-white/40">Position</div>
+          <div className="mb-1.5 text-[10px] text-white/40">Position</div>
           <Segmented<PositionFilter>
             options={[
               { label: "Any", value: "any" },
@@ -101,7 +101,7 @@ function SimilarityInner() {
           />
         </div>
         <div>
-          <div className="mb-1.5 text-[10px] uppercase tracking-wider text-white/40">Age band</div>
+          <div className="mb-1.5 text-[10px] text-white/40">Age band</div>
           <Segmented<AgeBandFilter>
             options={[
               { label: "Any age", value: "any" },
@@ -178,7 +178,7 @@ function SimilarityInner() {
                           <span className="truncate text-sm font-semibold text-white">{r.player.name}</span>
                           <span className="stat-num text-xs text-white/40">{r.player.pos}</span>
                           <span
-                            className="rounded-lg px-1.5 py-0.5 text-[9px] uppercase tracking-wide"
+                            className="rounded-lg px-1.5 py-0.5 text-[9px]"
                             style={{ background: `${accent}1a`, color: accent }}
                           >
                             {r.matchedArchetype}
@@ -194,7 +194,7 @@ function SimilarityInner() {
                       </div>
                       <div className="text-right">
                         <div className="stat-num text-lg font-bold" style={{ color: accent }}>{r.score}</div>
-                        <div className="text-[9px] uppercase text-white/35">match</div>
+                        <div className="text-[9px] text-white/35">match</div>
                       </div>
                     </motion.button>
                   );
@@ -207,7 +207,7 @@ function SimilarityInner() {
               <Panel title="Shared traits vs differences">
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">
+                    <div className="mb-2 text-[10px] text-white/40">
                       Most shared
                     </div>
                     <div className="space-y-2">
@@ -225,7 +225,7 @@ function SimilarityInner() {
                     </div>
                   </div>
                   <div>
-                    <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">
+                    <div className="mb-2 text-[10px] text-white/40">
                       Biggest differences
                     </div>
                     <div className="space-y-2">

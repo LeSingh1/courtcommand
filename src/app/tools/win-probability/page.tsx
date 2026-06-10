@@ -136,7 +136,7 @@ export default function WinProbabilityPage() {
               </div>
               <div className="mt-5 w-full max-w-md">
                 <Meter value={wp} color={accent} height={10} />
-                <div className="mt-1.5 flex justify-between text-[10px] uppercase tracking-wide text-white/55">
+                <div className="mt-1.5 flex justify-between text-[10px] text-white/55">
                   <span>Away</span>
                   <span>Home</span>
                 </div>

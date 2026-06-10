@@ -90,7 +90,7 @@ export default function UnderratedPage() {
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <div key={i} className="glass rounded-lg p-5">
-              <div className="text-[10px] uppercase tracking-wider text-white/35">
+              <div className="text-[10px] text-white/35">
                 Scanning the cap sheet…
               </div>
               <div className="mt-3 h-10 w-2/3 bg-white/[0.04]" />
@@ -133,7 +133,7 @@ export default function UnderratedPage() {
                       <div className="stat-num text-3xl font-bold" style={{ color: ACCENT }}>
                         {r.underratedScore}
                       </div>
-                      <div className="text-[10px] uppercase text-white/40">
+                      <div className="text-[10px] text-white/40">
                         Underrated · ${r.player.salary}M
                       </div>
                     </div>
@@ -226,7 +226,7 @@ export default function UnderratedPage() {
       <Panel title="Underrated rankings">
         {analyzing ? (
           <div className="space-y-2">
-            <div className="text-[10px] uppercase tracking-wider text-white/35">
+            <div className="text-[10px] text-white/35">
               Scanning the cap sheet…
             </div>
             {[0, 1, 2, 3, 4].map((i) => (

@@ -37,7 +37,7 @@ export function TrackRecord({ slug, accent = "#4D8DFF" }: { slug: string; accent
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-4">
         <div className="flex items-center gap-3">
           <span
-            className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider"
+            className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold"
             style={{ color: accent, border: `1px solid ${accent}40`, background: `${accent}10` }}
           >
             <span className="inline-block h-1.5 w-1.5" style={{ background: accent }} />
@@ -298,7 +298,7 @@ function ChampionsView({ champions, accent, league = "NBA" }: { champions: Recor
 function Bar({ value, color, label }: { value: number; color: string; label: string }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="w-12 shrink-0 text-[9px] uppercase tracking-wider text-[var(--text-faint)]">{label}</span>
+      <span className="w-12 shrink-0 text-[9px] text-[var(--text-faint)]">{label}</span>
       <div className="h-2 flex-1 bg-white/[0.06]">
         <div className="grow-x h-full" style={{ width: `${Math.min(100, value * 100)}%`, background: color, transformOrigin: "left" }} />
       </div>

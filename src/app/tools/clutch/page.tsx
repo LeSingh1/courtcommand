@@ -146,7 +146,7 @@ export default function ClutchPage() {
                       <div className="scoreboard text-4xl" style={{ color: gradeColor(score(r)) }}>
                         {r.pts}
                       </div>
-                      <div className="text-[11px] uppercase text-white/55">Clutch points</div>
+                      <div className="text-[11px] text-white/55">Clutch points</div>
                     </div>
                     <div className="stat-num text-right text-xs text-white/50">
                       <div>{Math.round(r.fgPct * 100)}% FG</div>
@@ -166,7 +166,7 @@ export default function ClutchPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
+                <tr className="border-b border-white/10 text-left text-[11px] text-white/40">
                   <th className="py-2 pl-2 font-medium">#</th>
                   <th className="py-2 font-medium">Player</th>
                   <th className="py-2 font-medium">Pts</th>

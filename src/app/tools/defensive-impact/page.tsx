@@ -111,7 +111,7 @@ export default function DefensiveImpactPage() {
                       >
                         {r.defScore}
                       </div>
-                      <div className="text-[11px] uppercase text-white/55">
+                      <div className="text-[11px] text-white/55">
                         Def score · {r.grade}
                       </div>
                     </div>
@@ -191,7 +191,7 @@ export default function DefensiveImpactPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
-              <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
+              <tr className="border-b border-white/10 text-left text-[11px] text-white/40">
                 <th className="py-2 pl-2 font-medium">#</th>
                 <th className="py-2 font-medium">Player</th>
                 <th className="py-2 font-medium">Def score</th>

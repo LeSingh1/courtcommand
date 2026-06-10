@@ -390,7 +390,7 @@ function OvrBadge({ ovr }: { ovr: number }) {
   return (
     <div className="flex h-9 w-9 shrink-0 flex-col items-center justify-center border" style={{ borderColor: `${c}66`, background: `${c}14` }}>
       <span className="scoreboard text-base leading-none" style={{ color: c }}>{ovr}</span>
-      <span className="text-[7px] uppercase tracking-wider text-white/40">ovr</span>
+      <span className="text-[7px] text-white/40">ovr</span>
     </div>
   );
 }
@@ -447,7 +447,7 @@ function AfterTrade({
         </div>
         <div className="flex h-11 w-11 flex-col items-center justify-center border" style={{ borderColor: `${gradeC}66`, background: `${gradeC}14` }}>
           <span className="scoreboard text-lg leading-none" style={{ color: gradeC }}>{side.grade}</span>
-          <span className="text-[7px] uppercase tracking-wider text-white/40">grade</span>
+          <span className="text-[7px] text-white/40">grade</span>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-px border-y border-[var(--line)] bg-[var(--line)] text-center">
@@ -486,7 +486,7 @@ function AfterTrade({
 function Cell({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-[var(--surface)] px-2 py-2.5">
-      <div className="text-[9px] uppercase tracking-wider text-white/40">{label}</div>
+      <div className="text-[9px] text-white/40">{label}</div>
       <div className="stat-num mt-0.5 text-sm font-semibold text-white">{value}</div>
     </div>
   );
@@ -524,7 +524,7 @@ function ContractRiskRow({ risk }: { risk: TradeResult["sides"][number]["contrac
   return (
     <div className="flex items-start gap-2 border-t border-[var(--line)] pt-2.5">
       <span
-        className="mt-0.5 shrink-0 rounded-lg px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+        className="mt-0.5 shrink-0 rounded-lg px-1.5 py-0.5 text-[10px] font-semibold"
         style={{ background: `${c}1f`, color: c, border: `1px solid ${c}33` }}
       >
         {risk.level} risk

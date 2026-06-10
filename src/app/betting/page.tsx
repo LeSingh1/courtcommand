@@ -94,7 +94,7 @@ export default function BettingPage() {
           className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 border px-3 py-1.5 text-[11px]"
           style={{ borderColor: `${EMERALD}40` }}
         >
-          <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider" style={{ color: EMERALD }}>
+          <span className="flex items-center gap-1.5 font-semibold" style={{ color: EMERALD }}>
             <Sigma size={12} /> EdgeBoard model
           </span>
           <span className="text-[var(--text-muted)]">Recency-weighted projections · isotonic-style edge</span>
@@ -148,7 +148,7 @@ export default function BettingPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[740px] text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--line)] text-left text-[11px] uppercase tracking-wide text-[var(--text-faint)]">
+                  <tr className="border-b border-[var(--line)] text-left text-[11px] text-[var(--text-faint)]">
                     <th className="py-2.5 pl-4 font-medium">Player</th>
                     <th className="py-2.5 font-medium">Prop</th>
                     <th className="py-2.5 font-medium">Line</th>
@@ -187,7 +187,7 @@ export default function BettingPage() {
                           <div className="text-[var(--text-muted)]">{e.marketLabel}</div>
                           {e.oddsType !== "standard" && (
                             <span
-                              className="text-[10px] font-semibold uppercase"
+                              className="text-[10px] font-semibold"
                               style={{ color: e.oddsType === "demon" ? "#F4647D" : EMERALD }}
                             >
                               {ODDS_LABEL[e.oddsType]}
@@ -450,7 +450,7 @@ function PickButton({
 function SlipStat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="border border-[var(--line)] bg-[var(--surface-2)] px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wide text-[var(--text-faint)]">{label}</div>
+      <div className="text-[10px] text-[var(--text-faint)]">{label}</div>
       <div className="stat-num mt-0.5 text-sm font-semibold" style={{ color: color ?? "var(--text)" }}>
         {value}
       </div>
