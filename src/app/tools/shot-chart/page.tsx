@@ -238,8 +238,8 @@ function ShotChartInner() {
         <div className="mt-6">
           <Insight accent={EMBER}>
             In the 2026 playoffs, <b>{player.name}</b> is most lethal from the{" "}
-            <b>{best.label.toLowerCase()}</b>, hitting <b>{Math.round(best.efg * 100)}% eFG</b> there on{" "}
-            {best.att} attempts. His coldest look is the {worst.label.toLowerCase()}
+            <b>{best.label}</b>, hitting <b>{Math.round(best.efg * 100)}% eFG</b> there on {best.att}{" "}
+            attempts. His coldest look is the {worst.label}
             {` at ${Math.round(worst.efg * 100)}%`}.
           </Insight>
         </div>
