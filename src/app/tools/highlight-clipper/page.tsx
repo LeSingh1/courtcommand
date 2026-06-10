@@ -1,212 +1,159 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Scissors, UploadCloud, Film, Activity, Volume2, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Scissors, Loader2, Flame } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
-import { Slider, Badge } from "@/components/ui/Controls";
-import { Meter } from "@/components/ui/Meter";
-import { Reveal, Enter } from "@/components/ui/Reveal";
-import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
+import { ShotReplay } from "@/components/ui/ShotReplay";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TeamLogo } from "@/components/ui/TeamLogo";
 import { TrackRecord } from "@/components/ui/TrackRecord";
-import { getTool } from "@/lib/tools";
-import { detectHighlights, type HighlightClip } from "@/lib/engine/game";
+import { getTool, categoryColor } from "@/lib/tools";
+import { PLAYERS } from "@/lib/data";
+import { loadRealShots, highlightReel, type HighlightClip } from "@/lib/data/shots";
 import { gradeColor } from "@/lib/cn";
+import type { Player } from "@/lib/types";
 
-const EMBER = "#E0561F";
-
-const TYPE_COLOR: Record<string, string> = {
-  Dunk: "#E0561F",
-  Three: "#7E8CA0",
-  Block: "#BF5B4E",
-  "And-1": "#C9A14A",
-  Assist: "#5FA97E",
-  Steal: "#E0561F",
-};
+const playerByEspn = (id: number): Player | undefined => PLAYERS.find((p) => p.espnId === id);
 
 export default function HighlightClipperPage() {
   const tool = getTool("highlight-clipper")!;
-  const [filename, setFilename] = useState<string | null>(null);
-  const [durationMin, setDurationMin] = useState(12);
-  const [clips, setClips] = useState<HighlightClip[] | null>(null);
-  const analyze = useAnalyze([
-    "Decoding frames…",
-    "Tracking motion vectors…",
-    "Listening for crowd spikes…",
-    "Ranking moments…",
-  ]);
+  const accent = categoryColor(tool.category);
+  const [shots, setShots] = useState<Awaited<ReturnType<typeof loadRealShots>> | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadRealShots().then((d) => alive && setShots(d));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  const detect = () => {
-    if (!filename) setFilename("Q4_full.mp4");
-    analyze.run(() => setClips(detectHighlights(durationMin)));
-  };
+  const reel = useMemo<HighlightClip[]>(() => (shots ? highlightReel(shots, 30) : []), [shots]);
+  const [sel, setSel] = useState(0);
 
-  const top = clips?.[0] ?? null;
+  if (!shots) {
+    return (
+      <ToolShell tool={tool}>
+        <Panel className="flex min-h-[360px] flex-col items-center justify-center gap-3 text-center">
+          <Loader2 size={22} className="animate-spin text-[var(--text-faint)]" />
+          <p className="text-sm text-white/50">Scanning every playoff make for highlights…</p>
+        </Panel>
+      </ToolShell>
+    );
+  }
+
+  const clip = reel[sel] ?? reel[0];
+  const player = clip ? playerByEspn(clip.shot.espnId) : undefined;
 
   return (
     <ToolShell tool={tool}>
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <Panel title="Source footage">
-          <div className="space-y-5">
-            <button
-              onClick={() => setFilename(filename ? null : "Q4_full.mp4")}
-              className="group flex w-full flex-col items-center justify-center gap-3 rounded-none border-2 border-dashed px-4 py-8 text-center transition"
-              style={{
-                borderColor: filename ? `${EMBER}66` : "rgba(255,255,255,0.14)",
-                background: filename ? `${EMBER}0d` : "rgba(255,255,255,0.02)",
-              }}
-            >
-              <div>
-                {filename ? (
-                  <Film size={30} className="text-ember" />
-                ) : (
-                  <UploadCloud size={30} className="text-white/40 transition group-hover:text-white/70" />
-                )}
-              </div>
-              {filename ? (
-                <div>
-                  <div className="stat-num text-sm font-semibold text-white">{filename}</div>
-                  <div className="text-[11px] text-white/45">{durationMin}:00 · 1080p60 · tap to clear</div>
-                </div>
-              ) : (
-                <div>
-                  <div className="text-sm font-medium text-white/80">Drop game film here</div>
-                  <div className="text-[11px] text-white/55">MP4 · up to 4K · or click to load demo</div>
-                </div>
-              )}
-            </button>
+      <Insight accent={accent}>
+        Auto-detected <b>{reel.length} highlight-worthy plays</b> from the real 2026 playoffs — dunks,
+        deep threes, and clutch makes scored straight from the play-by-play. Each card&rsquo;s confidence
+        is the detector&rsquo;s real highlight score.
+      </Insight>
 
-            <Slider
-              label="Clip window length"
-              value={durationMin}
-              min={4}
-              max={20}
-              unit=" min"
-              onChange={setDurationMin}
-            />
-
-            <motion.button onClick={detect} whileTap={{ scale: 0.96 }} transition={spring.snappy} className="btn-ember flex w-full items-center justify-center gap-2 rounded-none py-3 text-sm">
-              <Scissors size={15} /> Detect highlights
-            </motion.button>
-            <p className="text-[11px] leading-relaxed text-white/55">
-              The auto-editor scans the timeline for motion-vector bursts and crowd-audio spikes, then
-              ranks each moment by detection confidence.
-            </p>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[360px_1fr]">
+        {/* reel list */}
+        <Panel title="Detected clips">
+          <div className="no-scrollbar max-h-[460px] space-y-1.5 overflow-y-auto">
+            {reel.map((h, i) => {
+              const p = playerByEspn(h.shot.espnId);
+              const on = i === sel;
+              return (
+                <button
+                  key={h.shot.id}
+                  onClick={() => setSel(i)}
+                  className="flex w-full items-center gap-2.5 border px-2.5 py-2 text-left transition"
+                  style={{ borderColor: on ? `${accent}66` : "var(--line)", background: on ? `${accent}12` : "transparent" }}
+                >
+                  {p ? <PlayerAvatar player={p} size={28} /> : null}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs text-white/85">{h.shot.player}</div>
+                    <div className="stat-num text-[10px] text-[var(--text-faint)]">
+                      {h.shot.game} · Q{h.shot.period}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {h.tags.slice(0, 1).map((t) => (
+                      <span key={t} className="border px-1 py-0.5 text-[9px]" style={{ borderColor: `${accent}40`, color: accent }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="scoreboard w-7 text-right text-sm" style={{ color: gradeColor(h.score) }}>
+                    {h.score}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </Panel>
 
+        {/* selected clip */}
         <div className="space-y-6">
-          <AnimatePresence mode="wait">
-          {analyze.phase === "running" ? (
-            <motion.div
-              key="running"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={spring.soft}
-            >
-              <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={EMBER} />
-            </motion.div>
-          ) : clips ? (
-            <motion.div
-              key="result"
-              className="space-y-6"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={spring.soft}
-            >
-              {top && (
-                <Insight accent={EMBER}>
-                  Top moment: a <b>{top.label.toLowerCase()}</b> at <b className="stat-num">{top.t}</b> with{" "}
-                  <b>{top.confidence}% confidence</b> — driven by a {top.motion}-motion / {top.audio}-audio spike.
-                  {" "}
-                  {top.confidence >= 70
-                    ? "Lead your reel with this clip."
-                    : "Verify it before featuring — confidence is modest."}
-                </Insight>
-              )}
-
-              <Panel
-                title="Detected timeline"
-                right={<span className="stat-num text-xs text-white/45">{clips.length} clips found</span>}
-              >
-                <div className="space-y-3">
-                  {clips.map((c, i) => {
-                    const color = TYPE_COLOR[c.type] ?? EMBER;
-                    return (
-                      <Reveal key={`${c.t}-${i}`} delay={Math.min(0.4, i * 0.05)}>
-                        <div className="rounded-none border border-white/[0.07] bg-white/[0.02] p-3.5 transition hover:border-white/15">
-                          <div className="flex items-center gap-3">
-                            <div className="flex flex-col items-center">
-                              <span className="stat-num text-lg font-bold text-white">{c.t}</span>
-                              <span className="text-[10px] uppercase text-white/50">timestamp</span>
-                            </div>
-                            <div className="h-9 w-px bg-white/10" />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <Badge color={color}>{c.type}</Badge>
-                                <span className="truncate text-sm font-medium text-white/85">{c.label}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Zap size={13} style={{ color: gradeColor(c.confidence) }} />
-                              <span className="stat-num text-lg font-bold" style={{ color: gradeColor(c.confidence) }}>
-                                {c.confidence}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                            <div className="flex items-center gap-2">
-                              <Activity size={12} className="shrink-0 text-white/40" />
-                              <Meter value={c.motion} color="#E0561F" height={6} />
-                              <span className="stat-num w-7 text-right text-[11px] text-white/55">{c.motion}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Volume2 size={12} className="shrink-0 text-white/40" />
-                              <Meter value={c.audio} color="#7E8CA0" height={6} />
-                              <span className="stat-num w-7 text-right text-[11px] text-white/55">{c.audio}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Zap size={12} className="shrink-0 text-white/40" />
-                              <Meter value={c.confidence} color={gradeColor(c.confidence)} height={6} />
-                              <span className="stat-num w-7 text-right text-[11px] text-white/55">{c.confidence}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </Reveal>
-                    );
-                  })}
+          {clip && (
+            <motion.div key={clip.shot.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={spring.soft} className="space-y-6">
+              <Panel>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    {player ? <PlayerAvatar player={player} size={46} /> : null}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-white">{clip.shot.player}</span>
+                        <TeamLogo abbr={clip.shot.team} size={16} />
+                      </div>
+                      <div className="mt-0.5 text-sm text-[var(--text-muted)]">{clip.shot.text}</div>
+                      <div className="stat-num mt-1 text-[11px] text-[var(--text-faint)]">
+                        {clip.shot.game} · Q{clip.shot.period} {clip.shot.clock}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Flame size={14} style={{ color: gradeColor(clip.score) }} />
+                      <span className="scoreboard text-2xl" style={{ color: gradeColor(clip.score) }}>
+                        {clip.score}
+                      </span>
+                    </div>
+                    <span className="kicker">Confidence</span>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {clip.tags.map((t) => (
+                    <span key={t} className="border px-2 py-0.5 text-[11px]" style={{ borderColor: `${accent}40`, color: accent }}>
+                      {t}
+                    </span>
+                  ))}
                 </div>
               </Panel>
+
+              <Panel title="Clip preview">
+                <ShotReplay key={clip.shot.id} x={clip.shot.x} y={clip.shot.y} made accent={accent} height={340} />
+                <p className="mt-2 text-center text-[11px] text-[var(--text-faint)]">
+                  Recreated from the shot&rsquo;s real court coordinates · for actual broadcast video of
+                  real shots, see the Shot Quality Film Room
+                </p>
+              </Panel>
             </motion.div>
-          ) : (
-            <Enter key="empty">
-            <Panel className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
-              <div className="mb-4">
-                <Scissors size={40} className="text-ember" />
-              </div>
-              <p className="max-w-xs text-sm text-white/50">
-                Load footage and run detection — the auto-clipper surfaces every dunk, triple, block, and
-                dime ranked by how loud the moment was.
-              </p>
-            </Panel>
-            </Enter>
           )}
-          </AnimatePresence>
         </div>
       </div>
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#C9A14A" }}>Model track record</div>
+          <div className="kicker" style={{ color: accent }}>
+            Data &amp; method
+          </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            Below is the model&apos;s real training history — the count of player-seasons it has learned
-            from growing each year since 2003 — alongside its validation metric and the method used to measure it.
+            Highlights are scored from real 2026 playoff play-by-play — the detector weights dunks,
+            deep threes, clutch timing, and shot difficulty into a confidence score. Real frame-level
+            video detection isn&rsquo;t available offline, so this surfaces the real plays and recreates
+            them; the Shot Quality Film Room carries actual broadcast clips.
           </p>
         </div>
-        <TrackRecord slug="highlight-clipper" accent="#C9A14A" />
+        <TrackRecord slug="highlight-clipper" accent={accent} />
       </div>
     </ToolShell>
   );

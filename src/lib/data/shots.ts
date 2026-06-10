@@ -177,6 +177,56 @@ export function gameMomentum(
   return { teams, timeline, runs, biggest: runs[0] ?? null };
 }
 
+// ---- Real highlight detection from the playoff shots ----
+// Scores each made shot for "highlight-worthiness" from the real play text +
+// context (dunks, deep threes, clutch makes, putbacks). Real events, real
+// confidence — no fabricated detections.
+export interface HighlightClip {
+  shot: RealShot;
+  score: number;
+  tags: string[];
+}
+
+function highlightScore(s: RealShot): { score: number; tags: string[] } {
+  if (!s.made) return { score: 0, tags: [] };
+  const t = (s.text || "").toLowerCase();
+  const tags: string[] = [];
+  let sc = 18;
+  if (/dunk|alley/.test(t)) {
+    sc += 44;
+    tags.push("Dunk");
+  }
+  if (/reverse|360|windmill|poster|put ?back|tip/.test(t)) {
+    sc += 16;
+    tags.push("Above the rim");
+  }
+  if (s.value === 3 && s.dist >= 27) {
+    sc += 32;
+    tags.push("Deep three");
+  } else if (s.value === 3) {
+    sc += 12;
+    tags.push("Three");
+  }
+  if (isClutch(s)) {
+    sc += 30;
+    tags.push("Clutch");
+  }
+  if (/step ?back|fadeaway|turnaround|fade/.test(t)) {
+    sc += 12;
+    tags.push("Tough shot");
+  }
+  return { score: Math.min(99, sc), tags };
+}
+
+export function highlightReel(shots: RealShot[], n = 28): HighlightClip[] {
+  return shots
+    .filter((s) => s.made)
+    .map((s) => ({ shot: s, ...highlightScore(s) }))
+    .filter((h) => h.score >= 40)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, n);
+}
+
 export function clutchLeaders(shots: RealShot[], minAtt = 6): ClutchLeader[] {
   const m = new Map<number, ClutchLeader>();
   for (const s of shots) {
