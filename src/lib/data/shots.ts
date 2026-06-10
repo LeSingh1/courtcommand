@@ -309,6 +309,83 @@ export function shotPlayerIds(shots: RealShot[], minShots = 6): Set<number> {
   return new Set([...m.entries()].filter(([, c]) => c >= minShots).map(([id]) => id));
 }
 
+// ---- Real per-player shot chart from the playoff shots ----
+// Plots a player's actual playoff attempts (real court coordinates + outcomes)
+// and buckets them into floor zones for a real eFG% heatmap. Replaces the old
+// synthetic per-player shot generator.
+const SHOT_ZONES: { id: string; label: string; cx: number; cy: number }[] = [
+  { id: "rim", label: "Restricted", cx: 250, cy: 80 },
+  { id: "paint", label: "Paint", cx: 250, cy: 150 },
+  { id: "ml", label: "L Mid", cx: 130, cy: 150 },
+  { id: "mr", label: "R Mid", cx: 370, cy: 150 },
+  { id: "elL", label: "L Elbow", cx: 175, cy: 215 },
+  { id: "elR", label: "R Elbow", cx: 325, cy: 215 },
+  { id: "c3l", label: "L Corner 3", cx: 50, cy: 90 },
+  { id: "c3r", label: "R Corner 3", cx: 450, cy: 90 },
+  { id: "w3l", label: "L Wing 3", cx: 90, cy: 240 },
+  { id: "w3r", label: "R Wing 3", cx: 410, cy: 240 },
+  { id: "top3", label: "Top 3", cx: 250, cy: 320 },
+];
+
+export interface ChartDot {
+  x: number;
+  y: number;
+  made: boolean;
+  r: number;
+}
+export interface ChartZone {
+  id: string;
+  label: string;
+  cx: number;
+  cy: number;
+  efg: number;
+  freq: number;
+  att: number;
+}
+export interface RealChart {
+  shots: ChartDot[];
+  zones: ChartZone[];
+  total: number;
+  made: number;
+}
+
+export function realShotChart(shots: RealShot[], espnId: number): RealChart | null {
+  const mine = shots.filter((s) => s.espnId === espnId);
+  if (mine.length < 8) return null;
+  const dots: ChartDot[] = mine.map((s) => ({ x: s.x, y: s.y, made: s.made, r: 3.4 }));
+  const agg = new Map<string, { att: number; made: number; made3: number }>();
+  for (const s of mine) {
+    let bestId = SHOT_ZONES[0].id;
+    let bestD = Infinity;
+    for (const z of SHOT_ZONES) {
+      const d = (s.x - z.cx) ** 2 + (s.y - z.cy) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        bestId = z.id;
+      }
+    }
+    let a = agg.get(bestId);
+    if (!a) {
+      a = { att: 0, made: 0, made3: 0 };
+      agg.set(bestId, a);
+    }
+    a.att++;
+    if (s.made) {
+      a.made++;
+      if (s.value === 3) a.made3++;
+    }
+  }
+  const total = mine.length;
+  const made = mine.filter((s) => s.made).length;
+  const zones: ChartZone[] = SHOT_ZONES.map((z) => {
+    const a = agg.get(z.id);
+    const att = a?.att ?? 0;
+    const efg = att ? (a!.made + 0.5 * a!.made3) / att : 0;
+    return { id: z.id, label: z.label, cx: z.cx, cy: z.cy, efg, freq: total ? att / total : 0, att };
+  });
+  return { shots: dots, zones, total, made };
+}
+
 export function clutchLeaders(shots: RealShot[], minAtt = 6): ClutchLeader[] {
   const m = new Map<number, ClutchLeader>();
   for (const s of shots) {
