@@ -202,7 +202,7 @@ export default function WinProbabilityPage() {
                             >
                               <span
                                 className="stat-num mr-1.5 font-semibold"
-                                style={{ color: s.delta > 0 ? accent : "#C98A78" }}
+                                style={{ color: s.delta > 0 ? accent : "#F4647D" }}
                               >
                                 {s.delta > 0 ? "+" : ""}
                                 {s.delta}%
@@ -279,7 +279,7 @@ export default function WinProbabilityPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E9A23B" }}>
+          <div className="kicker" style={{ color: "#00E07F" }}>
             Data &amp; method
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">

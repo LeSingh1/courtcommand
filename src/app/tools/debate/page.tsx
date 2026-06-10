@@ -16,7 +16,7 @@ import { debate } from "@/lib/engine/content";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const TEAL = "#9FB6C4";
+const TEAL = "#41C7E0";
 type Lens = "overall" | "offense" | "defense";
 
 export default function DebatePage() {
@@ -72,7 +72,7 @@ function DebateInner() {
       <AnimatePresence mode="wait">
       {typeof result === "string" ? (
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
-          <MessagesSquare size={40} className="mb-4 text-[#CBB280]" />
+          <MessagesSquare size={40} className="mb-4 text-[#D7BC6A]" />
           <p className="max-w-xs text-sm text-white/50">{result}</p>
           <p className="mt-3 max-w-xs text-xs text-white/35">
             The engine builds an evidence-backed case for each side and calls the edge by the
@@ -159,12 +159,12 @@ function DebateInner() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#CBB280" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#D7BC6A" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the player ratings these head-to-head edges draw on are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89). Context notes flag age, role, and usage gaps the raw edge can&rsquo;t see, and the confidence score is a fixed mapping of the edge size (50 = coin flip, 95 = decisive).
           </p>
         </div>
-        <TrackRecord slug="debate" accent="#CBB280" />
+        <TrackRecord slug="debate" accent="#D7BC6A" />
       </div>
     </ToolShell>
   );

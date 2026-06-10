@@ -77,7 +77,7 @@ export function SiteHeader() {
 function Mark() {
   return (
     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] transition-transform duration-300 group-hover:rotate-[24deg]">
-      <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" width="18" height="18" fill="none" stroke="#1a1006" strokeWidth="1.7">
+      <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" width="18" height="18" fill="none" stroke="#03130a" strokeWidth="1.7">
         <circle cx="12" cy="12" r="9" />
         <path d="M12 3 V21 M3 12 H21" />
         <path d="M5.5 5.5 Q12 12 5.5 18.5 M18.5 5.5 Q12 12 18.5 18.5" />

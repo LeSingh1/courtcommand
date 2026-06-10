@@ -257,7 +257,7 @@ function SimilarityInner() {
                 <RadarChart
                   axes={RADAR_AXES}
                   series={[
-                    { name: player.name, color: "#E9A23B", values: radarValues(player) },
+                    { name: player.name, color: "#00E07F", values: radarValues(player) },
                     ...(comp ? [{ name: comp.name, color: accent, values: radarValues(comp) }] : []),
                   ]}
                 />
@@ -287,10 +287,10 @@ function SimilarityInner() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#41C7E0" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Comps are computed by z-scoring every player across ten stat dimensions against the full league pool, then ranking by cosine similarity over weighted profiles (scoring 22%, efficiency 18%, playmaking 16%, defense 16%, shot diet 16%, rebounding 12%). Each season since 2003, that multi-stat profile is checked against what players actually produced the next year — the bars show the season-by-season correlation (about r=0.89), the signal the similarity engine rides on.</p>
         </div>
-        <TrackRecord slug="player-similarity" accent="#9FB6C4" />
+        <TrackRecord slug="player-similarity" accent="#41C7E0" />
       </div>
     </ToolShell>
   );

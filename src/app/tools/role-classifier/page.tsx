@@ -269,12 +269,12 @@ export default function RoleClassifierPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#41C7E0" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the bars show how often a player's assigned on-court archetype actually held the following year — stable about 70% of the time, the consistency the classifier is graded on.
           </p>
         </div>
-        <TrackRecord slug="role-classifier" accent="#9FB6C4" />
+        <TrackRecord slug="role-classifier" accent="#41C7E0" />
       </div>
     </ToolShell>
   );

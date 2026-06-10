@@ -285,7 +285,7 @@ export default function RecruitRankPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#C98A78" }}>Data &amp; method</div>
+          <div className="kicker" style={{ color: "#F4647D" }}>Data &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             RecruitRank scores the stat line you enter through a fixed, transparent formula —
             production weighted by position, size, and level of competition, then mapped to a star

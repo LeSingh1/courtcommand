@@ -12,9 +12,9 @@ import { getTool } from "@/lib/tools";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { loadRealShots, playoffGames, gameMomentum, type RealShot } from "@/lib/data/shots";
 
-const ACCENT = "#A3B79A";
-const AWAY = "#9FB6C4";
-const COLD = "#E9A23B";
+const ACCENT = "#2BD68B";
+const AWAY = "#41C7E0";
+const COLD = "#00E07F";
 
 export default function MomentumPage() {
   const tool = getTool("momentum")!;

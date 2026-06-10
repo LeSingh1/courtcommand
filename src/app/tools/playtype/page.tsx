@@ -294,12 +294,12 @@ export default function PlayTypePage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#2BD68B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             The model's possession classifier is checked against ESPN's own play-type labels on real plays — it agrees about 90% of the time — shown alongside the training data that has grown every season since 2003. Each play type carries a note on which labels trackers most often disagree about. Team mode blends every rostered player's mix weighted by usage, mirroring who actually ends possessions.
           </p>
         </div>
-        <TrackRecord slug="playtype" accent="#A3B79A" />
+        <TrackRecord slug="playtype" accent="#2BD68B" />
       </div>
     </ToolShell>
   );

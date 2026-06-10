@@ -256,7 +256,7 @@ export default function DefensiveImpactPage() {
           <b>{bestRim.rimProtect}</b> rim score), walling off the paint and holding opponents to{" "}
           <b>{bestRim.oppFg}%</b> at the rim.
         </Insight>
-        <Insight accent="#A3B79A">
+        <Insight accent="#2BD68B">
           <b>{bestPerimeter.player.name}</b> is the top perimeter stopper (
           <b>{bestPerimeter.perimeter}</b> perimeter score) — disruptive hands and point-of-attack
           containment.
@@ -266,12 +266,12 @@ export default function DefensiveImpactPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#41C7E0" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the model&apos;s defensive-activity composite is checked against how those same players rated defensively the next year — the bars show that year-over-year persistence (about r=0.87).
           </p>
         </div>
-        <TrackRecord slug="defensive-impact" accent="#9FB6C4" />
+        <TrackRecord slug="defensive-impact" accent="#41C7E0" />
       </div>
     </ToolShell>
   );

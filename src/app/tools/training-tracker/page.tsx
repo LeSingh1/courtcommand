@@ -20,8 +20,8 @@ import {
   BADGE_THRESHOLDS,
 } from "@/lib/engine/betting";
 
-const ACCENT = "#C98A78";
-const TIME = "#9FB6C4";
+const ACCENT = "#F4647D";
+const TIME = "#41C7E0";
 
 type SessionType = "Shooting" | "Conditioning" | "Strength" | "Skills";
 
@@ -34,10 +34,10 @@ interface Session {
 }
 
 const TYPE_COLOR: Record<SessionType, string> = {
-  Shooting: "#CBB280",
-  Conditioning: "#9FB6C4",
-  Strength: "#E9A23B",
-  Skills: "#A3B79A",
+  Shooting: "#D7BC6A",
+  Conditioning: "#41C7E0",
+  Strength: "#00E07F",
+  Skills: "#2BD68B",
 };
 
 const SEED: Session[] = [
@@ -100,10 +100,10 @@ export default function TrainingTrackerPage() {
         <Reveal delay={0.06}>
           <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
-              <Target size={16} style={{ color: "#CBB280" }} />
+              <Target size={16} style={{ color: "#D7BC6A" }} />
               <span className="text-xs uppercase tracking-wide">Total reps</span>
             </div>
-            <span style={{ color: "#CBB280" }}>
+            <span style={{ color: "#D7BC6A" }}>
               <AnimatedNumber value={totalReps} className="scoreboard mt-2 block text-5xl" />
             </span>
             <p className="mt-1 text-xs text-white/45">Makes & finishes across all sessions.</p>
@@ -234,7 +234,7 @@ export default function TrainingTrackerPage() {
                 <Meter
                   value={balance}
                   max={100}
-                  color="#A3B79A"
+                  color="#2BD68B"
                   label="Skill balance — spread of minutes across session types"
                   valueLabel={`${balance} / 100`}
                 />
@@ -314,7 +314,7 @@ export default function TrainingTrackerPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#C98A78" }}>Data &amp; method</div>
+          <div className="kicker" style={{ color: "#F4647D" }}>Data &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             This is a personal planning tool: every chart and total is computed directly from the
             sessions you log above — volume by type, weekly load, and balance across shooting,

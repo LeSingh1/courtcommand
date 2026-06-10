@@ -119,13 +119,13 @@ export default function DevelopmentCurvePage() {
                           <td className="stat-num py-2.5 pl-2 text-white/65">
                             +{s.season} (age {s.age})
                           </td>
-                          <td className="stat-num py-2.5 text-right text-[#C98A78]">
+                          <td className="stat-num py-2.5 text-right text-[#F4647D]">
                             {s.worst.ppg}
                           </td>
                           <td className="stat-num py-2.5 text-right font-semibold" style={{ color: ACCENT }}>
                             {s.expected.ppg}
                           </td>
-                          <td className="stat-num py-2.5 text-right text-[#A3B79A]">{s.best.ppg}</td>
+                          <td className="stat-num py-2.5 text-right text-[#2BD68B]">{s.best.ppg}</td>
                           <td className="stat-num py-2.5 pr-2 text-right text-white/55">
                             {s.worst.composite}–{s.best.composite}
                           </td>
@@ -205,26 +205,26 @@ export default function DevelopmentCurvePage() {
                 </div>
                 <div className="mt-4 space-y-3 border-t border-white/[0.06] pt-3">
                   <div>
-                    <div className="kicker mb-1.5" style={{ color: "#A3B79A" }}>
+                    <div className="kicker mb-1.5" style={{ color: "#2BD68B" }}>
                       Growth drivers
                     </div>
                     <ul className="space-y-1">
                       {projection.growthDrivers.map((g) => (
                         <li key={g} className="flex items-start gap-2 text-xs text-white/65">
-                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#A3B79A]" />
+                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#2BD68B]" />
                           {g}
                         </li>
                       ))}
                     </ul>
                   </div>
                   <div>
-                    <div className="kicker mb-1.5" style={{ color: "#C98A78" }}>
+                    <div className="kicker mb-1.5" style={{ color: "#F4647D" }}>
                       Risk factors
                     </div>
                     <ul className="space-y-1">
                       {projection.riskFactors.map((r) => (
                         <li key={r} className="flex items-start gap-2 text-xs text-white/65">
-                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#C98A78]" />
+                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#F4647D]" />
                           {r}
                         </li>
                       ))}
@@ -251,12 +251,12 @@ export default function DevelopmentCurvePage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E9A23B" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#00E07F" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Per-season bars show how far the model&apos;s next-season scoring projection missed each player&apos;s actual PPG the following year — averaging about ±2.4 PPG — over a training set that has grown every season since 2003.
           </p>
         </div>
-        <TrackRecord slug="development-curve" accent="#E9A23B" />
+        <TrackRecord slug="development-curve" accent="#00E07F" />
       </div>
     </ToolShell>
   );

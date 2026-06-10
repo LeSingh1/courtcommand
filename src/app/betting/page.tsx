@@ -28,8 +28,8 @@ import {
   type ConfidenceTier,
 } from "@/lib/engine/betting";
 
-// Ember accent (= var(--accent) #e9a23b), the sanctioned Prediction-category color.
-const EMERALD = "#E9A23B";
+// Ember accent (= var(--accent) #00e07f), the sanctioned Prediction-category color.
+const EMERALD = "#00E07F";
 
 // Betting isn't registered in tools.ts (it's not a public /tools entry), so we
 // describe it locally to drive the shared ToolShell header (breadcrumb + Share).
@@ -48,7 +48,7 @@ const BETTING_TOOL: ToolMeta = {
 const ODDS_LABEL: Record<OddsType, string> = { standard: "Standard", demon: "Demon", goblin: "Goblin" };
 
 // Muted semantic colors for confidence tiers (match the gradeColor palette).
-const TIER_COLOR: Record<ConfidenceTier, string> = { A: "#A3B79A", B: "#CBB280", C: "#C57A47" };
+const TIER_COLOR: Record<ConfidenceTier, string> = { A: "#2BD68B", B: "#D7BC6A", C: "#D7BC6A" };
 
 export default function BettingPage() {
   const [market, setMarket] = useState<Market | "ALL">("ALL");
@@ -188,7 +188,7 @@ export default function BettingPage() {
                           {e.oddsType !== "standard" && (
                             <span
                               className="text-[10px] font-semibold uppercase"
-                              style={{ color: e.oddsType === "demon" ? "#C98A78" : EMERALD }}
+                              style={{ color: e.oddsType === "demon" ? "#F4647D" : EMERALD }}
                             >
                               {ODDS_LABEL[e.oddsType]}
                             </span>
@@ -233,7 +233,7 @@ export default function BettingPage() {
                             <PickButton
                               active={sel?.side === "less"}
                               recommended={e.side === "less"}
-                              color="#C98A78"
+                              color="#F4647D"
                               onClick={() => toggle(e.id, "less")}
                             >
                               <TrendingDown size={12} /> U {e.line}
@@ -297,7 +297,7 @@ export default function BettingPage() {
                           aria-label={`Remove ${pk.prop.player.name} ${pk.prop.marketLabel}`}
                           whileTap={{ scale: 0.85 }}
                           onClick={() => toggle(pk.prop.id, pk.side)}
-                          className="cursor-pointer text-[var(--text-faint)] transition hover:text-[#C98A78]"
+                          className="cursor-pointer text-[var(--text-faint)] transition hover:text-[#F4647D]"
                         >
                           <Trash2 size={14} />
                         </motion.button>
@@ -339,19 +339,19 @@ export default function BettingPage() {
                   <SlipStat
                     label="Expected value"
                     value={`${lineup.expectedValue >= 0 ? "+" : ""}$${lineup.expectedValue.toFixed(2)}`}
-                    color={lineup.expectedValue >= 0 ? EMERALD : "#C98A78"}
+                    color={lineup.expectedValue >= 0 ? EMERALD : "#F4647D"}
                   />
                   <SlipStat
                     label="EV / stake"
                     value={`${lineup.evPct >= 0 ? "+" : ""}${lineup.evPct.toFixed(0)}%`}
-                    color={lineup.evPct >= 0 ? EMERALD : "#C98A78"}
+                    color={lineup.evPct >= 0 ? EMERALD : "#F4647D"}
                   />
                 </div>
 
                 {lineup.correlationWarning && (
                   <div
                     className="mt-3 rounded-lg border px-3 py-2 text-[11px] leading-relaxed"
-                    style={{ borderColor: "#C98A7866", color: "#C98A78" }}
+                    style={{ borderColor: "#F4647D66", color: "#F4647D" }}
                   >
                     {lineup.correlationWarning}{" "}
                     <span className="stat-num text-[var(--text-muted)]">

@@ -203,17 +203,17 @@ export interface RoleCluster {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  "Primary Creator": "#E9A23B",
-  "Volume Scorer": "#E9A23B",
-  "Secondary Playmaker": "#CBB280",
-  "3 and D Wing": "#8A8273",
-  "Floor Spacer": "#8A8273",
-  "Perimeter Stopper": "#A3B79A",
-  "Rim Protector": "#8A8273",
+  "Primary Creator": "#00E07F",
+  "Volume Scorer": "#00E07F",
+  "Secondary Playmaker": "#D7BC6A",
+  "3 and D Wing": "#6B6E78",
+  "Floor Spacer": "#6B6E78",
+  "Perimeter Stopper": "#2BD68B",
+  "Rim Protector": "#6B6E78",
   "Stretch Big": "#FF9A45",
-  "Playmaking Big": "#CBB280",
-  Slasher: "#C98A78",
-  "Combo Guard": "#A3B79A",
+  "Playmaking Big": "#D7BC6A",
+  Slasher: "#F4647D",
+  "Combo Guard": "#2BD68B",
   Connector: "#9aa6b5",
 };
 

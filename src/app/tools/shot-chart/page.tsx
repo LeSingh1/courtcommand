@@ -20,15 +20,15 @@ import {
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const EMBER = "#E9A23B";
+const EMBER = "#00E07F";
 
 // Mirrors CourtChart.heatColor exactly (>=0.58, >=0.50, >=0.44, >=0.38, else).
 const LEGEND = [
-  { label: "Hot · 58%+ eFG", color: "#E9A23B" },
-  { label: "Warm · 50–57%", color: "#CBB280" },
+  { label: "Hot · 58%+ eFG", color: "#00E07F" },
+  { label: "Warm · 50–57%", color: "#D7BC6A" },
   { label: "Neutral · 44–49%", color: "#9FB07A" },
   { label: "Cool · 38–43%", color: "#8E96A4" },
-  { label: "Cold · <38%", color: "#8A8273" },
+  { label: "Cold · <38%", color: "#6B6E78" },
 ];
 
 export default function ShotChartPage() {
@@ -207,12 +207,12 @@ function ShotChartInner() {
                 {view === "shots" && (
                   <div className="mt-4 flex items-center gap-4 border-t border-white/[0.06] pt-3 text-[11px] text-white/50">
                     <span className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#E9A23B" }} /> Make
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#00E07F" }} /> Make
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span
                         className="h-2.5 w-2.5 rounded-full border"
-                        style={{ borderColor: "#8A8273", background: "transparent" }}
+                        style={{ borderColor: "#6B6E78", background: "transparent" }}
                       />{" "}
                       Miss
                     </span>
@@ -224,7 +224,7 @@ function ShotChartInner() {
                 <Panel title="Best & worst zones">
                   <div className="space-y-3">
                     <Reveal>
-                      <div className="flex items-center justify-between rounded-lg border border-[#E9A23B33] bg-[#E9A23B0f] p-3">
+                      <div className="flex items-center justify-between rounded-lg border border-[#00E07F33] bg-[#00E07F0f] p-3">
                         <div className="flex items-center gap-2.5">
                           <Flame size={16} className="text-ember" />
                           <div>
@@ -239,7 +239,7 @@ function ShotChartInner() {
                       </div>
                     </Reveal>
                     <Reveal delay={0.06}>
-                      <div className="flex items-center justify-between rounded-lg border border-[#8A827333] bg-[#8A82730f] p-3">
+                      <div className="flex items-center justify-between rounded-lg border border-[#6B6E7833] bg-[#6B6E780f] p-3">
                         <div className="flex items-center gap-2.5">
                           <Snowflake size={16} className="text-cyan" />
                           <div>
@@ -259,8 +259,8 @@ function ShotChartInner() {
 
               <div className="flex flex-wrap gap-1.5">
                 <Badge color={EMBER}>{player.archetype}</Badge>
-                <Badge color="#8A8273">{Math.round(player.shotThree * 100)}% 3PA share</Badge>
-                <Badge color="#CBB280">{Math.round(player.shotRim * 100)}% rim share</Badge>
+                <Badge color="#6B6E78">{Math.round(player.shotThree * 100)}% 3PA share</Badge>
+                <Badge color="#D7BC6A">{Math.round(player.shotRim * 100)}% rim share</Badge>
               </div>
             </div>
           </motion.div>
@@ -280,7 +280,7 @@ function ShotChartInner() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#CBB280" }}>
+          <div className="kicker" style={{ color: "#D7BC6A" }}>
             Data &amp; method
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">

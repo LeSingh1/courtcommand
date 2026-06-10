@@ -11,9 +11,9 @@ import { getTool } from "@/lib/tools";
 import { QUIZ, quizResults } from "@/lib/engine/content";
 import { gradeColor } from "@/lib/cn";
 
-const ACCENT = "#C98A78"; // category color for "Player Tools"
-const GREEN = "#A3B79A"; // correct answer
-const WRONG = "#C57A47"; // muted negative tint for incorrect reads
+const ACCENT = "#F4647D"; // category color for "Player Tools"
+const GREEN = "#2BD68B"; // correct answer
+const WRONG = "#D7BC6A"; // muted negative tint for incorrect reads
 
 export default function IqQuizPage() {
   const tool = getTool("iq-quiz")!;
@@ -282,7 +282,7 @@ export default function IqQuizPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#C98A78" }}>Data &amp; method</div>
+          <div className="kicker" style={{ color: "#F4647D" }}>Data &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             These scenarios are hand-authored basketball decisions — spacing, help rotations,
             pick-and-roll coverages, and late-clock reads — each graded against a single coaching-standard

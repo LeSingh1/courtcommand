@@ -16,7 +16,7 @@ import { gameRecap, type BoxLine } from "@/lib/engine/game";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const EMBER = "#E9A23B";
+const EMBER = "#00E07F";
 
 const HEADLINE_LABELS: Record<string, string> = {
   straight: "Straight",
@@ -150,10 +150,10 @@ export default function GameRecapPage() {
                   <button
                     key={o.style}
                     onClick={() => setHeadlineIdx(i)}
-                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E9A23B]"
+                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#00E07F]"
                     style={
                       i === headlineIdx
-                        ? { background: EMBER, color: "#160600" }
+                        ? { background: EMBER, color: "#03130a" }
                         : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" }
                     }
                   >
@@ -202,8 +202,8 @@ export default function GameRecapPage() {
               {/* player of the game */}
               {recap.topPerformer && (
                 <Reveal>
-                  <div className="mt-6 flex items-center gap-4 rounded-lg border border-[#CBB28033] bg-[#CBB2800d] p-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#CBB28022]">
+                  <div className="mt-6 flex items-center gap-4 rounded-lg border border-[#D7BC6A33] bg-[#D7BC6A0d] p-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#D7BC6A22]">
                       <Trophy size={22} className="text-gold" />
                     </div>
                     <div className="flex flex-1 items-center gap-3">
@@ -248,7 +248,7 @@ export default function GameRecapPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#CBB280" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#D7BC6A" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             The recap writer is built on real player-season data that deepens each year from 2003 to today — the panel
             below shows that growing season count along with the model's validation metric and how it was measured.
@@ -256,7 +256,7 @@ export default function GameRecapPage() {
             (teams, final score, and the auto star lines) — nothing in them is invented beyond that input.
           </p>
         </div>
-        <TrackRecord slug="game-recap" accent="#CBB280" />
+        <TrackRecord slug="game-recap" accent="#D7BC6A" />
       </div>
     </ToolShell>
   );

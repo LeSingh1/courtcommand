@@ -29,9 +29,9 @@ export function BarChart({
             <div className="relative h-6 flex-1 overflow-hidden bg-[rgba(255,255,255,0.05)]">
               <div
                 className="flex h-full items-center justify-end pr-2"
-                style={{ width: `${pct}%`, background: b.color ?? "#E9A23B" }}
+                style={{ width: `${pct}%`, background: b.color ?? "#00E07F" }}
               >
-                <span className="stat-num text-[11px] font-semibold text-[#1a1006]">
+                <span className="stat-num text-[11px] font-semibold text-[#03130a]">
                   {b.value.toFixed(decimals)}
                   {unit}
                 </span>

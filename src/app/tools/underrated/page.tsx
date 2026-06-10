@@ -202,13 +202,13 @@ export default function UnderratedPage() {
                 </div>
               </div>
               <div>
-                <div className="kicker mb-2" style={{ color: "#C98A78" }}>
+                <div className="kicker mb-2" style={{ color: "#F4647D" }}>
                   Risk factors
                 </div>
                 <ul className="space-y-1.5">
                   {sleeperProfile.riskFactors.map((r) => (
                     <li key={r} className="flex items-start gap-2 text-sm text-white/70">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C98A78]" />
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F4647D]" />
                       {r}
                     </li>
                   ))}
@@ -254,7 +254,7 @@ export default function UnderratedPage() {
                   <div className="flex items-center gap-2 text-sm font-semibold text-white">
                     {r.player.name}
                     {profiles.get(r.player.id)?.smallSample && (
-                      <Badge color="#CBB280" className="text-[9px]">
+                      <Badge color="#D7BC6A" className="text-[9px]">
                         small sample
                       </Badge>
                     )}
@@ -295,12 +295,12 @@ export default function UnderratedPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#41C7E0" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the bars show what share of the players the model flagged as the best value (high production, low pay) actually held or improved their production the next year — about 78% across the span.
           </p>
         </div>
-        <TrackRecord slug="underrated" accent="#9FB6C4" />
+        <TrackRecord slug="underrated" accent="#41C7E0" />
       </div>
     </ToolShell>
   );

@@ -7,7 +7,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { TOOLS, CATEGORIES, categoryColor } from "@/lib/tools";
 import { HomePreviews } from "@/components/home/HomePreviews";
 
-const BETTING_GREEN = "#A3B79A";
+const BETTING_GREEN = "#2BD68B";
 
 // Oversized hollow numeral that anchors each section like a magazine spread.
 function SectionMark({ n, kicker, title }: { n: string; kicker: string; title: string }) {
@@ -150,21 +150,6 @@ export default function HomePage() {
         </Reveal>
       </section>
 
-      {/* Poster marquee — giant hollow wordmark drifting past */}
-      <div className="marquee select-none border-t border-[var(--line)] py-6" aria-hidden>
-        <div className="marquee-track" style={{ ["--marquee-dur" as string]: "60s" }}>
-          {[0, 1].map((row) => (
-            <span key={row} className="outline-display inline-flex items-center text-[clamp(5rem,14vw,11rem)]">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <span key={i} className="inline-flex items-center">
-                  <span className="px-6">COURTCOMMAND</span>
-                  <span className="mx-2 inline-block h-4 w-4 shrink-0 bg-[var(--accent)]" />
-                </span>
-              ))}
-            </span>
-          ))}
-        </div>
-      </div>
     </>
   );
 }

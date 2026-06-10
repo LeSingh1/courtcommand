@@ -210,12 +210,12 @@ function ScoutingInner() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#41C7E0" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the rating engine behind these reports is tested against what players actually produced the following year — the bars show that year-over-year correlation (about r=0.89).
           </p>
         </div>
-        <TrackRecord slug="scouting-report" accent="#9FB6C4" />
+        <TrackRecord slug="scouting-report" accent="#41C7E0" />
       </div>
     </ToolShell>
   );

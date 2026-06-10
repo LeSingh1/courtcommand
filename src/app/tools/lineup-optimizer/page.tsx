@@ -24,7 +24,7 @@ import {
 import { gradeColor, letterGrade } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
-const ACCENT = "#A3B79A";
+const ACCENT = "#2BD68B";
 
 export default function LineupOptimizerPage() {
   const tool = getTool("lineup-optimizer")!;
@@ -264,31 +264,31 @@ export default function LineupOptimizerPage() {
                         label="Spacing"
                         valueLabel={`${shown.spacing}`}
                         value={shown.spacing}
-                        color="#8A8273"
+                        color="#6B6E78"
                       />
                       <Meter
                         label="Defense"
                         valueLabel={`${shown.defense}`}
                         value={shown.defense}
-                        color="#A3B79A"
+                        color="#2BD68B"
                       />
                       <Meter
                         label="Scoring"
                         valueLabel={`${shown.scoring}`}
                         value={shown.scoring}
-                        color="#E9A23B"
+                        color="#00E07F"
                       />
                       <Meter
                         label="Playmaking"
                         valueLabel={`${shown.playmaking}`}
                         value={shown.playmaking}
-                        color="#CBB280"
+                        color="#D7BC6A"
                       />
                       <Meter
                         label="Balance"
                         valueLabel={`${shown.balance}`}
                         value={shown.balance}
-                        color="#C98A78"
+                        color="#F4647D"
                       />
                     </div>
                   </Panel>
@@ -309,7 +309,7 @@ export default function LineupOptimizerPage() {
                   {shown.role_conflicts.length > 0 ? (
                     <ul className="mb-4 space-y-2">
                       {shown.role_conflicts.map((c) => (
-                        <li key={c} className="flex items-start gap-2 text-sm text-[#CBB280]">
+                        <li key={c} className="flex items-start gap-2 text-sm text-[#D7BC6A]">
                           <AlertTriangle size={15} className="mt-0.5 shrink-0" />
                           <span>{c}</span>
                         </li>
@@ -322,14 +322,14 @@ export default function LineupOptimizerPage() {
                   )}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <div className="kicker mb-2" style={{ color: "#A3B79A" }}>
+                      <div className="kicker mb-2" style={{ color: "#2BD68B" }}>
                         Strengths
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {shown.strengths.map((s) => (
                           <span
                             key={s}
-                            className="rounded-lg border border-[#A3B79A]/30 bg-[#A3B79A]/10 px-2 py-1 text-xs text-[#A3B79A]"
+                            className="rounded-lg border border-[#2BD68B]/30 bg-[#2BD68B]/10 px-2 py-1 text-xs text-[#2BD68B]"
                           >
                             {s}
                           </span>
@@ -337,14 +337,14 @@ export default function LineupOptimizerPage() {
                       </div>
                     </div>
                     <div>
-                      <div className="kicker mb-2" style={{ color: "#C98A78" }}>
+                      <div className="kicker mb-2" style={{ color: "#F4647D" }}>
                         Weaknesses
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {shown.weaknesses.map((s) => (
                           <span
                             key={s}
-                            className="rounded-lg border border-[#C98A78]/30 bg-[#C98A78]/10 px-2 py-1 text-xs text-[#C98A78]"
+                            className="rounded-lg border border-[#F4647D]/30 bg-[#F4647D]/10 px-2 py-1 text-xs text-[#F4647D]"
                           >
                             {s}
                           </span>
@@ -378,12 +378,12 @@ export default function LineupOptimizerPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#2BD68B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the player-impact ratings behind the lineup scoring are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89). Goal presets only reweight the five sub-scores (spacing, defense, scoring, playmaking, balance); the underlying ratings are identical for every goal.
           </p>
         </div>
-        <TrackRecord slug="lineup-optimizer" accent="#A3B79A" />
+        <TrackRecord slug="lineup-optimizer" accent="#2BD68B" />
       </div>
     </ToolShell>
   );

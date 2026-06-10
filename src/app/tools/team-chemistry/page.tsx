@@ -17,7 +17,7 @@ import { teamChemistry, best_team_matches, type ChemistryResult } from "@/lib/en
 import { gradeColor } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
-const ACCENT = "#A3B79A";
+const ACCENT = "#2BD68B";
 
 export default function TeamChemistryPage() {
   const tool = getTool("team-chemistry")!;
@@ -157,25 +157,25 @@ export default function TeamChemistryPage() {
                     label="Usage overlap"
                     valueLabel={`${result.usageOverlap}`}
                     value={result.usageOverlap}
-                    color="#8A8273"
+                    color="#6B6E78"
                   />
                   <Meter
                     label="Spacing gain"
                     valueLabel={`${result.spacingGain}`}
                     value={result.spacingGain}
-                    color="#A3B79A"
+                    color="#2BD68B"
                   />
                   <Meter
                     label="Defense gain"
                     valueLabel={`${result.defenseGain}`}
                     value={result.defenseGain}
-                    color="#CBB280"
+                    color="#D7BC6A"
                   />
                   <Meter
                     label="Positional need"
                     valueLabel={`${result.positionalNeed}`}
                     value={result.positionalNeed}
-                    color="#E9A23B"
+                    color="#00E07F"
                   />
                 </div>
               </Panel>
@@ -186,7 +186,7 @@ export default function TeamChemistryPage() {
                 <Panel title="Red flags">
                   <ul className="space-y-2">
                     {result.red_flags.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm text-[#C98A78]">
+                      <li key={f} className="flex items-start gap-2 text-sm text-[#F4647D]">
                         <AlertTriangle size={15} className="mt-0.5 shrink-0" />
                         <span>{f}</span>
                       </li>
@@ -269,12 +269,12 @@ export default function TeamChemistryPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#2BD68B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the player ratings behind the fit scoring are tested against what those players actually produced the following year — the bars show that year-over-year correlation (about r=0.89). Red flags are rule-based: stacked 28%+ usage, three-deep position groups, and a 3+ possession pace gap between the player's current team and the destination. The league-wide list runs the identical fit model on all 29 other teams.
           </p>
         </div>
-        <TrackRecord slug="team-chemistry" accent="#A3B79A" />
+        <TrackRecord slug="team-chemistry" accent="#2BD68B" />
       </div>
     </ToolShell>
   );

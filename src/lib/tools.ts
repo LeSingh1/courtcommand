@@ -315,18 +315,19 @@ export const CATEGORIES = [
   "Player Tools",
 ] as const;
 
-// Night Amber per-category accents — chroma-matched dusty tones that share one
-// temperature, so panels never fight each other for attention.
+// Court Mono wayfinding hues. The chrome is achromatic; these appear only at
+// tiny scale (dots, labels) on index surfaces and as the single accent of a
+// tool's own page — never as washes, so they cannot collide.
 export const CATEGORY_COLOR: Record<string, string> = {
-  Prediction: "#E9A23B", // amber signal
-  "Player Analysis": "#9FB6C4", // dusty silver-blue
-  "Team & Strategy": "#A3B79A", // dusty sage
-  "Content & Media": "#CBB280", // dusty gold
-  "Player Tools": "#C98A78", // dusty rose
+  Prediction: "#00E07F", // court green (the signal)
+  "Player Analysis": "#41C7E0", // electric cyan
+  "Team & Strategy": "#6FA8FF", // electric blue
+  "Content & Media": "#D7BC6A", // quiet gold
+  "Player Tools": "#9D8CFF", // electric violet
 };
 
 export function categoryColor(category: string): string {
-  return CATEGORY_COLOR[category] ?? "#E9A23B";
+  return CATEGORY_COLOR[category] ?? "#00E07F";
 }
 
 export function getTool(slug: string): ToolMeta | undefined {

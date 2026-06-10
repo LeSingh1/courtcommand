@@ -17,7 +17,7 @@ import { gradeColor } from "@/lib/cn";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const ACCENT = "#E9A23B";
+const ACCENT = "#00E07F";
 const LEAGUE_AVG = 1.0;
 // Mirrors the engine's clamp(turnoverRate, 6, 22) ceiling in pickAndRoll().
 const TURNOVER_CEILING = 22;
@@ -61,7 +61,7 @@ export default function PickAndRollPage() {
           <PlayerPicker
             value={roller}
             onChange={setRoller}
-            accent="#8A8273"
+            accent="#6B6E78"
             exclude={handler ? [handler.id] : []}
             placeholder="Pick the roll-man…"
           />
@@ -187,7 +187,7 @@ export default function PickAndRollPage() {
                     label="Short-roll game"
                     valueLabel={`${result.short_roll_efficiency}`}
                     value={result.short_roll_efficiency}
-                    color="#CBB280"
+                    color="#D7BC6A"
                   />
                   <p className="text-[11px] leading-relaxed text-white/40">
                     Lob threat = the roll-man's rim share scaled by the handler's assist volume;
@@ -199,7 +199,7 @@ export default function PickAndRollPage() {
             </Reveal>
 
             <Reveal delay={0.08}>
-              <Insight accent="#CBB280">{result.tactical_explanation}</Insight>
+              <Insight accent="#D7BC6A">{result.tactical_explanation}</Insight>
             </Reveal>
 
             <Reveal delay={0.1}>
@@ -231,7 +231,7 @@ export default function PickAndRollPage() {
                 value={result.turnoverRate}
                 suffix="%"
                 decimals={1}
-                color={result.turnoverRate <= 12 ? "#A3B79A" : "#C98A78"}
+                color={result.turnoverRate <= 12 ? "#2BD68B" : "#F4647D"}
                 invert
               />
               <StatCard
@@ -243,7 +243,7 @@ export default function PickAndRollPage() {
                 label="Fouls drawn / 100"
                 value={result.foulsDrawn}
                 decimals={1}
-                color="#CBB280"
+                color="#D7BC6A"
               />
             </div>
           </Reveal>
@@ -253,10 +253,10 @@ export default function PickAndRollPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#2BD68B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the playmaking and finishing ratings behind these grades are tested against what those players produced the following year — the bars show that year-over-year correlation (about r=0.89).</p>
         </div>
-        <TrackRecord slug="pick-and-roll" accent="#A3B79A" />
+        <TrackRecord slug="pick-and-roll" accent="#2BD68B" />
       </div>
     </ToolShell>
   );

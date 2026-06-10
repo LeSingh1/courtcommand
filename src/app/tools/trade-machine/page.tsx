@@ -20,10 +20,10 @@ const r1 = (n: number) => Math.round(n * 10) / 10;
 const sum = (ps: Player[], k: (p: Player) => number) => ps.reduce((a, p) => a + k(p), 0);
 
 function ovrColor(o: number): string {
-  if (o >= 90) return "#CBB280";
-  if (o >= 80) return "#A3B79A";
-  if (o >= 72) return "#9FB6C4";
-  return "#8A8273";
+  if (o >= 90) return "#D7BC6A";
+  if (o >= 80) return "#2BD68B";
+  if (o >= 72) return "#41C7E0";
+  return "#6B6E78";
 }
 
 // one traded player: who, from where, to where
@@ -202,10 +202,10 @@ export default function TradeMachinePage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#2BD68B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the player-rating model these deals are graded on is tested against what players actually produced the next year — the bars show that year-over-year correlation (about r=0.89). Contract risk is an estimate: it projects remaining years on age-30+ deals from player age, since contract-length data isn't ingested. Fit is positional balance of the post-trade roster (100 = even across all five spots).</p>
         </div>
-        <TrackRecord slug="trade-machine" accent="#A3B79A" />
+        <TrackRecord slug="trade-machine" accent="#2BD68B" />
       </div>
     </ToolShell>
   );
@@ -338,7 +338,7 @@ function TeamPanel({
         </div>
         {incoming.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-[var(--line)] pt-2">
-            <span className="kicker text-[#A3B79A]">Gets</span>
+            <span className="kicker text-[#2BD68B]">Gets</span>
             {incoming.map((p) => (
               <span key={p.id} className="flex items-center gap-1 text-[11px] text-white/70">
                 <PlayerAvatar player={p} size={14} /> {p.name}
@@ -398,7 +398,7 @@ function OvrBadge({ ovr }: { ovr: number }) {
 /* ---------------- Verdict banner ---------------- */
 function VerdictBanner({ result, teams }: { result: TradeResult; teams: string[] }) {
   const ok = result.legal;
-  const color = ok ? "#A3B79A" : "#C98A78";
+  const color = ok ? "#2BD68B" : "#F4647D";
   return (
     <div className="relative flex flex-col gap-3 overflow-hidden border px-5 py-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: `${color}55`, background: `${color}10` }}>
       <div className="flex items-center gap-3">
@@ -431,7 +431,7 @@ function AfterTrade({
   sends: Player[];
 }) {
   const c = side.team.color;
-  const gradeC = side.talentDelta > 5 ? "#A3B79A" : side.talentDelta < -5 ? "#C98A78" : "#CBB280";
+  const gradeC = side.talentDelta > 5 ? "#2BD68B" : side.talentDelta < -5 ? "#F4647D" : "#D7BC6A";
   const offDelta = r1(sum(receives, (p) => p.offImpact) - sum(sends, (p) => p.offImpact));
   const defDelta = r1(sum(receives, (p) => p.defImpact) - sum(sends, (p) => p.defImpact));
   return (
@@ -456,9 +456,9 @@ function AfterTrade({
         <Cell label="Apron" value={side.apronBand} />
       </div>
       {side.failure_reasons.length > 0 && (
-        <div className="space-y-1 border-b border-[var(--line)] bg-[#C98A78]/[0.07] px-4 py-2.5">
+        <div className="space-y-1 border-b border-[var(--line)] bg-[#F4647D]/[0.07] px-4 py-2.5">
           {side.failure_reasons.map((r) => (
-            <div key={r} className="flex items-start gap-1.5 text-[11px] text-[#C98A78]">
+            <div key={r} className="flex items-start gap-1.5 text-[11px] text-[#F4647D]">
               <ShieldAlert size={12} className="mt-0.5 shrink-0" />
               <span>{r}</span>
             </div>
@@ -494,14 +494,14 @@ function Cell({ label, value }: { label: string; value: string }) {
 
 // Post-trade positional balance (0-100) with the change vs the current roster.
 function FitRow({ score, delta }: { score: number; delta: number }) {
-  const deltaC = delta > 0 ? "#A3B79A" : delta < 0 ? "#C98A78" : "#8A8273";
+  const deltaC = delta > 0 ? "#2BD68B" : delta < 0 ? "#F4647D" : "#6B6E78";
   return (
     <div className="flex items-center gap-3">
       <span className="w-14 text-xs text-white/60">Fit</span>
       <div className="relative h-2 flex-1 bg-white/[0.06]">
         <motion.div
           className="absolute top-0 h-full"
-          style={{ background: "#8A8273" }}
+          style={{ background: "#6B6E78" }}
           initial={{ width: 0 }}
           animate={{ width: `${score}%` }}
           transition={spring.soft}
@@ -517,7 +517,7 @@ function FitRow({ score, delta }: { score: number; delta: number }) {
   );
 }
 
-const RISK_COLOR: Record<string, string> = { Low: "#A3B79A", Med: "#CBB280", High: "#C98A78" };
+const RISK_COLOR: Record<string, string> = { Low: "#2BD68B", Med: "#D7BC6A", High: "#F4647D" };
 
 function ContractRiskRow({ risk }: { risk: TradeResult["sides"][number]["contract_risk"] }) {
   const c = RISK_COLOR[risk.level];
@@ -536,7 +536,7 @@ function ContractRiskRow({ risk }: { risk: TradeResult["sides"][number]["contrac
 
 function ImpactMeter({ label, delta }: { label: string; delta: number }) {
   const pos = delta >= 0;
-  const color = pos ? "#A3B79A" : "#C98A78";
+  const color = pos ? "#2BD68B" : "#F4647D";
   const w = Math.min(50, Math.abs(delta) * 1.1);
   return (
     <div className="flex items-center gap-3">

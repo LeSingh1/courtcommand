@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 export function Meter({
   value,
   max = 100,
-  color = "#E9A23B",
+  color = "#00E07F",
   label,
   valueLabel,
   className,
@@ -36,8 +36,8 @@ export function Meter({
 export function Diverging({
   value,
   range = 10,
-  color = "#A3B79A",
-  negColor = "#C98A78",
+  color = "#2BD68B",
+  negColor = "#F4647D",
 }: {
   value: number;
   range?: number;

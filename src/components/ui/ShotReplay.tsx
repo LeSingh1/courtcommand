@@ -22,7 +22,7 @@ export function ShotReplay({
   x,
   y,
   made,
-  accent = "#E9A23B",
+  accent = "#00E07F",
   height = 360,
 }: {
   x: number;

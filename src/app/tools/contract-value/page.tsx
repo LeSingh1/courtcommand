@@ -18,21 +18,21 @@ import { contractBreakdown } from "@/lib/engine/value";
 import type { Player } from "@/lib/types";
 
 const RISK_COLOR: Record<string, string> = {
-  Low: "#A3B79A",
-  Med: "#CBB280",
-  High: "#C98A78",
+  Low: "#2BD68B",
+  Med: "#D7BC6A",
+  High: "#F4647D",
 };
 
 type Filter = "all" | "Bargain" | "Fair" | "Overpaid";
 
 const VERDICT_COLOR: Record<ContractRow["verdict"], string> = {
-  Bargain: "#A3B79A",
-  Fair: "#CBB280",
-  Overpaid: "#C98A78",
+  Bargain: "#2BD68B",
+  Fair: "#D7BC6A",
+  Overpaid: "#F4647D",
 };
 
-const POS = "#A3B79A";
-const NEG = "#C98A78";
+const POS = "#2BD68B";
+const NEG = "#F4647D";
 
 export default function ContractValuePage() {
   const tool = getTool("contract-value")!;
@@ -78,14 +78,14 @@ export default function ContractValuePage() {
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Insight accent="#A3B79A">
+        <Insight accent="#2BD68B">
           <b>{bestBargain.player.name}</b> is the league&apos;s best value — producing{" "}
           <b>${bestBargain.produced}M</b> on a <b>${bestBargain.player.salary}M</b> deal for{" "}
           <b className="text-mint">+${bestBargain.surplus}M</b> of surplus. Production is modeled
           from win value, availability, and the age curve.
         </Insight>
         <Segmented
-          accent="#A3B79A"
+          accent="#2BD68B"
           value={filter}
           onChange={setFilter}
           options={[
@@ -296,7 +296,7 @@ export default function ContractValuePage() {
       </Panel>
 
       <div className="mt-6">
-        <Insight accent="#C98A78">
+        <Insight accent="#F4647D">
           <b>{worstOverpay.player.name}</b> is the steepest overpay — ${worstOverpay.player.salary}M
           for just ${worstOverpay.produced}M of production (
           <b className="text-rose">${worstOverpay.surplus}M</b>). The gap from{" "}
@@ -307,12 +307,12 @@ export default function ContractValuePage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#41C7E0" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the production rating a contract is judged against is tested against what the player actually produced the following year — the bars show that year-over-year persistence (about r=0.89), the signal surplus value is built on.
           </p>
         </div>
-        <TrackRecord slug="contract-value" accent="#9FB6C4" />
+        <TrackRecord slug="contract-value" accent="#41C7E0" />
       </div>
     </ToolShell>
   );

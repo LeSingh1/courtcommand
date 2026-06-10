@@ -8,17 +8,18 @@
   --font-sans: "Instrument Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* Night Amber — warm cinematic darks, one amber signal, dusty support tones */
-  --bg: #0e0d0b;
-  --surface: #15130f;
-  --surface-2: #1c1915;
-  --line: rgba(231, 213, 184, 0.09);
-  --line-strong: rgba(231, 213, 184, 0.18);
-  --text: #f2ede4;
-  --text-muted: #a89f90;
-  --text-faint: #6e675b;
-  --accent: #e9a23b;
-  --accent-ink: #1a1006;
+  /* Court Mono — true-neutral black ramp, one electric court-green signal.
+     Zero temperature cast anywhere: grays are pure, color lives in the data. */
+  --bg: #0a0a0b;
+  --surface: #121214;
+  --surface-2: #18181b;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #f4f4f5;
+  --text-muted: #9b9ba3;
+  --text-faint: #63636b;
+  --accent: #00e07f;
+  --accent-ink: #03130a;
 
   --radius: 14px;
   --radius-sm: 9px;
@@ -92,15 +93,8 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
-.glass {
-  background: rgba(16, 20, 27, 0.66);
-  backdrop-filter: blur(14px) saturate(1.25);
-  -webkit-backdrop-filter: blur(14px) saturate(1.25);
-}
 .glass-strong {
-  background: rgba(22, 28, 38, 0.82);
-  backdrop-filter: blur(18px) saturate(1.25);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
@@ -124,7 +118,7 @@ body {
 .btn-ember:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 32px -12px rgba(233, 162, 59, 0.45);
+  box-shadow: 0 10px 32px -12px rgba(0, 224, 127, 0.4);
 }
 .btn-accent:active,
 .btn-ember:active {
@@ -159,17 +153,17 @@ body {
   background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #232c3a;
+  background: #232327;
   border: 3px solid var(--bg);
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #31405a;
+  background: #34343a;
 }
 
 ::selection {
-  background: rgba(200, 242, 63, 0.85);
-  color: #0e1402;
+  background: rgba(0, 224, 127, 0.85);
+  color: #03130a;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -277,33 +271,10 @@ body {
 }
 
 /* ---------- Atmosphere ---------- */
-/* Film grain over everything — monochrome SVG noise, barely-there. */
-body::after {
-  content: "";
-  position: fixed;
-  inset: -50%;
-  width: 200%;
-  height: 200%;
-  pointer-events: none;
-  z-index: 100;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.032;
-}
-@media (prefers-reduced-motion: no-preference) {
-  body::after {
-    animation: cc-grain 9s steps(6) infinite;
-  }
-}
-@keyframes cc-grain {
-  0% { transform: translate(0, 0); }
-  20% { transform: translate(-2%, 1.6%); }
-  40% { transform: translate(1.4%, -2%); }
-  60% { transform: translate(-1.2%, -1.2%); }
-  80% { transform: translate(2%, 1.2%); }
-  100% { transform: translate(0, 0); }
-}
+/* No grain, no overlays: a pure-neutral field keeps every surface step honest
+   and lets the one accent read at full strength. */
 
-/* Giant hollow display type (poster marquee, section numerals) */
+/* Giant hollow display type (section numerals) */
 .outline-display {
   font-family: var(--font-display);
   font-weight: 600;
