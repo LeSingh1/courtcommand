@@ -66,3 +66,59 @@ export function shotsForPlayer(shots: RealShot[], espnId: number): RealShot[] {
     .filter((s) => s.espnId === espnId)
     .sort((a, b) => (b.date || "").localeCompare(a.date || "") || a.period - b.period);
 }
+
+// ---- Real clutch-time shooting, derived from the playoff shots ----
+// Clutch = last 5:00 of Q4 or any overtime. Every number below is real:
+// counted directly from the 2026 playoff play-by-play.
+function clockToSec(clock: string): number {
+  const m = (clock || "").match(/(\d+):(\d+)/);
+  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : 999;
+}
+
+export interface ClutchLeader {
+  espnId: number;
+  player: string;
+  team: string;
+  att: number;
+  made: number;
+  fgPct: number;
+  threeAtt: number;
+  threeMade: number;
+  threePct: number;
+  pts: number;
+  efg: number;
+}
+
+export function isClutch(s: RealShot): boolean {
+  return s.period >= 4 && clockToSec(s.clock) <= 300;
+}
+
+export function clutchLeaders(shots: RealShot[], minAtt = 6): ClutchLeader[] {
+  const m = new Map<number, ClutchLeader>();
+  for (const s of shots) {
+    if (!isClutch(s)) continue;
+    let e = m.get(s.espnId);
+    if (!e) {
+      e = { espnId: s.espnId, player: s.player, team: s.team, att: 0, made: 0, fgPct: 0, threeAtt: 0, threeMade: 0, threePct: 0, pts: 0, efg: 0 };
+      m.set(s.espnId, e);
+    }
+    e.att++;
+    if (s.made) {
+      e.made++;
+      e.pts += s.value;
+    }
+    if (s.value === 3) {
+      e.threeAtt++;
+      if (s.made) e.threeMade++;
+    }
+  }
+  return [...m.values()]
+    .filter((e) => e.att >= minAtt)
+    .map((e) => ({
+      ...e,
+      fgPct: e.att ? e.made / e.att : 0,
+      threePct: e.threeAtt ? e.threeMade / e.threeAtt : 0,
+      efg: e.att ? (e.made + 0.5 * e.threeMade) / e.att : 0,
+    }))
+    .sort((a, b) => b.pts - a.pts);
+}
