@@ -22,8 +22,8 @@ export function ToolCard({ tool, index = 0 }: { tool: ToolMeta; index?: number }
         animate="rest"
         variants={{ rest: { y: 0 }, hover: { y: -5 } }}
         transition={spring.snappy}
-        className="relative flex h-full flex-col overflow-hidden border border-[var(--line)] bg-[var(--surface)] p-5"
-        style={{ ["--cat" as string]: color }}
+        className="card-frame relative flex h-full flex-col border border-[var(--line)] bg-[var(--surface)] p-5"
+        style={{ ["--cat" as string]: color, ["--card-accent" as string]: color }}
       >
         {/* category accent rule — visible at rest, brightens on hover */}
         <motion.span

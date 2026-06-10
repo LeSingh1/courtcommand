@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Hero } from "@/components/home/Hero";
+import { Ticker } from "@/components/home/Ticker";
 import { ToolCard } from "@/components/ui/ToolCard";
 import { Reveal } from "@/components/ui/Reveal";
 import { TOOLS, CATEGORIES, categoryColor } from "@/lib/tools";
@@ -8,23 +9,32 @@ import { HomePreviews } from "@/components/home/HomePreviews";
 
 const BETTING_GREEN = "#2FA96B";
 
+// Oversized hollow numeral that anchors each section like a magazine spread.
+function SectionMark({ n, kicker, title }: { n: string; kicker: string; title: string }) {
+  return (
+    <div className="relative mb-8 border-t border-[var(--line)] pt-8">
+      <span className="outline-display pointer-events-none absolute -top-3 right-0 hidden text-[7rem] sm:block" aria-hidden>
+        {n}
+      </span>
+      <div className="kicker mb-3" style={{ color: "var(--accent)" }}>{kicker}</div>
+      <h2 className="display max-w-2xl text-3xl text-[var(--text)] sm:text-4xl">{title}</h2>
+    </div>
+  );
+}
+
 export default function HomePage() {
   return (
     <>
       <Hero />
+      <Ticker />
 
       {/* Live previews */}
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
         <Reveal>
-          <div className="mb-8 border-t border-[var(--line)] pt-8">
-            <div className="kicker mb-3">Live engine</div>
-            <h2 className="display max-w-2xl text-3xl text-[var(--text)] sm:text-4xl">
-              Every figure is computed, not illustrated.
-            </h2>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--text-muted)]">
-              The panels below run on the same deterministic engine that powers all thirty tools.
-            </p>
-          </div>
+          <SectionMark n="01" kicker="Live engine" title="Every figure is computed, not illustrated." />
+          <p className="-mt-4 mb-8 max-w-xl text-sm leading-relaxed text-[var(--text-muted)]">
+            The panels below run on the same deterministic engine that powers all thirty tools.
+          </p>
         </Reveal>
         <HomePreviews />
       </section>
@@ -32,14 +42,11 @@ export default function HomePage() {
       {/* Tool grid by category */}
       <section className="mx-auto max-w-7xl px-5 pb-16 sm:px-8">
         <Reveal>
-          <div className="mb-2 flex items-end justify-between border-t border-[var(--line)] pt-8">
-            <div>
-              <div className="kicker mb-3">The arsenal</div>
-              <h2 className="display text-3xl text-[var(--text)] sm:text-4xl">Thirty instruments</h2>
-            </div>
+          <div className="relative">
+            <SectionMark n="02" kicker="The arsenal" title="Thirty instruments" />
             <Link
               href="/tools"
-              className="hidden items-center gap-1.5 text-sm text-[var(--text-muted)] transition hover:text-[var(--text)] sm:flex"
+              className="link-underline absolute bottom-1 right-0 hidden items-center gap-1.5 text-sm text-[var(--text-muted)] transition hover:text-[var(--text)] sm:inline-flex"
             >
               Browse all <ArrowRight size={15} strokeWidth={2} />
             </Link>
@@ -78,7 +85,11 @@ export default function HomePage() {
       {/* Betting */}
       <section className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
         <Reveal>
-          <Link href="/betting" className="lift group block border border-[var(--line)] bg-[var(--surface)] hover:bg-[var(--surface-2)]">
+          <Link
+            href="/betting"
+            className="lift card-frame group block border border-[var(--line)] bg-[var(--surface)] hover:bg-[var(--surface-2)]"
+            style={{ ["--card-accent" as string]: BETTING_GREEN }}
+          >
             <div className="grid gap-6 p-8 sm:grid-cols-[1.4fr_1fr] sm:items-center sm:p-10">
               <div>
                 <div className="kicker mb-3 flex items-center gap-2" style={{ color: BETTING_GREEN }}>
@@ -121,7 +132,7 @@ export default function HomePage() {
       {/* CTA */}
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
         <Reveal>
-          <div className="border border-[var(--line)] bg-[var(--surface)] px-8 py-16 text-center sm:py-20">
+          <div className="card-frame border border-[var(--line)] bg-[var(--surface)] px-8 py-16 text-center sm:py-20">
             <h2 className="display mx-auto max-w-2xl text-3xl text-[var(--text)] sm:text-4xl">
               Settle the argument with the numbers.
             </h2>
@@ -138,6 +149,22 @@ export default function HomePage() {
           </div>
         </Reveal>
       </section>
+
+      {/* Poster marquee — giant hollow wordmark drifting past */}
+      <div className="marquee select-none border-t border-[var(--line)] py-6" aria-hidden>
+        <div className="marquee-track" style={{ ["--marquee-dur" as string]: "60s" }}>
+          {[0, 1].map((row) => (
+            <span key={row} className="outline-display inline-flex items-center text-[clamp(5rem,14vw,11rem)]">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <span key={i} className="inline-flex items-center">
+                  <span className="px-6">COURTCOMMAND</span>
+                  <span className="mx-2 inline-block h-4 w-4 shrink-0 bg-[var(--accent)]" />
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
     </>
   );
 }
