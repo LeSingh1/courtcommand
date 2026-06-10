@@ -1,256 +1,137 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { Scale } from "lucide-react";
-import { spring } from "@/lib/motion";
+import { useMemo, useState } from "react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
-import { Meter, Diverging } from "@/components/ui/Meter";
+import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { TeamLogo } from "@/components/ui/TeamLogo";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
-import { refBiasBoard } from "@/lib/engine/game";
-import { TEAM_MAP } from "@/lib/data";
+import { PLAYERS } from "@/lib/data";
+import { FT_RATES, teamFtRates } from "@/lib/data/ftrate";
 import { gradeColor } from "@/lib/cn";
+import type { Player } from "@/lib/types";
 
-type SortKey = "homeWhistle" | "starWhistle" | "foulDiff";
+const playerByEspn = (id: number): Player | undefined => PLAYERS.find((p) => p.espnId === id);
+type View = "players" | "teams";
 
 export default function RefBiasPage() {
   const tool = getTool("ref-bias")!;
-  const ACCENT = categoryColor(tool.category);
-  const [sort, setSort] = useState<SortKey>("homeWhistle");
+  const accent = categoryColor(tool.category);
+  const [view, setView] = useState<View>("players");
 
-  const [isAnalyzing, setIsAnalyzing] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setIsAnalyzing(false), 600);
-    return () => clearTimeout(t);
-  }, []);
-
-  const board = useMemo(() => refBiasBoard(), []);
-
-  const withGap = useMemo(
-    () =>
-      board.map((r) => ({
-        ...r,
-        homeGap: Math.round((r.homeFtRate - r.awayFtRate) * 10) / 10,
-      })),
-    [board],
-  );
-
-  const sorted = useMemo(() => {
-    const key =
-      sort === "homeWhistle"
-        ? (r: (typeof withGap)[number]) => r.homeGap
-        : sort === "starWhistle"
-          ? (r: (typeof withGap)[number]) => r.starWhistle
-          : (r: (typeof withGap)[number]) => r.foulDiff;
-    return [...withGap].sort((a, b) => key(b) - key(a));
-  }, [withGap, sort]);
-
-  // team with the biggest home-vs-away FT gap
-  const biggestGap = useMemo(
-    () => [...withGap].sort((a, b) => b.homeGap - a.homeGap)[0],
-    [withGap],
-  );
-
-  const leagueHomeGap = useMemo(
-    () => Math.round((withGap.reduce((a, r) => a + r.homeGap, 0) / withGap.length) * 10) / 10,
-    [withGap],
-  );
-
-  const gapTeam = biggestGap ? TEAM_MAP[biggestGap.team] : undefined;
-
-  if (isAnalyzing) {
-    return (
-      <ToolShell tool={tool}>
-        <Panel title="Officiating tendency board">
-          <div className="flex items-center gap-3 py-2 text-sm text-[var(--text-muted)]">
-            <span
-              className="inline-block h-3 w-3 animate-pulse"
-              style={{ background: ACCENT }}
-            />
-            Reading officiating logs…
-          </div>
-          <div className="mt-4 space-y-2">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-9 w-full animate-pulse bg-white/[0.04]" />
-            ))}
-          </div>
-        </Panel>
-      </ToolShell>
-    );
-  }
-
-  if (sorted.length === 0 || !biggestGap) {
-    return (
-      <ToolShell tool={tool}>
-        <Panel title="Officiating tendency board">
-          <p className="text-sm text-[var(--text-muted)]">No officiating data available.</p>
-        </Panel>
-      </ToolShell>
-    );
-  }
+  const players = useMemo(() => [...FT_RATES].sort((a, b) => b.ftr - a.ftr).slice(0, 40), []);
+  const teams = useMemo(() => teamFtRates(), []);
+  const maxFtr = players[0]?.ftr ?? 1;
+  const leader = players[0];
+  const score = (ftr: number) => Math.round((ftr / maxFtr) * 100);
 
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Insight accent={ACCENT}>
-          League-wide, home teams average <b>+{leagueHomeGap} free throws</b> per game over visitors —
-          a measurable home-whistle tilt. <b>{gapTeam?.city} {gapTeam?.name}</b> draw the most one-sided
-          home advantage at <b>+{biggestGap.homeGap} FT/game</b>.
+        <Insight accent={accent}>
+          <b>{leader?.name}</b> draws the most contact in the league — a <b>{leader?.ftr.toFixed(2)}</b> free-throw
+          rate ({leader?.fta} FTA per {leader?.fga} FGA). Free-throw rate is real foul-drawing pressure
+          from this season&rsquo;s box scores; it reflects playstyle and whistle patterns, not a claim
+          about referee intent.
         </Insight>
         <Segmented
-          accent={ACCENT}
-          value={sort}
-          onChange={setSort}
+          accent={accent}
+          value={view}
+          onChange={setView}
           options={[
-            { label: "Home Whistle", value: "homeWhistle" },
-            { label: "Star Whistle", value: "starWhistle" },
-            { label: "Foul Diff", value: "foulDiff" },
+            { label: "Players", value: "players" },
+            { label: "Teams", value: "teams" },
           ]}
         />
       </div>
 
-      <div key={sort} className="enter">
-      {/* spotlight cards */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {sorted.slice(0, 3).map((r, i) => {
-          const team = TEAM_MAP[r.team];
-          const val = sort === "homeWhistle" ? r.homeGap : sort === "starWhistle" ? r.starWhistle : r.foulDiff;
-          return (
-            <Reveal key={r.team} delay={i * 0.08}>
-              <motion.div
-                whileHover={{ y: -3 }}
-                whileTap={{ scale: 0.97 }}
-                transition={spring.snappy}
-                className="glass relative overflow-hidden rounded-none p-5"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="display text-4xl text-white/15">#{i + 1}</span>
-                  <Scale size={20} style={{ color: ACCENT }} />
-                </div>
-                <div className="mt-2 flex items-center gap-2.5">
-                  <TeamLogo abbr={r.team} size={32} />
-                  <span className="font-semibold text-white">
-                    {team?.city} {team?.name}
-                  </span>
-                </div>
-                <div className="mt-4 flex items-end justify-between">
-                  <div>
-                    <div className="scoreboard text-4xl font-bold tabular-nums" style={{ color: ACCENT }}>
-                      {val > 0 && sort !== "starWhistle" ? "+" : ""}
-                      {val}
-                    </div>
-                    <div className="text-[10px] uppercase tracking-wide text-white/40">
-                      {sort === "homeWhistle"
-                        ? "Home FT edge"
-                        : sort === "starWhistle"
-                          ? "Star whistle"
-                          : "Foul diff / game"}
-                    </div>
-                  </div>
-                  <div className="stat-num text-right text-xs text-white/50">
-                    <div>{r.homeFtRate} home FT</div>
-                    <div>{r.awayFtRate} away FT</div>
-                  </div>
-                </div>
-              </motion.div>
-            </Reveal>
-          );
-        })}
-      </div>
-
-      <Panel title="Officiating tendency board">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
-                <th className="py-2 pl-2 font-medium">Team</th>
-                <th className="py-2 text-right font-medium">Home FT</th>
-                <th className="py-2 text-right font-medium">Away FT</th>
-                <th className="py-2 font-medium">Foul Diff</th>
-                <th className="py-2 font-medium">Star Whistle</th>
-                <th className="py-2 pr-2 text-right font-medium">Home Edge</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((r) => {
-                const team = TEAM_MAP[r.team];
-                const isFlag = r.team === biggestGap.team;
-                return (
-                  <tr
-                    key={r.team}
-                    className="border-b border-white/[0.04] transition hover:bg-white/[0.03]"
-                    style={isFlag ? { background: `${ACCENT}12` } : undefined}
-                  >
-                    <td className="py-2.5 pl-2">
-                      <div className="flex items-center gap-2.5">
-                        <TeamLogo abbr={r.team} size={26} />
-                        <span className="text-white/85">
-                          {team?.city} {team?.name}
-                        </span>
-                        {isFlag && (
-                          <span
-                            className="rounded-none px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
-                            style={{ background: `${ACCENT}22`, color: ACCENT }}
-                          >
-                            Biggest tilt
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="stat-num py-2.5 text-right text-white/75">{r.homeFtRate}</td>
-                    <td className="stat-num py-2.5 text-right text-white/55">{r.awayFtRate}</td>
-                    <td className="py-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24">
-                          <Diverging value={r.foulDiff} range={6} color="#5FA97E" negColor="#BF5B4E" />
-                        </div>
-                        <span
-                          className="stat-num w-9 text-xs font-semibold"
-                          style={{ color: r.foulDiff >= 0 ? "#5FA97E" : "#BF5B4E" }}
-                        >
-                          {r.foulDiff > 0 ? "+" : ""}
-                          {r.foulDiff}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-16">
-                          <Meter value={r.starWhistle} max={8} color={gradeColor((r.starWhistle / 8) * 100)} height={6} />
-                        </div>
-                        <span className="stat-num w-7 text-xs text-white/65">{r.starWhistle}</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 pr-2 text-right">
-                      <span
-                        className="stat-num rounded-none px-2 py-0.5 text-xs font-bold"
-                        style={{ background: `${ACCENT}1f`, color: ACCENT }}
-                      >
-                        +{r.homeGap}
-                      </span>
-                    </td>
+      <div key={view} className="enter">
+        {view === "players" ? (
+          <Panel title="Foul-drawn rate · FTA per FGA">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px] text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
+                    <th className="py-2 pl-2 font-medium">#</th>
+                    <th className="py-2 font-medium">Player</th>
+                    <th className="py-2 font-medium">FT rate</th>
+                    <th className="py-2 font-medium">FTA</th>
+                    <th className="py-2 font-medium">FGA</th>
+                    <th className="py-2 pr-2 text-right font-medium">FT%</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
+                </thead>
+                <tbody>
+                  {players.map((r, i) => {
+                    const p = playerByEspn(r.espnId);
+                    return (
+                      <tr key={r.espnId} className="border-b border-white/[0.04] transition hover:bg-white/[0.03]">
+                        <td className="stat-num py-2.5 pl-2 text-white/35">{i + 1}</td>
+                        <td className="py-2.5">
+                          <div className="flex items-center gap-2.5">
+                            {p ? <PlayerAvatar player={p} size={28} /> : null}
+                            <span className="text-white/85">{r.name}</span>
+                            <TeamLogo abbr={r.team} size={14} />
+                          </div>
+                        </td>
+                        <td className="py-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-20">
+                              <Meter value={score(r.ftr)} color={gradeColor(score(r.ftr))} height={6} />
+                            </div>
+                            <span className="stat-num w-9 font-semibold" style={{ color: gradeColor(score(r.ftr)) }}>
+                              {r.ftr.toFixed(2)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="stat-num py-2.5 text-white/65">{r.fta}</td>
+                        <td className="stat-num py-2.5 text-white/65">{r.fga}</td>
+                        <td className="stat-num py-2.5 pr-2 text-right text-white/55">{Math.round(r.ftp * 100)}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Panel>
+        ) : (
+          <Panel title="Team free-throw rate · who gets to the line">
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {teams.map((t, i) => (
+                <Reveal key={t.team} delay={Math.min(i * 0.02, 0.3)}>
+                  <div className="flex items-center gap-3 border border-white/[0.06] bg-white/[0.02] p-3">
+                    <span className="stat-num w-5 text-white/35">{i + 1}</span>
+                    <TeamLogo abbr={t.team} size={26} />
+                    <span className="flex-1 text-sm text-white/85">{t.team}</span>
+                    <div className="w-24">
+                      <Meter value={Math.round((t.ftr / teams[0].ftr) * 100)} color={gradeColor(Math.round((t.ftr / teams[0].ftr) * 100))} height={6} />
+                    </div>
+                    <span className="stat-num w-12 text-right font-semibold" style={{ color: accent }}>
+                      {t.ftr.toFixed(3)}
+                    </span>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </Panel>
+        )}
       </div>
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#B0688E" }}>Model track record</div>
+          <div className="kicker" style={{ color: accent }}>
+            Data &amp; method
+          </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The panel shows the real officiating-log history behind this model — the count of player-seasons it
-            has trained on growing each year since 2003 — alongside its validation metric and how that score was measured.
+            Free-throw rate (FTA ÷ FGA) is counted from this season&rsquo;s real box-score totals for{" "}
+            {FT_RATES.length} players. It surfaces who draws contact most — a measurable whistle pattern,
+            not an accusation of officiating bias. Real per-call officiating data isn&rsquo;t public, so
+            this tool reports rates, not intent.
           </p>
         </div>
-        <TrackRecord slug="ref-bias" accent="#B0688E" />
+        <TrackRecord slug="ref-bias" accent={accent} />
       </div>
     </ToolShell>
   );
