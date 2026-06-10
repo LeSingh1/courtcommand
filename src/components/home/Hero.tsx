@@ -26,7 +26,7 @@ export function Hero() {
 
       <div className="relative mx-auto max-w-7xl px-5 pb-10 pt-32 sm:px-8 sm:pt-40 lg:pt-44">
         <div className="kicker enter mb-7 flex items-center gap-3" style={{ animationDelay: "0.9s" }}>
-          <span className="blink inline-block h-1.5 w-1.5 bg-[var(--accent)]" />
+          <span className="blink inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
           Live render · 436 real playoff shots in orbit
         </div>
 
@@ -79,7 +79,7 @@ export function Hero() {
           {STATS.map((s) => (
             <div key={s.l} className="border-b border-r border-[var(--line)] px-4 py-5 last:border-r-0 sm:border-b-0">
               <dt className="scoreboard text-4xl text-[var(--text)]">{s.k || String(PLAYERS.length)}</dt>
-              <dd className="mt-1.5 text-[11px] uppercase tracking-wider text-[var(--text-faint)]">{s.l}</dd>
+              <dd className="mt-1.5 text-xs font-medium text-[var(--text-faint)]">{s.l}</dd>
             </div>
           ))}
         </dl>

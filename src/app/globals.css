@@ -78,12 +78,13 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* Small labels: clean sentence-case sans — no uppercase tracking, no mono.
+   The terminal-ticker look is exactly what reads as dated. */
 .kicker,
 .eyebrow {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.7rem;
+  font-family: var(--font-sans);
+  letter-spacing: 0.01em;
+  font-size: 0.78rem;
   color: var(--text-faint);
   font-weight: 500;
 }

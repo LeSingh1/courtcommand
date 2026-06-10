@@ -105,7 +105,7 @@ export function Panel({
       {(title || right) && (
         <div className="mb-4 flex items-center justify-between border-b border-[var(--line)] pb-3">
           {title && (
-            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            <h3 className="text-[13px] font-medium text-[var(--text-muted)]">
               {title}
             </h3>
           )}
@@ -122,7 +122,7 @@ function ModelTag({ slug }: { slug: string }) {
   if (!model) return null;
   return (
     <div className="mt-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-1.5 text-[11px]">
-      <span className="flex items-center gap-1.5 font-semibold uppercase tracking-wider text-[var(--accent)]">
+      <span className="flex items-center gap-1.5 font-semibold text-[var(--accent)]">
         <span className="blink inline-block h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
         Trained model
       </span>

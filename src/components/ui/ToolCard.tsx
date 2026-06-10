@@ -40,7 +40,7 @@ export function ToolCard({ tool, index = 0 }: { tool: ToolMeta; index?: number }
         <h3 className="relative font-semibold tracking-tight text-[var(--text)]">{tool.name}</h3>
         <p className="relative mt-1.5 text-[13px] leading-relaxed text-[var(--text-muted)]">{tool.tagline}</p>
         <div className="relative mt-auto flex items-center justify-between border-t border-[var(--line)] pt-4">
-          <span className="flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-faint)]">
+          <span className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-faint)]">
             <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: color }} />
             {tool.category}
           </span>

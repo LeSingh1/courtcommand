@@ -61,7 +61,7 @@ export default function HomePage() {
                 <div className="mb-5 flex items-center gap-3">
                   <span className="h-3 w-1" style={{ background: categoryColor(cat) }} />
                   <h3
-                    className="text-xs font-semibold uppercase tracking-[0.16em]"
+                    className="text-sm font-medium"
                     style={{ color: categoryColor(cat) }}
                   >
                     {cat}
