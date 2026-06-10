@@ -3,11 +3,10 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUpRight, Plus, Check, Trash2, TrendingUp, TrendingDown, Sigma } from "lucide-react";
+import { ArrowUpRight, Check, Trash2, TrendingUp, TrendingDown, Sigma } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
-import { Meter } from "@/components/ui/Meter";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { gradeColor } from "@/lib/cn";
@@ -144,109 +143,27 @@ export default function BettingPage() {
             </span>
           </div>
 
-          <Panel className="!p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[740px] text-sm">
-                <thead>
-                  <tr className="border-b border-[var(--line)] text-left text-[11px] text-[var(--text-faint)]">
-                    <th className="py-2.5 pl-4 font-medium">Player</th>
-                    <th className="py-2.5 font-medium">Prop</th>
-                    <th className="py-2.5 font-medium">Line</th>
-                    <th className="py-2.5 font-medium">Proj</th>
-                    <th className="py-2.5 font-medium">Edge</th>
-                    <th className="py-2.5 font-medium">Kelly</th>
-                    <th className="py-2.5 pr-4 text-right font-medium">Pick</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {board.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-[var(--text-faint)]">
-                        No edges match these filters.
-                      </td>
-                    </tr>
-                  )}
-                  {board.map((e) => {
-                    const sel = slip.find((x) => x.id === e.id);
-                    const ec = gradeColor(50 + e.edge * 280);
-                    return (
-                      <tr key={e.id} className="border-b border-[var(--line)] transition-colors hover:bg-[var(--surface-2)]">
-                        <td className="py-2 pl-4">
-                          <div className="flex items-center gap-2.5">
-                            <PlayerAvatar player={e.player} size={30} />
-                            <div className="min-w-0">
-                              <div className="truncate text-[var(--text)]">{e.player.name}</div>
-                              <div className="flex items-center gap-1">
-                                <TeamLogo abbr={e.player.team} size={12} />
-                                <span className="stat-num text-[10px] text-[var(--text-faint)]">{e.player.team}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-2">
-                          <div className="text-[var(--text-muted)]">{e.marketLabel}</div>
-                          {e.oddsType !== "standard" && (
-                            <span
-                              className="text-[10px] font-semibold"
-                              style={{ color: e.oddsType === "demon" ? "#F4647D" : EMERALD }}
-                            >
-                              {ODDS_LABEL[e.oddsType]}
-                            </span>
-                          )}
-                        </td>
-                        <td className="stat-num py-2 text-[var(--text)]">{e.line}</td>
-                        <td className="stat-num py-2 text-[var(--text-muted)]">{e.projection}</td>
-                        <td className="py-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-12">
-                              <Meter value={e.edge * 100} max={40} color={ec} height={4} />
-                            </div>
-                            <span className="stat-num text-xs font-semibold" style={{ color: ec }}>
-                              {e.edge >= 0 ? "+" : ""}
-                              {(e.edge * 100).toFixed(0)}%
-                            </span>
-                            <span
-                              className="rounded-lg border px-1.5 text-[9px] font-bold"
-                              style={{
-                                color: TIER_COLOR[e.confidenceTier],
-                                borderColor: `${TIER_COLOR[e.confidenceTier]}55`,
-                              }}
-                              title={`Confidence tier ${e.confidenceTier} — edge vs projection volatility`}
-                            >
-                              {e.confidenceTier}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="stat-num py-2 text-[var(--text-muted)]">
-                          {e.kellyFraction > 0 ? `${(e.kellyFraction * 100).toFixed(1)}%` : "—"}
-                        </td>
-                        <td className="py-2 pr-4">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <PickButton
-                              active={sel?.side === "more"}
-                              recommended={e.side === "more"}
-                              color={EMERALD}
-                              onClick={() => toggle(e.id, "more")}
-                            >
-                              <TrendingUp size={12} /> O {e.line}
-                            </PickButton>
-                            <PickButton
-                              active={sel?.side === "less"}
-                              recommended={e.side === "less"}
-                              color="#F4647D"
-                              onClick={() => toggle(e.id, "less")}
-                            >
-                              <TrendingDown size={12} /> U {e.line}
-                            </PickButton>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {/* Prop cards — the actual EdgeBoard / PrizePicks board treatment:
+              one card per prop, glyph-coded demons and goblins, circular
+              headshot, the line front and center, More/Less to pick. */}
+          {board.length === 0 ? (
+            <Panel>
+              <div className="py-12 text-center text-sm text-[var(--text-faint)]">
+                No edges match these filters.
+              </div>
+            </Panel>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {board.map((e) => (
+                <PropCard
+                  key={e.id}
+                  edge={e}
+                  selectedSide={slip.find((x) => x.id === e.id)?.side ?? null}
+                  onPick={(side) => toggle(e.id, side)}
+                />
+              ))}
             </div>
-          </Panel>
+          )}
         </div>
 
         {/* Bet slip */}
@@ -280,7 +197,10 @@ export default function BettingPage() {
                       <div className="flex items-center gap-2.5 px-4 py-2.5">
                         <PlayerAvatar player={pk.prop.player} size={28} />
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-xs text-[var(--text)]">{pk.prop.player.name}</div>
+                          <div className="flex items-center gap-1.5 truncate text-xs text-[var(--text)]">
+                            {pk.prop.player.name}
+                            <OddsGlyph oddsType={pk.prop.oddsType} size={14} />
+                          </div>
                           <div className="stat-num text-[10px] text-[var(--text-faint)]">
                             {pk.side === "more" ? "Over" : "Under"} {pk.prop.line} {pk.prop.marketLabel} ·{" "}
                             {(pk.prob * 100).toFixed(0)}% · Kelly{" "}
@@ -416,34 +336,152 @@ export default function BettingPage() {
   );
 }
 
-function PickButton({
-  children,
-  active,
-  recommended,
-  color,
-  onClick,
-}: {
-  children: React.ReactNode;
-  active?: boolean;
-  recommended?: boolean;
-  color: string;
-  onClick: () => void;
-}) {
+// Authentic PrizePicks demon/goblin glyphs (bundled locally, same assets the
+// production EdgeBoard uses) with their canonical colors.
+const ODDS_ACCENT: Record<OddsType, string> = {
+  standard: "#4D8DFF",
+  demon: "#FF6B35",
+  goblin: "#4ADE80",
+};
+
+function OddsGlyph({ oddsType, size = 22 }: { oddsType: OddsType; size?: number }) {
+  if (oddsType === "standard") return null;
   return (
-    <motion.button
-      onClick={onClick}
-      whileTap={{ scale: 0.9 }}
-      animate={{ scale: active ? 1.04 : 1 }}
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={oddsType === "demon" ? "/demon.png" : "/goblin.png"}
+      alt={ODDS_LABEL[oddsType]}
+      title={
+        oddsType === "demon"
+          ? "Demon — harder line, boosted payout"
+          : "Goblin — easier line, reduced payout"
+      }
+      width={size}
+      height={size}
+      className="inline-block shrink-0"
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
+// PrizePicks-faithful prop card, Court Mono build: header chips, circular
+// headshot ringed in the odds-type accent, the line front and center, and a
+// split More/Less control carrying the model's probabilities.
+function PropCard({
+  edge: e,
+  selectedSide,
+  onPick,
+}: {
+  edge: PropEdge;
+  selectedSide: Side | null;
+  onPick: (side: Side) => void;
+}) {
+  const accent = ODDS_ACCENT[e.oddsType];
+  const selected = selectedSide !== null;
+  return (
+    <motion.div
+      layout
+      whileHover={{ y: -3 }}
       transition={spring.snappy}
-      className="inline-flex cursor-pointer items-center gap-1 border px-2 py-1 text-[11px] font-semibold"
+      className="relative flex flex-col rounded-2xl border bg-[var(--surface)] p-4"
       style={{
-        color: active ? "#0a0a0b" : color,
-        background: active ? color : "transparent",
-        borderColor: active ? color : recommended ? `${color}66` : "var(--line)",
+        borderColor: selected ? accent : "var(--line)",
+        boxShadow: selected ? `0 0 0 1px ${accent}, 0 14px 36px -18px ${accent}66` : undefined,
       }}
     >
-      {children}
-    </motion.button>
+      {selected && (
+        <motion.span
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={spring.snappy}
+          className="absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full"
+          style={{ background: accent, color: "#0a0a0b" }}
+        >
+          <Check size={14} strokeWidth={3} />
+        </motion.span>
+      )}
+
+      {/* header chips */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <TeamLogo abbr={e.player.team} size={16} />
+          <span className="stat-num text-[10px] text-[var(--text-faint)]">{e.player.team}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span
+            className="rounded-full border px-1.5 py-px text-[9px] font-bold"
+            style={{ color: TIER_COLOR[e.confidenceTier], borderColor: `${TIER_COLOR[e.confidenceTier]}55` }}
+            title={`Confidence tier ${e.confidenceTier} — edge vs projection volatility`}
+          >
+            {e.confidenceTier}
+          </span>
+          <span
+            className="stat-num rounded-full px-1.5 py-px text-[10px] font-semibold"
+            style={{ background: `${accent}1c`, color: accent }}
+            title="Model edge over the line's implied probability"
+          >
+            {e.edge >= 0 ? "+" : ""}
+            {(e.edge * 100).toFixed(0)}%
+          </span>
+          <OddsGlyph oddsType={e.oddsType} />
+        </div>
+      </div>
+
+      {/* headshot */}
+      <div className="mt-3 flex justify-center">
+        <span
+          className="flex items-center justify-center overflow-hidden rounded-full border-2 bg-[var(--surface-2)]"
+          style={{ borderColor: accent, boxShadow: `0 0 16px ${accent}33` }}
+        >
+          <PlayerAvatar player={e.player} size={72} />
+        </span>
+      </div>
+
+      {/* name + meta */}
+      <div className="mt-2.5 text-center">
+        <div className="truncate text-sm font-semibold text-[var(--text)]">{e.player.name}</div>
+        <div className="stat-num mt-0.5 text-[10px] text-[var(--text-faint)]">
+          {e.player.pos} · proj {e.projection} · Kelly{" "}
+          {e.kellyFraction > 0 ? `${(e.kellyFraction * 100).toFixed(1)}%` : "—"}
+        </div>
+      </div>
+
+      {/* line + stat */}
+      <div className="mt-3 border-t border-dashed pt-2.5 text-center" style={{ borderColor: `${accent}44` }}>
+        <span className="scoreboard text-3xl text-[var(--text)]">{e.line}</span>
+        <span className="ml-2 text-xs text-[var(--text-muted)]">{e.marketLabel}</span>
+      </div>
+
+      {/* More / Less */}
+      <div className="mt-3 grid grid-cols-2 gap-1.5">
+        {(["more", "less"] as Side[]).map((side) => {
+          const active = selectedSide === side;
+          const prob = side === "more" ? e.pMore : e.pLess;
+          const sideColor = side === "more" ? accent : "#F4647D";
+          const recommended = e.side === side;
+          return (
+            <motion.button
+              key={side}
+              onClick={() => onPick(side)}
+              whileTap={{ scale: 0.94 }}
+              transition={spring.snappy}
+              className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-semibold"
+              style={{
+                color: active ? "#0a0a0b" : sideColor,
+                background: active ? sideColor : "transparent",
+                borderColor: active ? sideColor : recommended ? `${sideColor}66` : "var(--line)",
+              }}
+              aria-pressed={active}
+              aria-label={`${side === "more" ? "More" : "Less"} than ${e.line} ${e.marketLabel} for ${e.player.name}`}
+            >
+              {side === "more" ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+              {side === "more" ? "More" : "Less"}
+              <span className="stat-num text-[10px] opacity-80">{(prob * 100).toFixed(0)}%</span>
+            </motion.button>
+          );
+        })}
+      </div>
+    </motion.div>
   );
 }
 
