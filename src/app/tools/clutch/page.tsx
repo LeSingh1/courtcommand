@@ -89,7 +89,7 @@ export default function ClutchPage() {
               <b>{leader.player}</b> leads the 2026 playoffs in clutch-time scoring —{" "}
               <b>{leader.pts} points</b> on {Math.round(leader.fgPct * 100)}% shooting in {DEFS[def].phrase}.
               Every number here is counted from the real playoff play-by-play; rows under 10 attempts
-              carry a small-sample flag.
+              are dimmed.
             </>
           ) : (
             "No shots match this clutch definition yet."
@@ -180,13 +180,18 @@ export default function ClutchPage() {
                 {board.map((r, i) => {
                   const p = playerByEspn(r.espnId);
                   return (
-                    <tr key={r.espnId} className="border-b border-white/[0.04] transition hover:bg-white/[0.03]">
+                    <tr
+                      key={r.espnId}
+                      className={`border-b border-white/[0.04] transition hover:bg-white/[0.03] ${r.smallSample ? "opacity-60" : ""}`}
+                    >
                       <td className="stat-num py-2.5 pl-2 text-white/35">{i + 1}</td>
                       <td className="py-2.5">
                         <div className="flex items-center gap-2.5">
                           {p ? <PlayerAvatar player={p} size={28} /> : null}
                           <span className="text-white/85">{r.player}</span>
-                          {r.smallSample && <Badge color="#8E96A4">small sample</Badge>}
+                          {r.smallSample && (
+                            <span className="stat-num text-[11px] text-[var(--text-faint)]">{r.att} att</span>
+                          )}
                         </div>
                       </td>
                       <td className="stat-num py-2.5 font-semibold text-white/85">{r.pts}</td>
@@ -213,6 +218,9 @@ export default function ClutchPage() {
               </tbody>
             </table>
           </div>
+          <p className="mt-3 text-[11px] text-[var(--text-faint)]">
+            Rows under 10 attempts are dimmed — too few shots to read much into.
+          </p>
         </Panel>
       </div>
 
@@ -224,8 +232,8 @@ export default function ClutchPage() {
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             The leaderboard above is counted directly from real 2026 playoff play-by-play under the
             selected clutch definition (the time window applies to the end of Q4 and of each overtime;
-            OT-only counts any overtime shot). Rows under 10 attempts are flagged as small samples and
-            tighter windows use a lower attempt floor, so read those rates loosely. The panel below
+            OT-only counts any overtime shot). Rows under 10 attempts are dimmed and tighter windows
+            use a lower attempt floor, so read those rates loosely. The panel below
             validates the player-rating model the clutch grades lean on, season by season since 2003
             (about r=0.89).
           </p>

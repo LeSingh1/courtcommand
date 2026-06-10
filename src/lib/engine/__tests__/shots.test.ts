@@ -9,7 +9,8 @@ import {
   playerForm,
   type RealShot,
 } from "@/lib/data/shots";
-import { ftrZScores, ftrSampleSizeWarning, type FtRate } from "@/lib/data/ftrate";
+import { ftrZScores, ftrSampleSizeWarning, FT_RATES, type FtRate } from "@/lib/data/ftrate";
+import { refSplits, REF_SMALL_SAMPLE_GAMES, type OfficialGame } from "@/lib/data/officials";
 
 let seq = 0;
 function shot(over: Partial<RealShot> = {}): RealShot {
@@ -238,5 +239,63 @@ describe("FTr z-scores and sample warnings", () => {
     const rated = ftrZScores(pool);
     expect(rated.find((r) => r.espnId === 4)!.smallSample).toBe(true); // 2 FGA/g
     expect(rated.find((r) => r.espnId === 1)!.smallSample).toBe(false); // 10 FGA/g
+  });
+});
+
+describe("referee splits", () => {
+  // AAA (home) vs BBB (away) in eight games. Ref X works the first four —
+  // AAA averages 30 FTA in those and 20 in the rest. BBB shoots 10 every
+  // night. Ref Z works only game 1.
+  const game = (id: string, aaaFta: number, officials: string[]): OfficialGame => ({
+    gameId: id,
+    teams: [
+      { abbr: "BBB", ftm: 8, fta: 10, homeAway: "away" },
+      { abbr: "AAA", ftm: Math.round(aaaFta * 0.8), fta: aaaFta, homeAway: "home" },
+    ],
+    officials,
+  });
+  const fixture: OfficialGame[] = [
+    game("g1", 30, ["Ref X", "Ref Z"]),
+    game("g2", 28, ["Ref X"]),
+    game("g3", 32, ["Ref X"]),
+    game("g4", 30, ["Ref X"]),
+    game("g5", 20, ["Ref Y"]),
+    game("g6", 22, ["Ref Y"]),
+    game("g7", 18, ["Ref Y"]),
+    game("g8", 20, ["Ref Y"]),
+  ];
+
+  it("computes per-team with/without deltas from the game log", () => {
+    const x = refSplits(fixture).find((r) => r.official === "Ref X")!;
+    expect(x.games).toBe(4);
+    expect(x.avgTotalFta).toBeCloseTo(40, 10); // (40+38+42+40)/4
+    expect(x.avgFtaDiff).toBeCloseTo(20, 10); // home AAA minus away BBB
+    const aaa = x.teams.find((t) => t.team === "AAA")!;
+    expect(aaa.ftaWith).toBeCloseTo(30, 10); // (30+28+32+30)/4
+    expect(aaa.ftaWithout).toBeCloseTo(20, 10); // (20+22+18+20)/4
+    expect(aaa.delta).toBeCloseTo(10, 10);
+    const bbb = x.teams.find((t) => t.team === "BBB")!;
+    expect(bbb.delta).toBeCloseTo(0, 10); // 10 FTA every game
+    expect(x.teams[0].team).toBe("AAA"); // sorted by |delta| descending
+  });
+
+  it("flags small samples below the 4-game floor on every row", () => {
+    const splits = refSplits(fixture);
+    const x = splits.find((r) => r.official === "Ref X")!;
+    const z = splits.find((r) => r.official === "Ref Z")!;
+    expect(REF_SMALL_SAMPLE_GAMES).toBe(4);
+    expect(x.smallSample).toBe(false); // 4 games worked
+    expect(x.teams.find((t) => t.team === "AAA")!.smallSample).toBe(false); // 4 with / 4 without
+    expect(z.smallSample).toBe(true); // 1 game worked
+    const zAaa = z.teams.find((t) => t.team === "AAA")!;
+    expect(zAaa.gamesWith).toBe(1);
+    expect(zAaa.smallSample).toBe(true);
+    expect(zAaa.delta).toBeCloseTo(30 - 170 / 7, 10); // g1 vs AAA's other 7 games
+  });
+
+  it("merged FT_RATES has no duplicate espnIds", () => {
+    const ids = FT_RATES.map((r) => r.espnId);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.length).toBeGreaterThan(0);
   });
 });

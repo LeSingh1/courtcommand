@@ -15,10 +15,17 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const r1 = (v: number) => Math.round(v * 10) / 10;
 
 // ---------------- Trade Machine ----------------
+export interface TradePick {
+  year: number;
+  round: 1 | 2;
+  protected?: boolean;
+}
 export interface TradeSide {
   team: string;
   outgoing: Player[];
   incoming: Player[];
+  picks?: TradePick[]; // outgoing picks — transfer like players, carry no salary
+  picksIn?: TradePick[]; // picks routed to this team
 }
 export type ContractRiskLevel = "Low" | "Med" | "High";
 export interface ContractRisk {
@@ -39,6 +46,8 @@ export interface TradeResult {
     talentDelta: number;
     grade: string;
     note: string;
+    picks_out: string[]; // label strings, e.g. "2027 1st (protected)"
+    picks_in: string[];
     failure_reasons: string[];
     contract_risk: ContractRisk;
     roster_fit_score: number; // post-trade positional balance, 0-100
@@ -49,6 +58,23 @@ export interface TradeResult {
 
 // Max players a single team can send out in this simplified model.
 export const MAX_OUTGOING = 4;
+
+// Next draft year for the 2025-26 season this dataset covers; the trade
+// machine lets teams attach picks for the four drafts from this year on.
+export const DRAFT_BASE_YEAR = 2026;
+
+// Deterministic talent estimate for a traded pick. Unprotected 1sts are worth
+// the most, protections discount them, 2nds are flyers; picks landing within
+// two drafts carry a small nearness premium (+0.5 per year inside 2 years).
+export function pickValue(pick: TradePick): number {
+  const base = pick.round === 1 ? (pick.protected ? 6 : 9) : 2.5;
+  const yearsOut = Math.max(0, pick.year - DRAFT_BASE_YEAR);
+  return base + Math.max(0, 2 - yearsOut) * 0.5;
+}
+
+export function pickLabel(pick: TradePick): string {
+  return `${pick.year} ${pick.round === 1 ? "1st" : "2nd"}${pick.protected ? " (protected)" : ""}`;
+}
 
 // Deterministic remaining-years proxy for a veteran deal: contracts are
 // assumed to run through roughly age 36, so a 30-year-old carries more
@@ -134,11 +160,17 @@ export function evaluateTrade(sides: TradeSide[]): TradeResult {
             : newPayroll > SALARY_CAP
               ? "Over Cap"
               : "Under Cap";
+    const picksOut = s.picks ?? [];
+    const picksIn = s.picksIn ?? [];
+    const pickDelta =
+      picksIn.reduce((a, p) => a + pickValue(p), 0) -
+      picksOut.reduce((a, p) => a + pickValue(p), 0);
     const talentDelta =
       s.incoming.reduce((a, p) => a + p.starPower + p.bpm * 3, 0) -
-      s.outgoing.reduce((a, p) => a + p.starPower + p.bpm * 3, 0);
+      s.outgoing.reduce((a, p) => a + p.starPower + p.bpm * 3, 0) +
+      pickDelta;
     const grade = letterGrade(clamp(60 + talentDelta * 0.5 - Math.max(0, netSalary) * 0.6, 5, 99));
-    const note =
+    const baseNote =
       talentDelta > 25
         ? "Clear talent upgrade"
         : talentDelta > 5
@@ -146,6 +178,10 @@ export function evaluateTrade(sides: TradeSide[]): TradeResult {
           : talentDelta > -5
             ? "Lateral / fit move"
             : "Sheds talent (cap or youth play)";
+    const note =
+      picksOut.length || picksIn.length
+        ? `${baseNote} · pick value ${pickDelta >= 0 ? "+" : ""}${r1(pickDelta)}`
+        : baseNote;
     return {
       team,
       out: r1(out),
@@ -157,6 +193,8 @@ export function evaluateTrade(sides: TradeSide[]): TradeResult {
       talentDelta: r1(talentDelta),
       grade,
       note,
+      picks_out: picksOut.map(pickLabel),
+      picks_in: picksIn.map(pickLabel),
       failure_reasons,
       contract_risk: contractRisk(s.incoming),
       roster_fit_score,

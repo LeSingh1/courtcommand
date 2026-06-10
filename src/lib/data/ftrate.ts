@@ -13,7 +13,49 @@ export interface FtRate {
   ftp: number; // FT%
 }
 
-export const FT_RATES = raw as unknown as FtRate[];
+// The raw file has one row per team stint, so traded players appear 2-3 times
+// under the same espnId (416 rows, 355 unique players) — which duplicated
+// React keys and double-counted players in every consumer. Merge stints here,
+// at load time, so FT_RATES is one row per player.
+//
+// Merge choice: fta/fga are per-game AVERAGES per stint, and the file carries
+// no game counts, so summing or averaging them naively would be wrong. We keep
+// the stint with the higher fga as the primary (its per-game fta/fga are the
+// most representative volume numbers we have) and recompute the rate as
+// ftr = Σfta / Σfga across stints — treating the listed per-game numbers as
+// rates, this is an fga-weighted blend of the stint ratios. ftp is reweighted
+// by each stint's fta, and the team label comes from the last-listed stint
+// (the most recent club). Deterministic, no invented data.
+function mergeStints(rows: FtRate[]): FtRate[] {
+  const byId = new Map<number, FtRate[]>();
+  for (const r of rows) {
+    const arr = byId.get(r.espnId);
+    if (arr) arr.push(r);
+    else byId.set(r.espnId, [r]);
+  }
+  const out: FtRate[] = [];
+  for (const stints of byId.values()) {
+    if (stints.length === 1) {
+      out.push(stints[0]);
+      continue;
+    }
+    const primary = stints.reduce((a, b) => (b.fga > a.fga ? b : a));
+    const sumFta = stints.reduce((a, s) => a + s.fta, 0);
+    const sumFga = stints.reduce((a, s) => a + s.fga, 0);
+    out.push({
+      espnId: primary.espnId,
+      name: primary.name,
+      team: stints[stints.length - 1].team,
+      fta: primary.fta,
+      fga: primary.fga,
+      ftr: sumFga ? sumFta / sumFga : 0,
+      ftp: sumFta ? stints.reduce((a, s) => a + s.ftp * s.fta, 0) / sumFta : primary.ftp,
+    });
+  }
+  return out;
+}
+
+export const FT_RATES = mergeStints(raw as unknown as FtRate[]);
 
 export interface TeamFt {
   team: string;

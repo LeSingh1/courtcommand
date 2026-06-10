@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeftRight, Check, Plus, X, Loader2, ShieldAlert, BadgeCheck, GripVertical } from "lucide-react";
+import { ArrowLeftRight, Check, Plus, X, Loader2, ShieldAlert, BadgeCheck, GripVertical, Ticket } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
@@ -11,7 +11,7 @@ import { TeamLogo } from "@/components/ui/TeamLogo";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { PLAYERS, TEAMS, playersByTeam } from "@/lib/data";
-import { evaluateTrade, type TradeResult } from "@/lib/engine/teams";
+import { evaluateTrade, pickLabel, DRAFT_BASE_YEAR, type TradeResult, type TradePick } from "@/lib/engine/teams";
 import type { Player, Team } from "@/lib/types";
 
 const teamOf = (abbr: string): Team => TEAMS.find((t) => t.abbr === abbr)!;
@@ -33,6 +33,16 @@ interface PoolEntry {
   to: string;
 }
 
+// one traded pick: which draft slot, from where, to where
+interface PickEntry {
+  key: string; // `${from}:${year}:r${round}` — a team owns one pick per round per year
+  from: string;
+  to: string;
+  pick: TradePick;
+}
+
+const PICK_YEARS = [0, 1, 2, 3].map((n) => DRAFT_BASE_YEAR + n);
+
 const DEFAULT_TEAMS = ["LAL", "GSW", "BOS", "NYK"];
 
 export default function TradeMachinePage() {
@@ -40,6 +50,7 @@ export default function TradeMachinePage() {
   const [count, setCount] = useState<2 | 3 | 4>(2);
   const [teams, setTeams] = useState<string[]>(["LAL", "GSW"]);
   const [pool, setPool] = useState<PoolEntry[]>([]);
+  const [pickPool, setPickPool] = useState<PickEntry[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
@@ -59,6 +70,7 @@ export default function TradeMachinePage() {
       while (next.length < n) next.push(DEFAULT_TEAMS.find((t) => !next.includes(t))!);
       next.length = n;
       setPool((p) => p.filter((e) => next.includes(e.from) && next.includes(e.to)));
+      setPickPool((p) => p.filter((e) => next.includes(e.from) && next.includes(e.to)));
       return next;
     });
   };
@@ -69,6 +81,7 @@ export default function TradeMachinePage() {
       const next = [...prev];
       next[i] = abbr;
       setPool((p) => p.filter((e) => e.from !== old && e.to !== old));
+      setPickPool((p) => p.filter((e) => e.from !== old && e.to !== old));
       return next;
     });
   };
@@ -94,15 +107,26 @@ export default function TradeMachinePage() {
     else addToPool(id, from, nextTeam(from));
   };
 
+  // picks: attach to the next team in the ring; one pick per round per year per team
+  const addPick = (from: string, pick: TradePick) => {
+    const key = `${from}:${pick.year}:r${pick.round}`;
+    setPickPool((p) => [...p.filter((e) => e.key !== key), { key, from, to: nextTeam(from), pick }]);
+    pulse();
+  };
+  const removePick = (key: string) => { setPickPool((p) => p.filter((e) => e.key !== key)); pulse(); };
+  const setPickDest = (key: string, to: string) => { setPickPool((p) => p.map((e) => (e.key === key ? { ...e, to } : e))); pulse(); };
+
   const result: TradeResult | null = useMemo(() => {
-    if (pool.length === 0) return null;
+    if (pool.length === 0 && pickPool.length === 0) return null;
     const sides = teams.map((t) => ({
       team: t,
       outgoing: pool.filter((e) => e.from === t).map((e) => playerOf(e.id)!).filter(Boolean),
       incoming: pool.filter((e) => e.to === t).map((e) => playerOf(e.id)!).filter(Boolean),
+      picks: pickPool.filter((e) => e.from === t).map((e) => e.pick),
+      picksIn: pickPool.filter((e) => e.to === t).map((e) => e.pick),
     }));
     return evaluateTrade(sides);
-  }, [teams, pool]);
+  }, [teams, pool, pickPool]);
 
   const gridCols = count === 2 ? "lg:grid-cols-2" : count === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2";
 
@@ -138,10 +162,15 @@ export default function TradeMachinePage() {
               roster={playersByTeam(abbr)}
               outgoing={outgoing}
               incoming={incoming}
+              outgoingPicks={pickPool.filter((e) => e.from === abbr)}
+              incomingPicks={pickPool.filter((e) => e.to === abbr)}
               onToggle={(id) => toggle(id, abbr)}
               onDrop={(id, from) => from !== abbr && addToPool(id, from, abbr)}
               onDest={setDest}
               onRemove={removeFromPool}
+              onAddPick={(pick) => addPick(abbr, pick)}
+              onRemovePick={removePick}
+              onPickDest={setPickDest}
               onTeamChange={(t) => setTeamAt(i, t)}
               exclude={teams}
             />
@@ -190,9 +219,10 @@ export default function TradeMachinePage() {
             <motion.div key="empty" className="enter" exit={{ opacity: 0, y: -8 }} transition={spring.soft}>
               <div className="flex min-h-[130px] items-center justify-center border border-dashed border-[var(--line-strong)] bg-[var(--surface)] px-6 text-center">
                 <p className="max-w-md text-sm text-white/55">
-                  Drag players onto another team (or tap to send). CourtCommand checks 2024 CBA salary matching,
-                  apron hard-caps, and a 4-player outgoing limit per team, then grades the haul — including
-                  aging-contract risk and post-trade positional fit — for each front office.
+                  Drag players onto another team (or tap to send), and attach draft picks from each trade block.
+                  CourtCommand checks 2024 CBA salary matching, apron hard-caps, and a 4-player outgoing limit per
+                  team, then grades the haul — including pick value, aging-contract risk, and post-trade
+                  positional fit — for each front office.
                 </p>
               </div>
             </motion.div>
@@ -203,7 +233,7 @@ export default function TradeMachinePage() {
       <div className="mt-8 space-y-3">
         <div>
           <div className="kicker" style={{ color: "#4D8DFF" }}>Model track record</div>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the player-rating model these deals are graded on is tested against what players actually produced the next year — the bars show that year-over-year correlation (about r=0.89). Contract risk is an estimate: it projects remaining years on age-30+ deals from player age, since contract-length data isn't ingested. Fit is positional balance of the post-trade roster (100 = even across all five spots).</p>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the player-rating model these deals are graded on is tested against what players actually produced the next year — the bars show that year-over-year correlation (about r=0.89). Contract risk is an estimate: it projects remaining years on age-30+ deals from player age, since contract-length data isn't ingested. Pick value is a flat deterministic estimate (unprotected 1st = 9, protected 1st = 6, 2nd = 2.5, with a small premium for the next two drafts) — it doesn't project where a pick will land. Fit is positional balance of the post-trade roster (100 = even across all five spots).</p>
         </div>
         <TrackRecord slug="trade-machine" accent="#4D8DFF" />
       </div>
@@ -218,10 +248,15 @@ function TeamPanel({
   roster,
   outgoing,
   incoming,
+  outgoingPicks,
+  incomingPicks,
   onToggle,
   onDrop,
   onDest,
   onRemove,
+  onAddPick,
+  onRemovePick,
+  onPickDest,
   onTeamChange,
   exclude,
 }: {
@@ -230,10 +265,15 @@ function TeamPanel({
   roster: Player[];
   outgoing: PoolEntry[];
   incoming: Player[];
+  outgoingPicks: PickEntry[];
+  incomingPicks: PickEntry[];
   onToggle: (id: string) => void;
   onDrop: (id: string, from: string) => void;
   onDest: (id: string, to: string) => void;
   onRemove: (id: string) => void;
+  onAddPick: (pick: TradePick) => void;
+  onRemovePick: (key: string) => void;
+  onPickDest: (key: string, to: string) => void;
   onTeamChange: (t: string) => void;
   exclude: string[];
 }) {
@@ -241,6 +281,7 @@ function TeamPanel({
   const [hover, setHover] = useState(false);
   const outIds = new Set(outgoing.map((e) => e.id));
   const outSalary = r1(sum(outgoing.map((e) => playerOf(e.id)!).filter(Boolean), (p) => p.salary));
+  const hasOut = outgoing.length > 0 || outgoingPicks.length > 0;
 
   return (
     <div
@@ -293,18 +334,50 @@ function TeamPanel({
       >
         <div className="mb-2 flex items-center justify-between">
           <span className="kicker" style={{ color: c }}>Trade block</span>
-          <span className="stat-num text-[11px] text-white/45">{outgoing.length ? `$${outSalary}M out` : "drop here"}</span>
+          <span className="stat-num text-[11px] text-white/45">{hasOut ? `$${outSalary}M out` : "drop here"}</span>
         </div>
         <div className="flex min-h-[34px] flex-wrap gap-1.5">
           <AnimatePresence mode="popLayout">
-            {outgoing.length === 0 ? (
+            {!hasOut ? (
               <span className="self-center text-[11px] text-white/30">Drag or tap players to trade them away</span>
             ) : (
-              outgoing.map((e) => {
-                const p = playerOf(e.id)!;
-                return (
+              [
+                ...outgoing.map((e) => {
+                  const p = playerOf(e.id)!;
+                  return (
+                    <motion.div
+                      key={e.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={spring.snappy}
+                      className="flex items-center gap-1.5 border px-1.5 py-1"
+                      style={{ borderColor: `${c}55`, background: `${c}1a` }}
+                    >
+                      <PlayerAvatar player={p} size={18} />
+                      <span className="text-[12px] text-white/90">{p.name}</span>
+                      {teams.length > 2 && (
+                        <select
+                          value={e.to}
+                          onChange={(ev) => onDest(e.id, ev.target.value)}
+                          aria-label="Destination team"
+                          className="cursor-pointer border border-[var(--line)] bg-[var(--bg)] px-1 py-0.5 text-[10px] text-white outline-none"
+                        >
+                          {teams.filter((t) => t !== e.from).map((t) => (
+                            <option key={t} value={t}>→ {t}</option>
+                          ))}
+                        </select>
+                      )}
+                      <button onClick={() => onRemove(e.id)} aria-label="Remove" className="text-white/40 hover:text-white">
+                        <X size={11} />
+                      </button>
+                    </motion.div>
+                  );
+                }),
+                ...outgoingPicks.map((e) => (
                   <motion.div
-                    key={e.id}
+                    key={e.key}
                     layout
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -313,12 +386,12 @@ function TeamPanel({
                     className="flex items-center gap-1.5 border px-1.5 py-1"
                     style={{ borderColor: `${c}55`, background: `${c}1a` }}
                   >
-                    <PlayerAvatar player={p} size={18} />
-                    <span className="text-[12px] text-white/90">{p.name}</span>
+                    <Ticket size={13} style={{ color: c }} />
+                    <span className="text-[12px] text-white/90">{pickLabel(e.pick)}</span>
                     {teams.length > 2 && (
                       <select
                         value={e.to}
-                        onChange={(ev) => onDest(e.id, ev.target.value)}
+                        onChange={(ev) => onPickDest(e.key, ev.target.value)}
                         aria-label="Destination team"
                         className="cursor-pointer border border-[var(--line)] bg-[var(--bg)] px-1 py-0.5 text-[10px] text-white outline-none"
                       >
@@ -327,21 +400,31 @@ function TeamPanel({
                         ))}
                       </select>
                     )}
-                    <button onClick={() => onRemove(e.id)} aria-label="Remove" className="text-white/40 hover:text-white">
+                    <button onClick={() => onRemovePick(e.key)} aria-label="Remove pick" className="text-white/40 hover:text-white">
                       <X size={11} />
                     </button>
                   </motion.div>
-                );
-              })
+                )),
+              ]
             )}
           </AnimatePresence>
         </div>
-        {incoming.length > 0 && (
+        <AddPick
+          accent={c}
+          attached={new Set(outgoingPicks.map((e) => `${e.pick.year}:r${e.pick.round}`))}
+          onAdd={onAddPick}
+        />
+        {(incoming.length > 0 || incomingPicks.length > 0) && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-[var(--line)] pt-2">
             <span className="kicker text-[#4D8DFF]">Gets</span>
             {incoming.map((p) => (
               <span key={p.id} className="flex items-center gap-1 text-[11px] text-white/70">
                 <PlayerAvatar player={p} size={14} /> {p.name}
+              </span>
+            ))}
+            {incomingPicks.map((e) => (
+              <span key={e.key} className="flex items-center gap-1 text-[11px] text-white/70">
+                <Ticket size={13} className="text-white/45" /> {pickLabel(e.pick)}
               </span>
             ))}
           </div>
@@ -380,6 +463,80 @@ function TeamPanel({
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Add pick ---------------- */
+function AddPick({
+  accent,
+  attached,
+  onAdd,
+}: {
+  accent: string;
+  attached: Set<string>;
+  onAdd: (pick: TradePick) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [year, setYear] = useState(PICK_YEARS[0]);
+  const [round, setRound] = useState<1 | 2>(1);
+  const [prot, setProt] = useState(false);
+
+  const sel = (active: boolean) => ({
+    borderColor: active ? accent : "var(--line)",
+    background: active ? `${accent}1a` : "transparent",
+    color: active ? "#fff" : "rgba(255,255,255,0.55)",
+  });
+  const onBlock = attached.has(`${year}:r${round}`);
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-2 flex items-center gap-1.5 border border-dashed border-[var(--line-strong)] px-2 py-1 text-[11px] text-white/55 transition hover:text-white"
+      >
+        <Ticket size={12} /> Add pick
+      </button>
+    );
+  }
+  return (
+    <div className="mt-2 space-y-2 border border-[var(--line)] bg-[var(--bg)] p-2.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="w-12 text-[11px] text-white/45">Draft</span>
+        {PICK_YEARS.map((y) => (
+          <button key={y} onClick={() => setYear(y)} className="stat-num border px-2 py-1 text-[11px]" style={sel(year === y)}>
+            {y}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="w-12 text-[11px] text-white/45">Round</span>
+        <button onClick={() => setRound(1)} className="border px-2 py-1 text-[11px]" style={sel(round === 1)}>
+          1st
+        </button>
+        <button onClick={() => setRound(2)} className="border px-2 py-1 text-[11px]" style={sel(round === 2)}>
+          2nd
+        </button>
+        <button onClick={() => setProt((v) => !v)} className="ml-1 flex items-center gap-1 border px-2 py-1 text-[11px]" style={sel(prot)}>
+          {prot && <Check size={11} />} Protected
+        </button>
+      </div>
+      <div className="flex items-center gap-1.5 pt-0.5">
+        <button
+          onClick={() => {
+            onAdd({ year, round, ...(prot ? { protected: true } : {}) });
+            setProt(false);
+            setOpen(false);
+          }}
+          className="border px-2.5 py-1 text-[11px] font-semibold text-white"
+          style={{ borderColor: accent, background: `${accent}26` }}
+        >
+          {onBlock ? "Update pick" : "Attach pick"}
+        </button>
+        <button onClick={() => setOpen(false)} className="border border-[var(--line)] px-2.5 py-1 text-[11px] text-white/55 hover:text-white">
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -470,11 +627,16 @@ function AfterTrade({
         <ImpactMeter label="Defense" delta={defDelta} />
         <FitRow score={side.roster_fit_score} delta={side.roster_fit_delta} />
         <ContractRiskRow risk={side.contract_risk} />
-        {receives.length > 0 && (
+        {(receives.length > 0 || side.picks_in.length > 0) && (
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             <span className="kicker">Acquires</span>
             {receives.map((p) => (
               <span key={p.id} className="border border-[var(--line)] px-1.5 py-0.5 text-[11px] text-white/75">{p.name}</span>
+            ))}
+            {side.picks_in.map((label, i) => (
+              <span key={`${label}-${i}`} className="flex items-center gap-1 border border-[var(--line)] px-1.5 py-0.5 text-[11px] text-white/75">
+                <Ticket size={11} className="text-white/45" /> {label}
+              </span>
             ))}
           </div>
         )}

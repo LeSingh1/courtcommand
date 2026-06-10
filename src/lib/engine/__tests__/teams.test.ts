@@ -262,3 +262,90 @@ describe("playTypeMix / teamPlayTypeMix", () => {
     expect(teamPlayTypeMix("XXX")).toEqual([]);
   });
 });
+
+// ---------------- draft picks in trades ----------------
+import { DRAFT_BASE_YEAR } from "@/lib/engine/teams";
+
+describe("evaluateTrade with draft picks", () => {
+  it("treats a pick-only trade as salary-legal for both teams", () => {
+    // NYK sits above the 2nd apron, but a pick swap moves zero salary
+    const res = evaluateTrade([
+      {
+        team: "NYK",
+        outgoing: [],
+        incoming: [],
+        picks: [{ year: DRAFT_BASE_YEAR + 1, round: 1 }],
+        picksIn: [{ year: DRAFT_BASE_YEAR + 2, round: 2 }],
+      },
+      {
+        team: "MEM",
+        outgoing: [],
+        incoming: [],
+        picks: [{ year: DRAFT_BASE_YEAR + 2, round: 2 }],
+        picksIn: [{ year: DRAFT_BASE_YEAR + 1, round: 1 }],
+      },
+    ]);
+    expect(res.legal).toBe(true);
+    expect(res.violations).toEqual([]);
+    for (const s of res.sides) {
+      expect(s.out).toBe(0);
+      expect(s.in).toBe(0);
+      expect(s.netSalary).toBe(0);
+      expect(s.matchOk).toBe(true);
+      expect(s.failure_reasons).toEqual([]);
+    }
+  });
+
+  it("values a protected 1st below an unprotected 1st, with a nearness premium", () => {
+    const farYear = DRAFT_BASE_YEAR + 3; // outside the 2-year nearness window
+    const run = (pick: { year: number; round: 1 | 2; protected?: boolean }) =>
+      evaluateTrade([
+        { team: "BKN", outgoing: [], incoming: [], picksIn: [pick] },
+        { team: "MEM", outgoing: [], incoming: [], picks: [pick] },
+      ]).sides.find((s) => s.team.abbr === "BKN")!;
+    const unprot = run({ year: farYear, round: 1 });
+    const prot = run({ year: farYear, round: 1, protected: true });
+    const second = run({ year: farYear, round: 2 });
+    expect(unprot.talentDelta).toBe(9);
+    expect(prot.talentDelta).toBe(6);
+    expect(second.talentDelta).toBe(2.5);
+    expect(prot.talentDelta).toBeLessThan(unprot.talentDelta);
+    // a 1st in the very next draft carries the full +1 nearness premium
+    const near = run({ year: DRAFT_BASE_YEAR, round: 1 });
+    expect(near.talentDelta).toBe(10);
+    // the receiving side's note surfaces the pick value
+    expect(near.note).toContain("pick value +10");
+    // and the sending side mirrors it as a negative delta
+    const memSide = evaluateTrade([
+      { team: "BKN", outgoing: [], incoming: [], picksIn: [{ year: farYear, round: 1 }] },
+      { team: "MEM", outgoing: [], incoming: [], picks: [{ year: farYear, round: 1 }] },
+    ]).sides.find((s) => s.team.abbr === "MEM")!;
+    expect(memSide.talentDelta).toBe(-9);
+  });
+
+  it("formats picks_out / picks_in label summaries", () => {
+    const picks = [
+      { year: 2027, round: 1 as const, protected: true },
+      { year: 2026, round: 2 as const },
+    ];
+    const res = evaluateTrade([
+      { team: "BKN", outgoing: [], incoming: [], picks, picksIn: [] },
+      { team: "MEM", outgoing: [], incoming: [], picks: [], picksIn: picks },
+    ]);
+    const bkn = res.sides.find((s) => s.team.abbr === "BKN")!;
+    expect(bkn.picks_out).toEqual(["2027 1st (protected)", "2026 2nd"]);
+    expect(bkn.picks_in).toEqual([]);
+    const mem = res.sides.find((s) => s.team.abbr === "MEM")!;
+    expect(mem.picks_in).toEqual(["2027 1st (protected)", "2026 2nd"]);
+    expect(mem.picks_out).toEqual([]);
+    // sides without picks keep empty summaries
+    const noPicks = evaluateTrade([
+      { team: "BKN", outgoing: [makePlayer({ salary: 10 })], incoming: [] },
+      { team: "MEM", outgoing: [], incoming: [makePlayer({ salary: 10 })] },
+    ]);
+    for (const s of noPicks.sides) {
+      expect(s.picks_out).toEqual([]);
+      expect(s.picks_in).toEqual([]);
+    }
+  });
+});

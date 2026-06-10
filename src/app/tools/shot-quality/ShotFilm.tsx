@@ -48,7 +48,7 @@ export function ShotFilm() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return CLIP_PLAYERS.filter((p) => !s || p.player.toLowerCase().includes(s)).slice(0, 80);
+    return CLIP_PLAYERS.filter((p) => !s || p.player.toLowerCase().includes(s));
   }, [q]);
 
   const clip: RealClip | undefined = clips.find((c) => c.id === clipId) ?? clips[0];
@@ -66,6 +66,9 @@ export function ShotFilm() {
       {/* Left: player + clip list */}
       <div className="space-y-4">
         <Panel title="Players on film">
+          <p className="mb-2 text-[11px] text-[var(--text-faint)]">
+            {REAL_CLIPS.length} real broadcast clips · {CLIP_PLAYERS.length} players
+          </p>
           <div className="mb-3 flex items-center gap-2 border border-[var(--line)] bg-[var(--surface-2)] px-3 py-2">
             <Search size={15} className="text-[var(--text-faint)]" />
             <input
@@ -76,7 +79,12 @@ export function ShotFilm() {
               className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35"
             />
           </div>
-          <div className="no-scrollbar max-h-56 space-y-1 overflow-y-auto">
+          <div className="no-scrollbar max-h-72 space-y-1 overflow-y-auto">
+            {filtered.length === 0 && (
+              <p className="px-2.5 py-2 text-xs text-[var(--text-muted)]">
+                No players match that search.
+              </p>
+            )}
             {filtered.map((p) => {
               const sel = p.player === player;
               return (
