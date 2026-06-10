@@ -1,15 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Check, X } from "lucide-react";
+import { Search, Check, X, Loader2 } from "lucide-react";
 import { Panel, Insight } from "@/components/tool/ToolShell";
 import { Gauge } from "@/components/ui/Gauge";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { ShotReplay } from "@/components/ui/ShotReplay";
 import { PLAYERS } from "@/lib/data";
-import { SHOT_PLAYERS, shotsForPlayer, type RealShot } from "@/lib/data/shots";
+import {
+  loadRealShots,
+  shotPlayers,
+  shotsForPlayer,
+  type RealShot,
+  type ShotPlayer,
+} from "@/lib/data/shots";
 import { gradeRealShot } from "@/lib/engine/game";
 import { gradeColor } from "@/lib/cn";
 import { spring } from "@/lib/motion";
@@ -17,33 +23,62 @@ import type { Player } from "@/lib/types";
 
 const playerByEspn = (id: number): Player | undefined => PLAYERS.find((p) => p.espnId === id);
 
-// default to the biggest star who has real shots in the recent window
-const DEFAULT_ESPN = (() => {
-  let best = SHOT_PLAYERS[0];
-  let bestStar = -1;
-  for (const sp of SHOT_PLAYERS) {
-    const star = playerByEspn(sp.espnId)?.starPower ?? 0;
-    if (star > bestStar) {
-      bestStar = star;
-      best = sp;
-    }
-  }
-  return best?.espnId ?? 0;
-})();
-
 export function RealShots() {
+  const [all, setAll] = useState<RealShot[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadRealShots().then((d) => alive && setAll(d));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const players = useMemo<ShotPlayer[]>(() => (all ? shotPlayers(all) : []), [all]);
+
+  // default to the biggest star who has playoff shots
+  const defaultEspn = useMemo(() => {
+    let best = players[0]?.espnId ?? 0;
+    let bestStar = -1;
+    for (const sp of players) {
+      const star = playerByEspn(sp.espnId)?.starPower ?? 0;
+      if (star > bestStar) {
+        bestStar = star;
+        best = sp.espnId;
+      }
+    }
+    return best;
+  }, [players]);
+
   const [q, setQ] = useState("");
-  const [espnId, setEspnId] = useState<number>(DEFAULT_ESPN);
-  const shots = useMemo(() => shotsForPlayer(espnId), [espnId]);
-  const [shotId, setShotId] = useState<string>(shots[0]?.id ?? "");
+  const [espnId, setEspnId] = useState<number>(0);
+  useEffect(() => {
+    if (espnId === 0 && defaultEspn) setEspnId(defaultEspn);
+  }, [defaultEspn, espnId]);
+
+  const shots = useMemo(() => (all ? shotsForPlayer(all, espnId) : []), [all, espnId]);
+  const [shotId, setShotId] = useState<string>("");
+  useEffect(() => {
+    setShotId(shots[0]?.id ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [espnId, all]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return SHOT_PLAYERS.filter((p) => !s || p.player.toLowerCase().includes(s))
+    return players
+      .filter((p) => !s || p.player.toLowerCase().includes(s))
       .slice()
       .sort((a, b) => (playerByEspn(b.espnId)?.starPower ?? 0) - (playerByEspn(a.espnId)?.starPower ?? 0))
-      .slice(0, 60);
-  }, [q]);
+      .slice(0, 80);
+  }, [q, players]);
+
+  if (!all) {
+    return (
+      <Panel className="flex min-h-[360px] flex-col items-center justify-center gap-3 text-center">
+        <Loader2 size={22} className="animate-spin text-[var(--text-faint)]" />
+        <p className="text-sm text-white/50">Loading every playoff shot…</p>
+      </Panel>
+    );
+  }
 
   const shot = shots.find((x) => x.id === shotId) ?? shots[0];
   const player = playerByEspn(espnId);
@@ -53,13 +88,14 @@ export function RealShots() {
     <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
       {/* Left: player + shots */}
       <div className="space-y-4">
-        <Panel title="Pick a player">
+        <Panel title={`Players · ${players.length} in the playoffs`}>
           <div className="mb-3 flex items-center gap-2 border border-[var(--line)] bg-[var(--surface-2)] px-3 py-2">
             <Search size={15} className="text-[var(--text-faint)]" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search recent shooters…"
+              placeholder="Search any playoff shooter…"
+              aria-label="Search playoff shooters"
               className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35"
             />
           </div>
@@ -70,10 +106,7 @@ export function RealShots() {
               return (
                 <button
                   key={sp.espnId}
-                  onClick={() => {
-                    setEspnId(sp.espnId);
-                    setShotId(shotsForPlayer(sp.espnId)[0]?.id ?? "");
-                  }}
+                  onClick={() => setEspnId(sp.espnId)}
                   className="flex w-full items-center gap-2.5 border px-2.5 py-1.5 text-left transition"
                   style={{
                     borderColor: sel ? "#E0561F66" : "transparent",
@@ -89,7 +122,7 @@ export function RealShots() {
           </div>
         </Panel>
 
-        <Panel title={`${player?.name ?? "Player"} · real shots`}>
+        <Panel title={`${player?.name ?? "Player"} · ${shots.length} playoff shots`}>
           <div className="no-scrollbar max-h-[320px] space-y-1 overflow-y-auto">
             {shots.map((s) => {
               const sel = s.id === shotId;

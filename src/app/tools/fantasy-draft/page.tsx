@@ -71,7 +71,13 @@ export default function FantasyDraftPage() {
             </>
           )}
         </Insight>
-        <Segmented accent={GOLD} value={punt} onChange={setPunt} options={PUNTS} />
+        <div className="flex flex-col items-start gap-1.5 sm:items-end">
+          <Segmented accent={GOLD} value={punt} onChange={setPunt} options={PUNTS} />
+          <span className="max-w-xs text-[11px] leading-snug text-[var(--text-faint)] sm:text-right">
+            A <b className="text-[var(--text-muted)]">punt</b> strategy deliberately gives up one category
+            (e.g. free-throw %) so you can load up on the other eight and win more weeks.
+          </span>
+        </div>
       </div>
 
       <AnimatePresence mode="wait" initial={false}>
