@@ -6,13 +6,15 @@ import { Flame, Loader2 } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { LineChart } from "@/components/ui/LineChart";
 import { Reveal } from "@/components/ui/Reveal";
+import { Badge } from "@/components/ui/Controls";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { loadRealShots, playoffGames, gameMomentum, type RealShot } from "@/lib/data/shots";
 
-const ACCENT = "#5FA97E";
-const AWAY = "#4E8FA8";
+const ACCENT = "#A3B79A";
+const AWAY = "#9FB6C4";
+const COLD = "#E9A23B";
 
 export default function MomentumPage() {
   const tool = getTool("momentum")!;
@@ -106,6 +108,47 @@ export default function MomentumPage() {
                 </div>
               </Panel>
             </Reveal>
+
+            <Reveal delay={0.02}>
+              <Panel title="How they answered · response to every 8-0+ run">
+                {mom.keyShiftEvents.length === 0 ? (
+                  <p className="py-5 text-center text-xs text-white/50">
+                    No 8-0 runs in this game — no timeout-scale swings to answer.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {mom.keyShiftEvents.map((e, i) => {
+                      const resp = e.response;
+                      const tone = resp ? (resp.improved ? ACCENT : COLD) : "#8E96A4";
+                      return (
+                        <div
+                          key={`${e.run.startIdx}-${i}`}
+                          className="flex items-start gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
+                        >
+                          <TeamLogo abbr={e.run.team} size={18} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-sm font-semibold text-white/90">
+                                {e.run.pts}-0 {e.run.team} run · Q{e.run.period} {e.run.clock}
+                              </span>
+                              <Badge color={tone}>
+                                {resp ? (resp.improved ? "Answered" : "No answer") : "Game over"}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-xs leading-snug text-white/60">{e.label}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="mt-3 border-t border-white/[0.06] pt-2.5 text-[11px] text-white/45">
+                  Timeout proxy: public play-by-play shot data has no timeout events, so each 8-0+ run
+                  is followed by the conceding team&rsquo;s next five field-goal attempts, compared to
+                  its FG% up to that point.
+                </p>
+              </Panel>
+            </Reveal>
           </div>
 
           <Reveal delay={0.04}>
@@ -156,8 +199,11 @@ export default function MomentumPage() {
             Model track record
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The runs above are counted directly from real 2026 playoff play-by-play. The panel below
-            shows the real training-data history the run-detection heuristics were tuned on.
+            The runs and post-run responses above are counted directly from real 2026 playoff
+            play-by-play (field-goal attempts only — free throws and timeouts aren&rsquo;t in public
+            shot data, so the &ldquo;answer&rdquo; window is a proxy, not a literal timeout read). The
+            panel below shows the real training-data history the run-detection heuristics were tuned
+            on.
           </p>
         </div>
         <TrackRecord slug="momentum" accent={ACCENT} />

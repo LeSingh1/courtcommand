@@ -116,6 +116,35 @@ export type Side = "more" | "less";
 const IMPLIED_MORE: Record<OddsType, number> = { standard: 0.5, demon: 0.4, goblin: 0.588 };
 const ODDS_FACTOR: Record<OddsType, number> = { standard: 1.0, demon: 1.5, goblin: 0.85 };
 
+// ---------------- Kelly staking + confidence tiers ----------------
+
+// Hard cap on suggested stake: never more than 10% of bankroll, no matter how
+// large the modeled edge looks (fractional-Kelly discipline against model error).
+export const KELLY_CAP = 0.1;
+
+// Full Kelly at the pick's implied odds: with net decimal odds b = 1/implied - 1,
+// f* = (b·p - (1 - p)) / b. Negative-edge picks floor at 0; everything caps at
+// KELLY_CAP. Deterministic function of (model prob, implied prob) only.
+export function kellyFraction(pSide: number, implied: number): number {
+  const b = 1 / clamp(implied, 0.05, 0.95) - 1;
+  if (b <= 0) return 0;
+  const f = (b * pSide - (1 - pSide)) / b;
+  return Math.round(clamp(f, 0, KELLY_CAP) * 10000) / 10000;
+}
+
+export type ConfidenceTier = "A" | "B" | "C";
+
+// Tier = edge size graded against projection volatility. A big edge on a
+// stable stat (low sigma relative to the mean) is an A; thin edges or noisy
+// markets (steals, blocks, threes) fall to B/C. Monotone: more edge never
+// lowers the tier, more sigma never raises it.
+export function confidenceTier(edge: number, sd: number, proj: number): ConfidenceTier {
+  const cv = sd / Math.max(proj, 0.1); // relative volatility of the market
+  if (edge >= 0.07 && cv <= 0.45) return "A";
+  if (edge >= 0.04 && cv <= 0.7) return "B";
+  return "C";
+}
+
 export interface PropAdjustment {
   label: string;
   shift: number; // additive to projection mean
@@ -140,6 +169,8 @@ export interface PropEdge {
   implied: number; // implied prob of recommended side under this oddsType
   edge: number; // pSide - implied (0..1)
   evPct: number; // single-pick EV % at this oddsType payout factor
+  kellyFraction: number; // suggested bankroll fraction, 0..KELLY_CAP
+  confidenceTier: ConfidenceTier; // A/B/C from edge vs volatility
   grade: string;
   adjustments: PropAdjustment[];
 }
@@ -218,6 +249,8 @@ export function evaluateProp(p: Player, m: Market, oddsType: OddsType = "standar
     implied,
     edge: Math.round(edge * 1000) / 1000,
     evPct: Math.round(evPct * 10) / 10,
+    kellyFraction: kellyFraction(pSide, implied),
+    confidenceTier: confidenceTier(edge, sd, adjMean),
     grade,
     adjustments: adj,
   };
@@ -278,12 +311,14 @@ export interface LineupResult {
   picks: LineupPick[];
   playType: PlayType;
   entryCost: number;
-  hitProbAll: number; // P(all hit)
+  hitProbAll: number; // P(all hit) under independence
+  hitProbAdjusted: number; // P(all hit) after the correlation discount
   expectedValue: number; // $
   evPct: number; // EV as % of stake
   payoutMultiplier: number; // gross at max tier (incl. demon/goblin factor)
   oddsFactor: number;
   correlationRisk: "low" | "medium" | "high";
+  correlationWarning: string | null; // set when the same player appears in multiple legs
   distribution: number[]; // P(exactly k hits)
   grade: string;
 }
@@ -326,13 +361,30 @@ export function optimizeLineup(
   const risk = correlationRisk(picks);
   const rho = risk === "high" ? 0.45 : risk === "medium" ? 0.2 : 0;
 
+  // same-player multi-market legs share one box score (PTS and PRA can't miss
+  // independently) — name them so the slip can warn, and discount the all-hit
+  // probability via rho above.
+  const byPlayer = new Map<string, LineupPick[]>();
+  for (const pk of picks) {
+    const arr = byPlayer.get(pk.prop.player.id) ?? [];
+    arr.push(pk);
+    byPlayer.set(pk.prop.player.id, arr);
+  }
+  const overlaps = [...byPlayer.values()].filter((arr) => arr.length > 1);
+  const correlationWarning =
+    overlaps.length === 0
+      ? null
+      : `Correlated legs: ${overlaps
+          .map((arr) => `${arr[0].prop.player.name} (${arr.map((x) => x.prop.market).join(" + ")})`)
+          .join("; ")} share one box score, so these picks do not miss independently — the all-hit probability is discounted.`;
+  const hitProbAdjusted = hitProbAll * (1 - rho * 0.5);
+
   let ev = 0;
   let payoutMultiplier = 0;
   if (playType === "power") {
     const mult = (POWER_MULT[n] ?? POWER_MULT[6]) * oddsFactor;
     payoutMultiplier = mult;
-    const pWin = hitProbAll * (1 - rho * 0.5);
-    ev = entryCost * (mult * pWin - 1);
+    ev = entryCost * (mult * hitProbAdjusted - 1);
   } else {
     const table = FLEX_TABLE[n] ?? FLEX_TABLE[6];
     payoutMultiplier = (table[n] ?? 0) * oddsFactor;
@@ -351,14 +403,120 @@ export function optimizeLineup(
     playType,
     entryCost,
     hitProbAll: Math.round(hitProbAll * 1000) / 1000,
+    hitProbAdjusted: Math.round(hitProbAdjusted * 1000) / 1000,
     expectedValue: Math.round(ev * 100) / 100,
     evPct: Math.round(evPct * 10) / 10,
     payoutMultiplier: Math.round(payoutMultiplier * 100) / 100,
     oddsFactor: Math.round(oddsFactor * 100) / 100,
     correlationRisk: risk,
+    correlationWarning,
     distribution: dist.map((d) => Math.round(d * 1000) / 1000),
     grade: letterGrade(clamp(50 + evPct * 1.6, 5, 99)),
   };
+}
+
+// ============================================================================
+// Training Tracker math — pure session arithmetic for /tools/training-tracker.
+// No betting dependence; it lives in this engine module so the page stays
+// presentational and the math stays unit-testable. Every number below is a
+// deterministic function of the sessions the user logs — no external data.
+// ============================================================================
+
+export const TRAINING_TYPES = ["Shooting", "Conditioning", "Strength", "Skills"] as const;
+
+export interface TrainingSession {
+  day: string; // weekday label, e.g. "Mon"
+  type: string; // session type label
+  reps: number;
+  minutes: number;
+}
+
+export const BADGE_THRESHOLDS = {
+  volumeReps: 1000, // weekly rep volume
+  streakDays: 5, // distinct active days
+  balanceScore: 75, // skillBalance 0..100
+} as const;
+
+// Active days this week / 7, as 0..100. Duplicate sessions on the same day
+// count once — consistency measures showing up, not stacking.
+export function consistencyScore(sessions: TrainingSession[]): number {
+  const days = new Set(sessions.map((s) => s.day));
+  return Math.round((Math.min(days.size, 7) / 7) * 100);
+}
+
+// Entropy-like spread of training minutes across session types, 0..100.
+// Shannon entropy of the minutes-by-type distribution, normalized by ln(4):
+// 100 = perfectly even across all four types, 0 = everything in one bucket.
+export function skillBalance(sessions: TrainingSession[]): number {
+  const totals = new Map<string, number>();
+  for (const s of sessions) {
+    if (s.minutes <= 0) continue;
+    totals.set(s.type, (totals.get(s.type) ?? 0) + s.minutes);
+  }
+  const total = [...totals.values()].reduce((a, b) => a + b, 0);
+  if (total <= 0) return 0;
+  let h = 0;
+  for (const v of totals.values()) {
+    const p = v / total;
+    h -= p * Math.log(p);
+  }
+  return Math.round(clamp(h / Math.log(TRAINING_TYPES.length), 0, 1) * 100);
+}
+
+export interface TrainingBadge {
+  id: "volume" | "streak" | "balance";
+  label: string;
+  earned: boolean;
+  threshold: string; // human-readable rule
+  detail: string; // current status against the rule
+}
+
+export function trainingBadges(sessions: TrainingSession[]): TrainingBadge[] {
+  const totalReps = sessions.reduce((a, s) => a + s.reps, 0);
+  const activeDays = new Set(sessions.map((s) => s.day)).size;
+  const balance = skillBalance(sessions);
+  return [
+    {
+      id: "volume",
+      label: "Volume",
+      earned: totalReps >= BADGE_THRESHOLDS.volumeReps,
+      threshold: `${BADGE_THRESHOLDS.volumeReps.toLocaleString()} reps in a week`,
+      detail:
+        totalReps >= BADGE_THRESHOLDS.volumeReps
+          ? `${totalReps.toLocaleString()} reps logged`
+          : `${(BADGE_THRESHOLDS.volumeReps - totalReps).toLocaleString()} reps to go`,
+    },
+    {
+      id: "streak",
+      label: "Streak",
+      earned: activeDays >= BADGE_THRESHOLDS.streakDays,
+      threshold: `${BADGE_THRESHOLDS.streakDays} active days`,
+      detail:
+        activeDays >= BADGE_THRESHOLDS.streakDays
+          ? `${activeDays} active days`
+          : `${BADGE_THRESHOLDS.streakDays - activeDays} more day${BADGE_THRESHOLDS.streakDays - activeDays === 1 ? "" : "s"} needed`,
+    },
+    {
+      id: "balance",
+      label: "Balance",
+      earned: balance >= BADGE_THRESHOLDS.balanceScore,
+      threshold: `${BADGE_THRESHOLDS.balanceScore}+ skill balance`,
+      detail: `balance ${balance}/100`,
+    },
+  ];
+}
+
+// One-line weekly readout, built only from the log.
+export function weeklySummary(sessions: TrainingSession[]): string {
+  if (sessions.length === 0) return "No sessions logged yet this week.";
+  const totalReps = sessions.reduce((a, s) => a + s.reps, 0);
+  const totalMinutes = sessions.reduce((a, s) => a + s.minutes, 0);
+  const activeDays = new Set(sessions.map((s) => s.day)).size;
+  const balance = skillBalance(sessions);
+  const minutesByType = new Map<string, number>();
+  for (const s of sessions) minutesByType.set(s.type, (minutesByType.get(s.type) ?? 0) + s.minutes);
+  const top = [...minutesByType.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  return `${sessions.length} session${sessions.length === 1 ? "" : "s"} across ${activeDays} of 7 days — ${totalReps.toLocaleString()} reps, ${totalMinutes.toLocaleString()} minutes, heaviest on ${top.toLowerCase()}; skill balance ${balance}/100.`;
 }
 
 export { TEAM_MAP };

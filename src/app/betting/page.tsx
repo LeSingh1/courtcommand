@@ -17,16 +17,19 @@ import {
   optimizeLineup,
   MARKETS,
   MARKET_LABEL,
+  KELLY_CAP,
+  kellyFraction,
   type PropEdge,
   type Market,
   type OddsType,
   type Side,
   type PlayType,
   type LineupPick,
+  type ConfidenceTier,
 } from "@/lib/engine/betting";
 
-// Ember accent (= var(--accent) #e0561f), the sanctioned Prediction-category color.
-const EMERALD = "#E0561F";
+// Ember accent (= var(--accent) #e9a23b), the sanctioned Prediction-category color.
+const EMERALD = "#E9A23B";
 
 // Betting isn't registered in tools.ts (it's not a public /tools entry), so we
 // describe it locally to drive the shared ToolShell header (breadcrumb + Share).
@@ -43,6 +46,9 @@ const BETTING_TOOL: ToolMeta = {
 };
 
 const ODDS_LABEL: Record<OddsType, string> = { standard: "Standard", demon: "Demon", goblin: "Goblin" };
+
+// Muted semantic colors for confidence tiers (match the gradeColor palette).
+const TIER_COLOR: Record<ConfidenceTier, string> = { A: "#A3B79A", B: "#CBB280", C: "#C57A47" };
 
 export default function BettingPage() {
   const [market, setMarket] = useState<Market | "ALL">("ALL");
@@ -98,8 +104,10 @@ export default function BettingPage() {
           For entertainment and analysis only. Not betting advice. Projections are built from each
           player&rsquo;s real season-level production; the lines shown are modeled around those
           projections, not real posted sportsbook lines (there&rsquo;s no live book feed in this
-          offline demo). Point the model at a live game-log and odds feed to match the production
-          EdgeBoard.
+          offline demo). Kelly fractions are full Kelly at each pick&rsquo;s implied odds, hard-capped
+          at {KELLY_CAP * 100}% of bankroll; confidence tiers (A/B/C) grade edge size against
+          projection volatility. Point the model at a live game-log and odds feed to match the
+          production EdgeBoard.
         </p>
       </div>
 
@@ -138,7 +146,7 @@ export default function BettingPage() {
 
           <Panel className="!p-0">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] text-sm">
+              <table className="w-full min-w-[740px] text-sm">
                 <thead>
                   <tr className="border-b border-[var(--line)] text-left text-[11px] uppercase tracking-wide text-[var(--text-faint)]">
                     <th className="py-2.5 pl-4 font-medium">Player</th>
@@ -146,13 +154,14 @@ export default function BettingPage() {
                     <th className="py-2.5 font-medium">Line</th>
                     <th className="py-2.5 font-medium">Proj</th>
                     <th className="py-2.5 font-medium">Edge</th>
+                    <th className="py-2.5 font-medium">Kelly</th>
                     <th className="py-2.5 pr-4 text-right font-medium">Pick</th>
                   </tr>
                 </thead>
                 <tbody>
                   {board.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-[var(--text-faint)]">
+                      <td colSpan={7} className="py-12 text-center text-[var(--text-faint)]">
                         No edges match these filters.
                       </td>
                     </tr>
@@ -179,7 +188,7 @@ export default function BettingPage() {
                           {e.oddsType !== "standard" && (
                             <span
                               className="text-[10px] font-semibold uppercase"
-                              style={{ color: e.oddsType === "demon" ? "#BF5B4E" : EMERALD }}
+                              style={{ color: e.oddsType === "demon" ? "#C98A78" : EMERALD }}
                             >
                               {ODDS_LABEL[e.oddsType]}
                             </span>
@@ -196,7 +205,20 @@ export default function BettingPage() {
                               {e.edge >= 0 ? "+" : ""}
                               {(e.edge * 100).toFixed(0)}%
                             </span>
+                            <span
+                              className="rounded-lg border px-1.5 text-[9px] font-bold"
+                              style={{
+                                color: TIER_COLOR[e.confidenceTier],
+                                borderColor: `${TIER_COLOR[e.confidenceTier]}55`,
+                              }}
+                              title={`Confidence tier ${e.confidenceTier} — edge vs projection volatility`}
+                            >
+                              {e.confidenceTier}
+                            </span>
                           </div>
+                        </td>
+                        <td className="stat-num py-2 text-[var(--text-muted)]">
+                          {e.kellyFraction > 0 ? `${(e.kellyFraction * 100).toFixed(1)}%` : "—"}
                         </td>
                         <td className="py-2 pr-4">
                           <div className="flex items-center justify-end gap-1.5">
@@ -211,7 +233,7 @@ export default function BettingPage() {
                             <PickButton
                               active={sel?.side === "less"}
                               recommended={e.side === "less"}
-                              color="#BF5B4E"
+                              color="#C98A78"
                               onClick={() => toggle(e.id, "less")}
                             >
                               <TrendingDown size={12} /> U {e.line}
@@ -261,14 +283,21 @@ export default function BettingPage() {
                           <div className="truncate text-xs text-[var(--text)]">{pk.prop.player.name}</div>
                           <div className="stat-num text-[10px] text-[var(--text-faint)]">
                             {pk.side === "more" ? "Over" : "Under"} {pk.prop.line} {pk.prop.marketLabel} ·{" "}
-                            {(pk.prob * 100).toFixed(0)}%
+                            {(pk.prob * 100).toFixed(0)}% · Kelly{" "}
+                            {(
+                              kellyFraction(
+                                pk.prob,
+                                pk.side === pk.prop.side ? pk.prop.implied : 1 - pk.prop.implied,
+                              ) * 100
+                            ).toFixed(1)}
+                            %
                           </div>
                         </div>
                         <motion.button
                           aria-label={`Remove ${pk.prop.player.name} ${pk.prop.marketLabel}`}
                           whileTap={{ scale: 0.85 }}
                           onClick={() => toggle(pk.prop.id, pk.side)}
-                          className="cursor-pointer text-[var(--text-faint)] transition hover:text-[#BF5B4E]"
+                          className="cursor-pointer text-[var(--text-faint)] transition hover:text-[#C98A78]"
                         >
                           <Trash2 size={14} />
                         </motion.button>
@@ -310,14 +339,26 @@ export default function BettingPage() {
                   <SlipStat
                     label="Expected value"
                     value={`${lineup.expectedValue >= 0 ? "+" : ""}$${lineup.expectedValue.toFixed(2)}`}
-                    color={lineup.expectedValue >= 0 ? EMERALD : "#BF5B4E"}
+                    color={lineup.expectedValue >= 0 ? EMERALD : "#C98A78"}
                   />
                   <SlipStat
                     label="EV / stake"
                     value={`${lineup.evPct >= 0 ? "+" : ""}${lineup.evPct.toFixed(0)}%`}
-                    color={lineup.evPct >= 0 ? EMERALD : "#BF5B4E"}
+                    color={lineup.evPct >= 0 ? EMERALD : "#C98A78"}
                   />
                 </div>
+
+                {lineup.correlationWarning && (
+                  <div
+                    className="mt-3 rounded-lg border px-3 py-2 text-[11px] leading-relaxed"
+                    style={{ borderColor: "#C98A7866", color: "#C98A78" }}
+                  >
+                    {lineup.correlationWarning}{" "}
+                    <span className="stat-num text-[var(--text-muted)]">
+                      Adjusted hit prob {(lineup.hitProbAdjusted * 100).toFixed(1)}%.
+                    </span>
+                  </div>
+                )}
 
                 <div className="mt-3 flex items-center justify-between border border-[var(--line)] px-3 py-2">
                   <span className="text-xs text-[var(--text-muted)]">Slip grade · {lineup.correlationRisk} corr.</span>
@@ -366,7 +407,9 @@ export default function BettingPage() {
           The board ranks props by <b>model edge</b> — P(model) minus the line&rsquo;s implied
           probability. <b>Demons</b> pay 1.5× per pick but clear a harder line; <b>goblins</b> pay
           0.85× on an easier one. The optimizer&rsquo;s Poisson-binomial distribution shows the real
-          odds of hitting <i>k</i> of your legs.
+          odds of hitting <i>k</i> of your legs; stacking one player across markets gets flagged as
+          correlated and the all-hit tail is discounted. Kelly is a stake-sizing ceiling, not a
+          target — it caps at {KELLY_CAP * 100}% no matter how big the modeled edge.
         </Insight>
       </div>
     </ToolShell>

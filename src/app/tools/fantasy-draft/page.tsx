@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Crown } from "lucide-react";
+import { Trophy, Crown, X, RotateCcw } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
@@ -11,10 +11,16 @@ import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
-import { fantasyBoard, type PuntCategory } from "@/lib/engine/content";
+import { getPlayer } from "@/lib/data";
+import {
+  fantasyBoard,
+  draftRecommend,
+  rosterNeeds,
+  type PuntCategory,
+} from "@/lib/engine/content";
 import { gradeColor } from "@/lib/cn";
 
-const GOLD = "#C9A14A";
+const GOLD = "#CBB280";
 
 const PUNTS: { label: string; value: PuntCategory }[] = [
   { label: "No Punt", value: "none" },
@@ -34,8 +40,23 @@ const CATS: { key: "pts" | "reb" | "ast" | "stl" | "blk" | "threes"; label: stri
   { key: "threes", label: "3PM" },
 ];
 
+function ScorePill({ label, value, invert }: { label: string; value: number; invert?: boolean }) {
+  const color = gradeColor(invert ? 100 - value : value);
+  return (
+    <div className="w-16">
+      <div className="flex items-center justify-between">
+        <span className="text-[9px] uppercase text-white/35">{label}</span>
+        <span className="stat-num text-[11px] font-semibold" style={{ color }}>
+          {value}
+        </span>
+      </div>
+      <Meter value={value} color={color} height={5} />
+    </div>
+  );
+}
+
 function ZCell({ z }: { z: number }) {
-  const color = z >= 0 ? gradeColor(50 + z * 15) : "#BF5B4E";
+  const color = z >= 0 ? gradeColor(50 + z * 15) : "#C98A78";
   return (
     <span
       className="stat-num inline-flex h-7 w-12 items-center justify-center rounded-lg text-[11px] font-semibold"
@@ -53,6 +74,26 @@ export default function FantasyDraftPage() {
   const board = useMemo(() => fantasyBoard(punt), [punt]);
   const top3 = board.slice(0, 3);
   const puntLabel = PUNTS.find((p) => p.value === punt)!.label;
+
+  // Mock-draft session state: my picks plus players taken by other teams.
+  const [myIds, setMyIds] = useState<string[]>([]);
+  const [goneIds, setGoneIds] = useState<string[]>([]);
+  const myRoster = useMemo(
+    () => myIds.map((id) => getPlayer(id)).filter((p): p is NonNullable<typeof p> => Boolean(p)),
+    [myIds],
+  );
+  const recs = useMemo(
+    () => draftRecommend(myRoster, new Set(goneIds), punt).slice(0, 6),
+    [myRoster, goneIds, punt],
+  );
+  const needs = useMemo(() => rosterNeeds(myRoster, punt), [myRoster, punt]);
+  const weakest = needs.slice(0, 2).map((n) => n.label);
+  const draftMine = (id: string) => setMyIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+  const markGone = (id: string) => setGoneIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+  const resetDraft = () => {
+    setMyIds([]);
+    setGoneIds([]);
+  };
 
   return (
     <ToolShell tool={tool}>
@@ -133,6 +174,92 @@ export default function FantasyDraftPage() {
         })}
       </div>
 
+      {/* mock draft session */}
+      <Panel
+        title="Mock draft · next-pick recommendations"
+        className="mb-6"
+        right={
+          (myIds.length > 0 || goneIds.length > 0) && (
+            <button
+              onClick={resetDraft}
+              className="flex items-center gap-1.5 rounded-lg border border-white/15 px-2.5 py-1 text-[11px] text-white/60 transition hover:border-white/30 hover:text-white"
+            >
+              <RotateCcw size={11} /> Reset draft
+            </button>
+          )
+        }
+      >
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-white/55">My roster ({myRoster.length}):</span>
+          {myRoster.length === 0 ? (
+            <span className="text-xs text-white/35">
+              empty — draft players below and the recommendations re-rank around your build
+            </span>
+          ) : (
+            myRoster.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setMyIds((ids) => ids.filter((id) => id !== p.id))}
+                className="flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition hover:opacity-80"
+                style={{ borderColor: `${GOLD}33`, background: `${GOLD}14`, color: GOLD }}
+              >
+                {p.name}
+                <X size={11} />
+              </button>
+            ))
+          )}
+        </div>
+        {myRoster.length > 0 && (
+          <div className="mb-4 text-xs text-white/55">
+            Weakest categories right now:{" "}
+            <b className="stat-num text-white/80">{weakest.join(", ")}</b> — fit scores reward
+            players who fill them.
+          </div>
+        )}
+        <div className="space-y-2.5">
+          {recs.map((rec, i) => (
+            <div
+              key={rec.player.id}
+              className="rounded-lg border border-white/10 bg-white/[0.03] p-3 transition hover:border-white/20"
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="stat-num w-4 shrink-0 text-xs text-white/35">{i + 1}</span>
+                <PlayerAvatar player={rec.player} size={30} />
+                <div className="min-w-0 flex-1 basis-40">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium text-white/90">
+                      {rec.player.name}
+                    </span>
+                    <span className="stat-num text-[10px] text-white/35">{rec.player.pos}</span>
+                  </div>
+                  <p className="mt-0.5 text-[11px] leading-snug text-white/45">{rec.reasoning}</p>
+                </div>
+                <div className="hidden items-center gap-4 sm:flex">
+                  <ScorePill label="Fit" value={rec.fit_score} />
+                  <ScorePill label="Scarcity" value={rec.scarcity_score} />
+                  <ScorePill label="Risk" value={rec.risk_score} invert />
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  <button
+                    onClick={() => draftMine(rec.player.id)}
+                    className="rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:opacity-90"
+                    style={{ background: GOLD, color: "#0a0c11" }}
+                  >
+                    Draft
+                  </button>
+                  <button
+                    onClick={() => markGone(rec.player.id)}
+                    className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/60 transition hover:border-white/30 hover:text-white"
+                  >
+                    Taken
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
       <Panel title={`Draft board · ${puntLabel}`}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
@@ -192,14 +319,16 @@ export default function FantasyDraftPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#E9A23B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each bar shows how far the model's next-season scoring projection missed players' actual
             PPG the following year — averaging about ±2.4 PPG — validated against the real training
-            data that has grown every season since 2003.
+            data that has grown every season since 2003. The mock-draft recommendations re-rank the
+            same z-score board deterministically around your roster's weakest categories, remaining
+            position scarcity, and a games-played/age availability proxy — no randomness anywhere.
           </p>
         </div>
-        <TrackRecord slug="fantasy-draft" accent="#E0561F" />
+        <TrackRecord slug="fantasy-draft" accent="#E9A23B" />
       </div>
     </ToolShell>
   );

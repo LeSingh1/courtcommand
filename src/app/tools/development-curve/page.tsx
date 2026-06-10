@@ -11,6 +11,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { developmentCurve } from "@/lib/engine/players";
+import { projectSeasons } from "@/lib/engine/value";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
@@ -29,6 +30,7 @@ export default function DevelopmentCurvePage() {
   }, [player]);
 
   const result = useMemo(() => (player ? developmentCurve(player.id) : null), [player]);
+  const projection = useMemo(() => (player ? projectSeasons(player, 3) : null), [player]);
 
   const now = result?.curve[0];
   const peak = result ? result.curve.find((c) => c.age === result.peakAge) : undefined;
@@ -98,6 +100,48 @@ export default function DevelopmentCurvePage() {
               </div>
             </Panel>
 
+            {projection && (
+              <Panel title="Three-season projection bands">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[420px] text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
+                        <th className="py-2 pl-2 font-medium">Season</th>
+                        <th className="py-2 text-right font-medium">Worst PPG</th>
+                        <th className="py-2 text-right font-medium">Expected PPG</th>
+                        <th className="py-2 text-right font-medium">Best PPG</th>
+                        <th className="py-2 pr-2 text-right font-medium">Composite</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {projection.seasons.map((s) => (
+                        <tr key={s.season} className="border-b border-white/[0.04]">
+                          <td className="stat-num py-2.5 pl-2 text-white/65">
+                            +{s.season} (age {s.age})
+                          </td>
+                          <td className="stat-num py-2.5 text-right text-[#C98A78]">
+                            {s.worst.ppg}
+                          </td>
+                          <td className="stat-num py-2.5 text-right font-semibold" style={{ color: ACCENT }}>
+                            {s.expected.ppg}
+                          </td>
+                          <td className="stat-num py-2.5 text-right text-[#A3B79A]">{s.best.ppg}</td>
+                          <td className="stat-num py-2.5 pr-2 text-right text-white/55">
+                            {s.worst.composite}–{s.best.composite}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-3 text-[11px] leading-relaxed text-white/35">
+                  Bands come from an age curve peaking at 27, an efficiency-trend proxy (true
+                  shooting vs league), and role-expansion headroom — uncertainty widens with horizon
+                  and youth. Deterministic, computed from real season stats.
+                </p>
+              </Panel>
+            )}
+
             <div className="enter grid gap-4 sm:grid-cols-3">
               <Panel className="text-center">
                 <div className="stat-num display text-3xl" style={{ color: ACCENT }}>
@@ -144,6 +188,52 @@ export default function DevelopmentCurvePage() {
               )}
             </Panel>
 
+            {projection && (
+              <Panel title="Comparable age paths">
+                <div className="space-y-2.5">
+                  {projection.comparablePlayers.map((c) => (
+                    <div key={c.id} className="flex items-center gap-2.5">
+                      <PlayerAvatar player={c} size={32} />
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-white">{c.name}</div>
+                        <div className="stat-num text-[11px] text-white/45">
+                          {c.pos} · age {c.age} · {c.archetype}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 space-y-3 border-t border-white/[0.06] pt-3">
+                  <div>
+                    <div className="kicker mb-1.5" style={{ color: "#A3B79A" }}>
+                      Growth drivers
+                    </div>
+                    <ul className="space-y-1">
+                      {projection.growthDrivers.map((g) => (
+                        <li key={g} className="flex items-start gap-2 text-xs text-white/65">
+                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#A3B79A]" />
+                          {g}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <div className="kicker mb-1.5" style={{ color: "#C98A78" }}>
+                      Risk factors
+                    </div>
+                    <ul className="space-y-1">
+                      {projection.riskFactors.map((r) => (
+                        <li key={r} className="flex items-start gap-2 text-xs text-white/65">
+                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#C98A78]" />
+                          {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </Panel>
+            )}
+
             <Insight accent={ACCENT}>
               <b>{player.name}</b> ({player.age}) projects to peak around <b>age {result.peakAge}</b> at roughly{" "}
               <b>{peak?.proj} PER</b>, with a <b>{result.ceiling.toLowerCase()}</b> outcome on the table.
@@ -161,12 +251,12 @@ export default function DevelopmentCurvePage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#E9A23B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Per-season bars show how far the model&apos;s next-season scoring projection missed each player&apos;s actual PPG the following year — averaging about ±2.4 PPG — over a training set that has grown every season since 2003.
           </p>
         </div>
-        <TrackRecord slug="development-curve" accent="#E0561F" />
+        <TrackRecord slug="development-curve" accent="#E9A23B" />
       </div>
     </ToolShell>
   );

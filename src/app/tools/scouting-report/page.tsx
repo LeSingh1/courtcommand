@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
-import { Check, ClipboardList, X } from "lucide-react";
+import { AlertTriangle, Check, ClipboardList, X } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { RadarChart } from "@/components/ui/RadarChart";
@@ -71,7 +71,7 @@ function ScoutingInner() {
           <ClipboardList size={40} className="mb-4" style={{ color: ACCENT }} />
           <p className="max-w-xs text-sm text-white/50">
             Pick a player and the scout auto-generates a one-page report: skill grades, strengths,
-            weaknesses, role, a stylistic comp, and development priorities.
+            weaknesses, role, a stylistic comp, development priorities, and risk factors.
           </p>
         </Panel>
       ) : analyze.phase === "running" || !report ? (
@@ -164,22 +164,44 @@ function ScoutingInner() {
             </div>
           </div>
 
-          {/* Development priorities */}
-          <Panel title="Development priorities">
-            <ol className="space-y-2.5">
-              {report.priorities.map((p, i) => (
-                <li key={p} className="flex items-start gap-3 text-sm text-white/75">
-                  <span
-                    className="stat-num flex h-6 w-6 shrink-0 items-center justify-center text-xs font-bold"
-                    style={{ background: `${ACCENT}1f`, color: ACCENT }}
-                  >
-                    {i + 1}
-                  </span>
-                  {p}
-                </li>
-              ))}
-            </ol>
-          </Panel>
+          {/* Development priorities + risk factors */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Panel title="Development priorities">
+              <ol className="space-y-2.5">
+                {report.developmentPriorities.map((p, i) => (
+                  <li key={p} className="flex items-start gap-3 text-sm text-white/75">
+                    <span
+                      className="stat-num flex h-6 w-6 shrink-0 items-center justify-center text-xs font-bold"
+                      style={{ background: `${ACCENT}1f`, color: ACCENT }}
+                    >
+                      {i + 1}
+                    </span>
+                    {p}
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-3 text-[11px] leading-relaxed text-white/40">
+                The three weakest dimensions of this player&rsquo;s league-normalized (z-scored)
+                stat profile — z shown next to each.
+              </p>
+            </Panel>
+            <Panel title="Risk factors">
+              <ul className="space-y-2.5">
+                {report.riskFactors.map((r) => (
+                  <li key={r} className="flex items-start gap-2.5 text-sm text-white/75">
+                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-lg bg-gold/15">
+                      <AlertTriangle size={11} className="text-gold" />
+                    </span>
+                    {r}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-[11px] leading-relaxed text-white/40">
+                Flags computed from real age, games played, minutes load and shooting efficiency —
+                no flag is invented.
+              </p>
+            </Panel>
+          </div>
 
           <Insight accent={ACCENT}>{report.summary}</Insight>
         </motion.div>
@@ -188,12 +210,12 @@ function ScoutingInner() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the rating engine behind these reports is tested against what players actually produced the following year — the bars show that year-over-year correlation (about r=0.89).
           </p>
         </div>
-        <TrackRecord slug="scouting-report" accent="#4E8FA8" />
+        <TrackRecord slug="scouting-report" accent="#9FB6C4" />
       </div>
     </ToolShell>
   );

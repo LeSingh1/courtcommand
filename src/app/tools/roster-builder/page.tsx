@@ -14,9 +14,10 @@ import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { PLAYERS, SALARY_CAP } from "@/lib/data";
 import { scoreLineup, type LineupScore } from "@/lib/engine/teams";
+import { contractBreakdown } from "@/lib/engine/value";
 import { gradeColor, letterGrade, STEEL } from "@/lib/cn";
 
-const ACCENT = "#5FA97E";
+const ACCENT = "#A3B79A";
 
 export default function RosterBuilderPage() {
   const tool = getTool("roster-builder")!;
@@ -34,6 +35,18 @@ export default function RosterBuilderPage() {
   const score: LineupScore | null = useMemo(
     () => (roster.length === 5 ? scoreLineup(roster) : null),
     [roster],
+  );
+
+  const breakdowns = useMemo(
+    () => roster.map((p) => ({ player: p, value: contractBreakdown(p) })),
+    [roster],
+  );
+  const avgBargain = useMemo(
+    () =>
+      breakdowns.length
+        ? Math.round(breakdowns.reduce((a, b) => a + b.value.bargainScore, 0) / breakdowns.length)
+        : 0,
+    [breakdowns],
   );
 
   const filtered = useMemo(() => {
@@ -168,6 +181,41 @@ export default function RosterBuilderPage() {
             </Panel>
           </Reveal>
 
+          {breakdowns.length > 0 && (
+            <Reveal delay={0.05}>
+              <Panel
+                title="Cap efficiency"
+                right={
+                  <span className="stat-num text-xs" style={{ color: gradeColor(avgBargain) }}>
+                    avg bargain {avgBargain}
+                  </span>
+                }
+              >
+                <div className="space-y-3">
+                  {breakdowns.map(({ player: p, value }) => (
+                    <div key={p.id}>
+                      <div className="mb-1 flex items-center justify-between text-xs">
+                        <span className="truncate text-white/70">{p.name}</span>
+                        <span className="stat-num text-white/40">
+                          {value.productionPerDollar} prod/$M
+                        </span>
+                      </div>
+                      <Meter
+                        value={value.bargainScore}
+                        color={gradeColor(value.bargainScore)}
+                        height={6}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-[11px] leading-relaxed text-white/35">
+                  Bargain score prices each signing&apos;s two-way production per salary dollar,
+                  shaped by the age curve and games played — computed from real season stats.
+                </p>
+              </Panel>
+            </Reveal>
+          )}
+
           <AnimatePresence mode="wait">
           {score ? (
             <motion.div
@@ -195,11 +243,11 @@ export default function RosterBuilderPage() {
                   <Gauge value={score.overall} label="Overall" color={gradeColor(score.overall)} />
                 </div>
                 <div className="mt-5 space-y-3.5">
-                  <Meter label="Offense" valueLabel={`${score.scoring}`} value={score.scoring} color="#E0561F" />
-                  <Meter label="Defense" valueLabel={`${score.defense}`} value={score.defense} color="#5FA97E" />
-                  <Meter label="Playmaking" valueLabel={`${score.playmaking}`} value={score.playmaking} color="#C9A14A" />
+                  <Meter label="Offense" valueLabel={`${score.scoring}`} value={score.scoring} color="#E9A23B" />
+                  <Meter label="Defense" valueLabel={`${score.defense}`} value={score.defense} color="#A3B79A" />
+                  <Meter label="Playmaking" valueLabel={`${score.playmaking}`} value={score.playmaking} color="#CBB280" />
                   <Meter label="Spacing" valueLabel={`${score.spacing}`} value={score.spacing} color={STEEL} />
-                  <Meter label="Balance" valueLabel={`${score.balance}`} value={score.balance} color="#BF5B4E" />
+                  <Meter label="Balance" valueLabel={`${score.balance}`} value={score.balance} color="#C98A78" />
                 </div>
               </Panel>
             </motion.div>
@@ -250,12 +298,12 @@ export default function RosterBuilderPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the player ratings behind the roster grades are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89).
           </p>
         </div>
-        <TrackRecord slug="roster-builder" accent="#5FA97E" />
+        <TrackRecord slug="roster-builder" accent="#A3B79A" />
       </div>
     </ToolShell>
   );

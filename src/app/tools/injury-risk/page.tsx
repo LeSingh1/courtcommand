@@ -12,14 +12,21 @@ import { Meter } from "@/components/ui/Meter";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { injuryRisk } from "@/lib/engine/players";
+import { workloadRisk } from "@/lib/engine/value";
 import { gradeColor, ACCENT_HEX } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
+const OVERALL_COLOR: Record<string, string> = {
+  low: "#A3B79A",
+  med: "#CBB280",
+  high: "#C98A78",
+};
+
 const BAND_COLOR: Record<string, string> = {
-  Low: "#5FA97E",
-  Moderate: "#C9A14A",
-  Elevated: "#E0561F",
-  High: "#BF5B4E",
+  Low: "#A3B79A",
+  Moderate: "#CBB280",
+  Elevated: "#E9A23B",
+  High: "#C98A78",
 };
 
 export default function InjuryRiskPage() {
@@ -33,6 +40,7 @@ export default function InjuryRiskPage() {
     () => (player ? injuryRisk(player, { restDays, b2b, minutesLoad }) : null),
     [player, restDays, b2b, minutesLoad],
   );
+  const workload = useMemo(() => (player ? workloadRisk(player) : null), [player]);
 
   // higher risk = redder: invert the 0-100 scale into gradeColor
   const riskColor = result ? gradeColor(100 - result.risk) : ACCENT_HEX;
@@ -114,6 +122,71 @@ export default function InjuryRiskPage() {
                 <b>{player.name}</b> grades as a <b>{result.band.toLowerCase()}-risk</b> profile at{" "}
                 <b>{result.risk}/100</b> under this schedule. {result.recommendation}
               </Insight>
+
+              {workload && (
+                <Panel
+                  title="Season workload profile"
+                  right={
+                    <Badge color={OVERALL_COLOR[workload.overall]}>
+                      {workload.overall} workload
+                    </Badge>
+                  }
+                >
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-4">
+                      {[
+                        { label: "Minutes vs age-adjusted line", value: workload.workloadScore },
+                        { label: "Age factor", value: workload.ageFactor },
+                        { label: "Usage spike vs role", value: workload.recentSpike },
+                        { label: "Games missed", value: workload.missedGamesFactor },
+                      ].map((f) => (
+                        <div key={f.label}>
+                          <div className="mb-1.5 flex items-center justify-between text-xs">
+                            <span className="text-white/70">{f.label}</span>
+                            <span className="stat-num text-white/40">{f.value}</span>
+                          </div>
+                          <Meter value={f.value} color={gradeColor(100 - f.value)} height={7} />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="kicker mb-2" style={{ color: OVERALL_COLOR[workload.overall] }}>
+                          Contributing factors
+                        </div>
+                        <ul className="space-y-1.5">
+                          {workload.contributingFactors.map((f) => (
+                            <li key={f} className="flex items-start gap-2 text-sm text-white/70">
+                              <span
+                                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                                style={{ background: OVERALL_COLOR[workload.overall] }}
+                              />
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <div className="kicker mb-2" style={{ color: "#A3B79A" }}>
+                          Recommendations
+                        </div>
+                        <ul className="space-y-1.5">
+                          {workload.recommendations.map((r) => (
+                            <li key={r} className="flex items-start gap-2 text-sm text-white/70">
+                              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#A3B79A]" />
+                              {r}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-white/35">
+                        Workload accounting from schedule-visible inputs only (minutes, age, games
+                        played, usage) — nothing here is a medical assessment.
+                      </p>
+                    </div>
+                  </div>
+                </Panel>
+              )}
             </motion.div>
           )}
           </AnimatePresence>
@@ -122,12 +195,12 @@ export default function InjuryRiskPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#E9A23B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the bars show how close the workload model's projected availability came to the games players actually logged the following year — within about 14 games on average.
           </p>
         </div>
-        <TrackRecord slug="injury-risk" accent="#E0561F" />
+        <TrackRecord slug="injury-risk" accent="#E9A23B" />
       </div>
     </ToolShell>
   );

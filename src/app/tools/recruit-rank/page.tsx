@@ -214,6 +214,50 @@ export default function RecruitRankPage() {
                 </Panel>
               </div>
 
+              <div className="grid gap-6 md:grid-cols-2">
+                <Panel title="College fit">
+                  <div className="space-y-3">
+                    {result.college_fit_suggestions.map((f, i) => (
+                      <Reveal key={f.tier} delay={i * 0.05}>
+                        <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3.5">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="stat-num flex h-5 w-5 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold"
+                              style={{ background: `${ACCENT}1f`, color: ACCENT }}
+                            >
+                              {i + 1}
+                            </span>
+                            <span className="text-sm font-semibold text-white">{f.tier}</span>
+                          </div>
+                          <p className="mt-1.5 text-xs leading-relaxed text-white/55">{f.why}</p>
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
+                </Panel>
+                <Panel title="Development plan">
+                  <div className="space-y-3">
+                    {result.development_plan.map((item, i) => (
+                      <Reveal key={item} delay={i * 0.05}>
+                        <div className="flex items-start gap-2.5 rounded-lg border border-white/10 bg-white/[0.03] p-3.5">
+                          <span
+                            className="stat-num mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold"
+                            style={{ background: `${ACCENT}1f`, color: ACCENT }}
+                          >
+                            {i + 1}
+                          </span>
+                          <span className="text-xs leading-relaxed text-white/65">{item}</span>
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-[11px] leading-snug text-white/40">
+                    Built from the three weakest attributes above — improve them and re-run the
+                    profile to watch the grade move.
+                  </p>
+                </Panel>
+              </div>
+
               <Insight accent={ACCENT}>{result.report}</Insight>
             </motion.div>
           ) : (
@@ -241,13 +285,15 @@ export default function RecruitRankPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#B0688E" }}>Data &amp; method</div>
+          <div className="kicker" style={{ color: "#C98A78" }}>Data &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             RecruitRank scores the stat line you enter through a fixed, transparent formula —
             production weighted by position, size, and level of competition, then mapped to a star
             tier and percentile band. There is no private scouting database or recruiting feed behind
             it: every output is a deterministic projection of the inputs above, meant as a structured
-            evaluation framework rather than a real national ranking.
+            evaluation framework rather than a real national ranking. The college-fit tiers follow
+            fixed grade thresholds, and the development plan is generated from the three weakest
+            attribute scores.
           </p>
         </div>
       </div>

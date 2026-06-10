@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
-import { Segmented } from "@/components/ui/Controls";
+import { Segmented, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { TeamLogo } from "@/components/ui/TeamLogo";
@@ -10,7 +10,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { PLAYERS } from "@/lib/data";
-import { FT_RATES, teamFtRates } from "@/lib/data/ftrate";
+import { FT_RATES, teamFtRates, ftrZScores } from "@/lib/data/ftrate";
 import { gradeColor } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
@@ -22,7 +22,8 @@ export default function RefBiasPage() {
   const accent = categoryColor(tool.category);
   const [view, setView] = useState<View>("players");
 
-  const players = useMemo(() => [...FT_RATES].sort((a, b) => b.ftr - a.ftr).slice(0, 40), []);
+  // z-scores are standardized against the full pool, then the table shows the top 40.
+  const players = useMemo(() => ftrZScores().sort((a, b) => b.ftr - a.ftr).slice(0, 40), []);
   const teams = useMemo(() => teamFtRates(), []);
   const maxFtr = players[0]?.ftr ?? 1;
   const leader = players[0];
@@ -33,7 +34,8 @@ export default function RefBiasPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <Insight accent={accent}>
           <b>{leader?.name}</b> draws the most contact in the league — a <b>{leader?.ftr.toFixed(2)}</b> free-throw
-          rate ({leader?.fta} FTA per {leader?.fga} FGA). Free-throw rate is real foul-drawing pressure
+          rate ({leader?.fta} FTA per {leader?.fga} FGA), <b>{leader && leader.z >= 0 ? "+" : ""}{leader?.z.toFixed(1)}σ</b>{" "}
+          above the {FT_RATES.length}-player pool. Free-throw rate is real foul-drawing pressure
           from this season&rsquo;s box scores; it reflects playstyle and whistle patterns, not a claim
           about referee intent.
         </Insight>
@@ -52,12 +54,13 @@ export default function RefBiasPage() {
         {view === "players" ? (
           <Panel title="Foul-drawn rate · FTA per FGA">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[620px] text-sm">
+              <table className="w-full min-w-[680px] text-sm">
                 <thead>
                   <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-white/40">
                     <th className="py-2 pl-2 font-medium">#</th>
                     <th className="py-2 font-medium">Player</th>
                     <th className="py-2 font-medium">FT rate</th>
+                    <th className="py-2 font-medium">z vs pool</th>
                     <th className="py-2 font-medium">FTA</th>
                     <th className="py-2 font-medium">FGA</th>
                     <th className="py-2 pr-2 text-right font-medium">FT%</th>
@@ -74,6 +77,7 @@ export default function RefBiasPage() {
                             {p ? <PlayerAvatar player={p} size={28} /> : null}
                             <span className="text-white/85">{r.name}</span>
                             <TeamLogo abbr={r.team} size={14} />
+                            {r.smallSample && <Badge color="#8E96A4">thin sample</Badge>}
                           </div>
                         </td>
                         <td className="py-2.5">
@@ -85,6 +89,10 @@ export default function RefBiasPage() {
                               {r.ftr.toFixed(2)}
                             </span>
                           </div>
+                        </td>
+                        <td className="stat-num py-2.5 text-white/65">
+                          {r.z >= 0 ? "+" : ""}
+                          {r.z.toFixed(1)}σ
                         </td>
                         <td className="stat-num py-2.5 text-white/65">{r.fta}</td>
                         <td className="stat-num py-2.5 text-white/65">{r.fga}</td>
@@ -126,9 +134,12 @@ export default function RefBiasPage() {
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Free-throw rate (FTA ÷ FGA) is counted from this season&rsquo;s real box-score totals for{" "}
-            {FT_RATES.length} players. It surfaces who draws contact most — a measurable whistle pattern,
-            not an accusation of officiating bias. Real per-call officiating data isn&rsquo;t public, so
-            this tool reports rates, not intent.
+            {FT_RATES.length} players. The z column standardizes each rate against that full pool
+            (player FTr minus the pool mean, divided by the pool&rsquo;s standard deviation), so it
+            measures how unusual a rate is — a measurable whistle pattern, not an accusation of
+            officiating bias. Players whose shot volume projects under 200 field-goal attempts across
+            a full season are flagged as thin samples. Real per-call officiating data isn&rsquo;t
+            public, so this tool reports rates, not intent.
           </p>
         </div>
         <TrackRecord slug="ref-bias" accent={accent} />

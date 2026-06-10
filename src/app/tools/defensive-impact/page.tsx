@@ -6,10 +6,14 @@ import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { PlayerPicker } from "@/components/ui/PlayerPicker";
+import { RadarChart } from "@/components/ui/RadarChart";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { defenseBoard } from "@/lib/engine/players";
+import { defensiveProfile } from "@/lib/engine/value";
 import { gradeColor } from "@/lib/cn";
+import type { Player } from "@/lib/types";
 
 type SortKey = "defScore" | "rimProtect" | "perimeter";
 
@@ -38,6 +42,10 @@ export default function DefensiveImpactPage() {
     () => [...base].sort((a, b) => b.perimeter - a.perimeter)[0],
     [base],
   );
+
+  const [picked, setPicked] = useState<Player | null>(null);
+  const subject = picked ?? base[0]?.player;
+  const profile = useMemo(() => (subject ? defensiveProfile(subject) : null), [subject]);
 
   return (
     <ToolShell tool={tool}>
@@ -119,6 +127,66 @@ export default function DefensiveImpactPage() {
         </div>
       )}
 
+      {/* Per-player defensive radar */}
+      {subject && profile && (
+        <div className="mb-6">
+          <Panel title="Defensive profile radar">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
+              <div className="flex flex-col items-center">
+                <RadarChart
+                  axes={profile.axes}
+                  series={[{ name: subject.name, color: ACCENT, values: profile.values }]}
+                  size={280}
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="max-w-md">
+                  <PlayerPicker
+                    value={picked}
+                    onChange={setPicked}
+                    accent={ACCENT}
+                    placeholder={`Profile a defender… (showing ${subject.name})`}
+                  />
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <PlayerAvatar player={subject} size={36} />
+                  <div>
+                    <div className="font-semibold text-white">{subject.name}</div>
+                    <div className="stat-num text-[11px] text-white/45">
+                      {subject.pos} · {subject.bpg} BPG · {subject.spg} SPG
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                  {[
+                    { label: "Rim protection", value: profile.subs.rimProtection },
+                    { label: "Perimeter", value: profile.subs.perimeter },
+                    { label: "Rebounding", value: profile.subs.rebounding },
+                    { label: "Discipline", value: profile.subs.discipline },
+                    { label: "Versatility", value: profile.subs.versatility },
+                  ].map((s) => (
+                    <div key={s.label}>
+                      <div className="mb-1.5 flex items-center justify-between text-xs">
+                        <span className="text-white/70">{s.label}</span>
+                        <span className="stat-num text-white/40">{s.value}</span>
+                      </div>
+                      <Meter value={s.value} color={gradeColor(s.value)} height={6} />
+                    </div>
+                  ))}
+                </div>
+                <Insight accent={ACCENT}>{profile.matchupNote}</Insight>
+                <p className="text-[11px] leading-relaxed text-white/35">
+                  Sub-scores are computed from real season stats: rim = blocks plus a height/position
+                  proxy; perimeter = steals plus positioning; discipline is an inverse foul proxy
+                  (sustained minutes with few turnovers — no per-game foul data in the ingest);
+                  versatility is position-adjusted and capped by the weaker of rim/perimeter.
+                </p>
+              </div>
+            </div>
+          </Panel>
+        </div>
+      )}
+
       <Panel title="Defensive impact board">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
@@ -188,7 +256,7 @@ export default function DefensiveImpactPage() {
           <b>{bestRim.rimProtect}</b> rim score), walling off the paint and holding opponents to{" "}
           <b>{bestRim.oppFg}%</b> at the rim.
         </Insight>
-        <Insight accent="#5FA97E">
+        <Insight accent="#A3B79A">
           <b>{bestPerimeter.player.name}</b> is the top perimeter stopper (
           <b>{bestPerimeter.perimeter}</b> perimeter score) — disruptive hands and point-of-attack
           containment.
@@ -198,12 +266,12 @@ export default function DefensiveImpactPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the model&apos;s defensive-activity composite is checked against how those same players rated defensively the next year — the bars show that year-over-year persistence (about r=0.87).
           </p>
         </div>
-        <TrackRecord slug="defensive-impact" accent="#4E8FA8" />
+        <TrackRecord slug="defensive-impact" accent="#9FB6C4" />
       </div>
     </ToolShell>
   );

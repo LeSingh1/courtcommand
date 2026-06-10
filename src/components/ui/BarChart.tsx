@@ -31,7 +31,7 @@ export function BarChart({
                 className="flex h-full items-center justify-end pr-2"
                 style={{ width: `${pct}%`, background: b.color ?? "#E9A23B" }}
               >
-                <span className="stat-num text-[11px] font-semibold text-[#120802]">
+                <span className="stat-num text-[11px] font-semibold text-[#1a1006]">
                   {b.value.toFixed(decimals)}
                   {unit}
                 </span>

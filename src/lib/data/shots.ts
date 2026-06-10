@@ -87,10 +87,28 @@ export interface ClutchLeader {
   threePct: number;
   pts: number;
   efg: number;
+  smallSample: boolean; // fewer than 10 attempts under this definition
+}
+
+// Configurable clutch definition. The window applies to the end of Q4 and the
+// end of each overtime period (OT periods are 5:00 long, so the default
+// 5-minute window covers all of OT — identical to the original definition).
+export interface ClutchOptions {
+  lastMinutes?: number; // final-period window in minutes (default 5)
+  includeOT?: boolean; // count overtime shots (default true)
+  otOnly?: boolean; // only overtime shots, any clock
+}
+
+export function isClutchShot(s: RealShot, opts: ClutchOptions = {}): boolean {
+  const { lastMinutes = 5, includeOT = true, otOnly = false } = opts;
+  if (otOnly) return s.period >= 5;
+  if (s.period < 4) return false;
+  if (s.period >= 5 && !includeOT) return false;
+  return clockToSec(s.clock) <= lastMinutes * 60;
 }
 
 export function isClutch(s: RealShot): boolean {
-  return s.period >= 4 && clockToSec(s.clock) <= 300;
+  return isClutchShot(s);
 }
 
 // ---- Real game momentum, reconstructed from the playoff shot sequence ----
@@ -133,10 +151,34 @@ export interface ScoringRun {
   clock: string;
 }
 
+// Timeout-proxy analysis: after every 8-0+ run, how did the team that
+// conceded it shoot on its next (up to) five field-goal attempts, vs its own
+// FG% on every attempt up to the end of the run? FG attempts only — free
+// throws aren't in public shot data.
+export interface RunResponse {
+  team: string; // team that conceded the run
+  made: number;
+  att: number; // up to 5 attempts after the run
+  fgPct: number;
+  baselinePct: number; // their FG% on all attempts up to the run's last make
+  improved: boolean; // fgPct > baselinePct
+}
+export interface KeyShiftEvent {
+  run: ScoringRun;
+  response: RunResponse | null; // null when no attempts remained
+  label: string;
+}
+
 export function gameMomentum(
   shots: RealShot[],
   gameId: string,
-): { teams: string[]; timeline: MomentumPoint[]; runs: ScoringRun[]; biggest: ScoringRun | null } {
+): {
+  teams: string[];
+  timeline: MomentumPoint[];
+  runs: ScoringRun[];
+  biggest: ScoringRun | null;
+  keyShiftEvents: KeyShiftEvent[];
+} {
   const inGame = shots.filter((s) => s.gameId === gameId);
   const teams = [...new Set(inGame.map((s) => s.team))].filter(Boolean).slice(0, 2);
   const [A] = teams;
@@ -173,8 +215,48 @@ export function gameMomentum(
     }
   }
   flush(made.length - 1);
+
+  // Post-run response for every 8-0+ run, in chronological order (runs are
+  // built chronologically; capture them before the points sort below).
+  const ordered = inGame
+    .slice()
+    .sort((a, b) => a.period - b.period || clockToSec(b.clock) - clockToSec(a.clock));
+  const keyShiftEvents: KeyShiftEvent[] = [];
+  for (const run of runs) {
+    if (run.pts < 8) continue;
+    const other = teams.find((t) => t && t !== run.team) ?? "";
+    const endShot = made[run.endIdx];
+    const endPos = endShot ? ordered.findIndex((s) => s.id === endShot.id) : -1;
+    if (!other || endPos < 0) continue;
+    let bAtt = 0;
+    let bMade = 0;
+    for (let i = 0; i <= endPos; i++) {
+      if (ordered[i].team !== other) continue;
+      bAtt++;
+      if (ordered[i].made) bMade++;
+    }
+    const next = ordered
+      .slice(endPos + 1)
+      .filter((s) => s.team === other)
+      .slice(0, 5);
+    const rMade = next.filter((s) => s.made).length;
+    const baselinePct = bAtt ? bMade / bAtt : 0;
+    const fgPct = next.length ? rMade / next.length : 0;
+    const response: RunResponse | null = next.length
+      ? { team: other, made: rMade, att: next.length, fgPct, baselinePct, improved: fgPct > baselinePct }
+      : null;
+    const pct = Math.round(fgPct * 100);
+    const base = Math.round(baselinePct * 100);
+    const label = response
+      ? `${other} went ${rMade}/${next.length} (${pct}%) on its next shots after ${run.team}'s ${run.pts}-0 run, ${
+          fgPct > baselinePct ? `up from ${base}% before` : fgPct < baselinePct ? `down from ${base}% before` : `level with ${base}% before`
+        }`
+      : `${run.team}'s ${run.pts}-0 run ended the game; ${other} took no more shots`;
+    keyShiftEvents.push({ run: { ...run }, response, label });
+  }
+
   runs.sort((a, b) => b.pts - a.pts);
-  return { teams, timeline, runs, biggest: runs[0] ?? null };
+  return { teams, timeline, runs, biggest: runs[0] ?? null, keyShiftEvents };
 }
 
 // ---- Real highlight detection from the playoff shots ----
@@ -185,6 +267,28 @@ export interface HighlightClip {
   shot: RealShot;
   score: number;
   tags: string[];
+  rank: number; // 1-based position in the full reel
+  clipStart: string; // proxy window from the play clock, e.g. "Q4 2:04"
+  clipEnd: string; // e.g. "Q4 1:56"
+}
+
+// Clip windows are honest proxies: ±4s of game clock around the recorded play
+// time (clamped to the period), not real video timestamps.
+const CLIP_PAD_SEC = 4;
+
+function fmtClock(sec: number): string {
+  const m = Math.floor(sec / 60);
+  return `${m}:${String(sec % 60).padStart(2, "0")}`;
+}
+
+function clipWindow(s: RealShot): { start: string; end: string } {
+  const len = s.period >= 5 ? 300 : 720; // OT periods run 5:00, regulation 12:00
+  const t = Math.min(len, Math.max(0, clockToSec(s.clock)));
+  const q = s.period >= 5 ? (s.period > 5 ? `OT${s.period - 4}` : "OT") : `Q${s.period}`;
+  return {
+    start: `${q} ${fmtClock(Math.min(len, t + CLIP_PAD_SEC))}`,
+    end: `${q} ${fmtClock(Math.max(0, t - CLIP_PAD_SEC))}`,
+  };
 }
 
 function highlightScore(s: RealShot): { score: number; tags: string[] } {
@@ -224,7 +328,17 @@ export function highlightReel(shots: RealShot[], n = 28): HighlightClip[] {
     .map((s) => ({ shot: s, ...highlightScore(s) }))
     .filter((h) => h.score >= 40)
     .sort((a, b) => b.score - a.score)
-    .slice(0, n);
+    .slice(0, n)
+    .map((h, i) => {
+      const w = clipWindow(h.shot);
+      return { ...h, rank: i + 1, clipStart: w.start, clipEnd: w.end };
+    });
+}
+
+// Per-tag filter for the reel. Ranks are preserved from the full reel so a
+// filtered view still shows each clip's true overall rank.
+export function filterReelByTag(reel: HighlightClip[], tag: string | null): HighlightClip[] {
+  return tag ? reel.filter((h) => h.tags.includes(tag)) : reel;
 }
 
 // ---- Real per-game form / narrative momentum from the playoff shots ----
@@ -244,6 +358,11 @@ export interface FormGame {
   efg: number;
   score: number; // -100..100 vs the player's own playoff baseline
 }
+export interface FormShift {
+  fromGame: FormGame;
+  toGame: FormGame;
+  delta: number; // toGame.score - fromGame.score
+}
 export interface PlayerForm {
   games: FormGame[];
   current: number;
@@ -251,6 +370,8 @@ export interface PlayerForm {
   avgPts: number;
   peak: FormGame | null;
   headlines: { text: string; tone: number }[];
+  biggestPositiveShift: FormShift | null; // largest game-over-game score jump
+  biggestNegativeShift: FormShift | null; // largest game-over-game score drop
 }
 
 export function playerForm(shots: RealShot[], espnId: number): PlayerForm | null {
@@ -292,6 +413,16 @@ export function playerForm(shots: RealShot[], espnId: number): PlayerForm | null
   const prior = games.length >= 3 ? ((games.at(-2)?.score ?? 0) + (games.at(-3)?.score ?? 0)) / 2 : games[0].score;
   const trend = current - prior > 12 ? "rising" : current - prior < -12 ? "cooling" : "steady";
   const peak = [...games].sort((a, b) => b.pts - a.pts)[0] ?? null;
+  // Largest game-over-game momentum swings (consecutive games, chronological).
+  let biggestPositiveShift: FormShift | null = null;
+  let biggestNegativeShift: FormShift | null = null;
+  for (let i = 1; i < games.length; i++) {
+    const delta = games[i].score - games[i - 1].score;
+    if (delta > 0 && (!biggestPositiveShift || delta > biggestPositiveShift.delta))
+      biggestPositiveShift = { fromGame: games[i - 1], toGame: games[i], delta };
+    if (delta < 0 && (!biggestNegativeShift || delta < biggestNegativeShift.delta))
+      biggestNegativeShift = { fromGame: games[i - 1], toGame: games[i], delta };
+  }
   const headlines = [...games]
     .slice(-4)
     .reverse()
@@ -299,7 +430,16 @@ export function playerForm(shots: RealShot[], espnId: number): PlayerForm | null
       text: `vs ${g.opp || "opp"} — ${g.pts} pts on ${g.fgm}/${g.fga} FG${g.fg3a ? `, ${g.fg3m}/${g.fg3a} 3PT` : ""}`,
       tone: g.score,
     }));
-  return { games, current, trend, avgPts: Math.round(mean * 10) / 10, peak, headlines };
+  return {
+    games,
+    current,
+    trend,
+    avgPts: Math.round(mean * 10) / 10,
+    peak,
+    headlines,
+    biggestPositiveShift,
+    biggestNegativeShift,
+  };
 }
 
 // Players who actually appear in the playoff shot set (for restricting pickers).
@@ -342,16 +482,72 @@ export interface ChartZone {
   freq: number;
   att: number;
 }
+// Shot-diet summary: where a player's attempts come from, vs the playoff-wide
+// split computed from the same shot set (same quarter filter applied). Rim is
+// inside 8 ft; mid is any non-three from 8 ft out.
+export interface ShotDiet {
+  rim: number; // share of attempts, 0..1
+  mid: number;
+  three: number;
+  leagueRim: number;
+  leagueMid: number;
+  leagueThree: number;
+  note: string; // league-relative summary
+}
+
+function dietSplit(list: RealShot[]): { rim: number; mid: number; three: number } {
+  let rim = 0;
+  let mid = 0;
+  let three = 0;
+  for (const s of list) {
+    if (s.value === 3) three++;
+    else if (s.dist < 8) rim++;
+    else mid++;
+  }
+  const t = list.length || 1;
+  return { rim: rim / t, mid: mid / t, three: three / t };
+}
+
+export function shotDietSummary(mine: RealShot[], pool: RealShot[]): ShotDiet {
+  const p = dietSplit(mine);
+  const lg = dietSplit(pool);
+  const dims: { k: "rim" | "mid" | "three"; pv: number; lv: number; word: string }[] = [
+    { k: "rim", pv: p.rim, lv: lg.rim, word: "at the rim" },
+    { k: "mid", pv: p.mid, lv: lg.mid, word: "from midrange" },
+    { k: "three", pv: p.three, lv: lg.three, word: "from three" },
+  ];
+  dims.sort((a, b) => Math.abs(b.pv - b.lv) - Math.abs(a.pv - a.lv));
+  const top = dims[0];
+  const pct = (v: number) => Math.round(v * 100);
+  const diff = top.pv - top.lv;
+  const note =
+    Math.abs(diff) < 0.05
+      ? `Mix is in line with the playoff field (${pct(lg.rim)}% rim / ${pct(lg.mid)}% mid / ${pct(lg.three)}% three league-wide).`
+      : `${diff > 0 ? "Heavier" : "Lighter"} ${top.word} than the playoff field: ${pct(top.pv)}% of attempts vs ${pct(top.lv)}% league-wide.`;
+  return { rim: p.rim, mid: p.mid, three: p.three, leagueRim: lg.rim, leagueMid: lg.mid, leagueThree: lg.three, note };
+}
+
 export interface RealChart {
   shots: ChartDot[];
   zones: ChartZone[];
   total: number;
   made: number;
+  diet: ShotDiet;
 }
 
-export function realShotChart(shots: RealShot[], espnId: number): RealChart | null {
-  const mine = shots.filter((s) => s.espnId === espnId);
-  if (mine.length < 8) return null;
+// opts.period filters to a single quarter (1-4); period 5 means "any OT".
+export function realShotChart(
+  shots: RealShot[],
+  espnId: number,
+  opts: { period?: number } = {},
+): RealChart | null {
+  const base = shots.filter((s) => s.espnId === espnId);
+  if (base.length < 8) return null;
+  const inPeriod = (s: RealShot) =>
+    opts.period == null ? true : opts.period >= 5 ? s.period >= 5 : s.period === opts.period;
+  const mine = base.filter(inPeriod);
+  if (!mine.length) return null;
+  const pool = opts.period == null ? shots : shots.filter(inPeriod);
   const dots: ChartDot[] = mine.map((s) => ({ x: s.x, y: s.y, made: s.made, r: 3.4 }));
   const agg = new Map<string, { att: number; made: number; made3: number }>();
   for (const s of mine) {
@@ -383,16 +579,16 @@ export function realShotChart(shots: RealShot[], espnId: number): RealChart | nu
     const efg = att ? (a!.made + 0.5 * a!.made3) / att : 0;
     return { id: z.id, label: z.label, cx: z.cx, cy: z.cy, efg, freq: total ? att / total : 0, att };
   });
-  return { shots: dots, zones, total, made };
+  return { shots: dots, zones, total, made, diet: shotDietSummary(mine, pool) };
 }
 
-export function clutchLeaders(shots: RealShot[], minAtt = 6): ClutchLeader[] {
+export function clutchLeaders(shots: RealShot[], minAtt = 6, opts: ClutchOptions = {}): ClutchLeader[] {
   const m = new Map<number, ClutchLeader>();
   for (const s of shots) {
-    if (!isClutch(s)) continue;
+    if (!isClutchShot(s, opts)) continue;
     let e = m.get(s.espnId);
     if (!e) {
-      e = { espnId: s.espnId, player: s.player, team: s.team, att: 0, made: 0, fgPct: 0, threeAtt: 0, threeMade: 0, threePct: 0, pts: 0, efg: 0 };
+      e = { espnId: s.espnId, player: s.player, team: s.team, att: 0, made: 0, fgPct: 0, threeAtt: 0, threeMade: 0, threePct: 0, pts: 0, efg: 0, smallSample: false };
       m.set(s.espnId, e);
     }
     e.att++;
@@ -412,6 +608,7 @@ export function clutchLeaders(shots: RealShot[], minAtt = 6): ClutchLeader[] {
       fgPct: e.att ? e.made / e.att : 0,
       threePct: e.threeAtt ? e.threeMade / e.threeAtt : 0,
       efg: e.att ? (e.made + 0.5 * e.threeMade) / e.att : 0,
+      smallSample: e.att < 10,
     }))
     .sort((a, b) => b.pts - a.pts);
 }

@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Zap, Crown } from "lucide-react";
+import { Trophy, Zap, Crown, Swords } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Badge, Segmented } from "@/components/ui/Controls";
+import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import {
   simulateBracket,
+  simulateMatchup,
   NCAA_FIELD,
   type NcaaTeam,
   type BracketGame,
@@ -65,6 +67,37 @@ function TeamRow({
   );
 }
 
+function TeamSelect({
+  value,
+  onChange,
+  exclude,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  exclude: string;
+  label: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[10px] uppercase tracking-wide text-white/40">
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full cursor-pointer rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition focus:border-white/25"
+      >
+        {NCAA_FIELD.map((t) => (
+          <option key={t.name} value={t.name} disabled={t.name === exclude} className="bg-[#101012]">
+            ({t.seed}) {t.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 type Emphasis = "balanced" | "efficiency" | "form";
 
 const EMPHASIS_OPTIONS: { label: string; value: Emphasis }[] = [
@@ -102,6 +135,16 @@ export default function MarchMadnessPage() {
   };
 
   const upsetCount = result?.rounds.flat().filter((g) => g.upset).length ?? 0;
+
+  // Head-to-head picker: any two teams in the field, same model emphasis.
+  const [h2hA, setH2hA] = useState("UConn");
+  const [h2hB, setH2hB] = useState("Duke");
+  const matchup = useMemo(() => {
+    const ta = NCAA_FIELD.find((t) => t.name === h2hA);
+    const tb = NCAA_FIELD.find((t) => t.name === h2hB);
+    return ta && tb && ta.name !== tb.name ? simulateMatchup(ta, tb, emphasis) : null;
+  }, [h2hA, h2hB, emphasis]);
+  const bPct = matchup ? Math.round((100 - matchup.win_probability) * 10) / 10 : 0;
 
   // Field ranked by title odds under the chosen model emphasis.
   const titleOdds = [...NCAA_FIELD]
@@ -141,12 +184,102 @@ export default function MarchMadnessPage() {
             whileTap={{ scale: 0.96 }}
             transition={spring.snappy}
             className="rounded-lg px-5 py-2.5 text-sm font-semibold transition"
-            style={{ background: ACCENT, color: "#120802" }}
+            style={{ background: ACCENT, color: "#1a1006" }}
           >
             {result ? "Re-simulate Tournament" : "Simulate Tournament"}
           </motion.button>
         </div>
       </div>
+
+      {/* head-to-head picker */}
+      <Panel
+        title="Head-to-head"
+        className="mb-6"
+        right={
+          <span className="flex items-center gap-1.5 text-[11px] text-white/45">
+            <Swords size={13} style={{ color: ACCENT }} /> single game · {emphasis} emphasis
+          </span>
+        }
+      >
+        {matchup && (
+          <>
+            <div className="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-end">
+              <div>
+                <TeamSelect value={h2hA} onChange={setH2hA} exclude={h2hB} label="Team A" />
+                <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                  <span className="text-white/45">
+                    {matchup.a.eff} net eff · seed {matchup.a.seed}
+                  </span>
+                  <span
+                    className="stat-num font-semibold"
+                    style={{
+                      color:
+                        matchup.win_probability >= 50 ? ACCENT : "rgba(255,255,255,0.55)",
+                    }}
+                  >
+                    {matchup.win_probability}% win
+                  </span>
+                </div>
+              </div>
+              <div className="px-2 text-center">
+                <div className="scoreboard text-3xl text-white">
+                  {matchup.projected_score.a} – {matchup.projected_score.b}
+                </div>
+                <div className="mt-1 text-[10px] uppercase tracking-wide text-white/40">
+                  Projected · ~70 possessions
+                </div>
+              </div>
+              <div>
+                <TeamSelect value={h2hB} onChange={setH2hB} exclude={h2hA} label="Team B" />
+                <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                  <span className="text-white/45">
+                    {matchup.b.eff} net eff · seed {matchup.b.seed}
+                  </span>
+                  <span
+                    className="stat-num font-semibold"
+                    style={{ color: bPct >= 50 ? ACCENT : "rgba(255,255,255,0.55)" }}
+                  >
+                    {bPct}% win
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/[0.06] pt-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wide text-white/40">
+                  Key factors
+                </span>
+                {matchup.key_factors.map((f) => (
+                  <Badge key={f.label} color={ACCENT}>
+                    {f.label} {f.edge >= 0 ? "+" : ""}
+                    {f.edge} · {f.favors}
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex min-w-[180px] flex-1 items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wide text-white/40">
+                  Upset risk
+                </span>
+                <div className="w-24">
+                  <Meter
+                    value={matchup.upset_risk}
+                    color={matchup.upset_risk >= 50 ? ACCENT : "#8A8273"}
+                    height={6}
+                  />
+                </div>
+                <span className="stat-num text-xs font-semibold text-white/70">
+                  {matchup.upset_risk}
+                </span>
+                {matchup.upset_risk >= 50 && (
+                  <Badge color={ACCENT}>
+                    <Zap size={10} /> Seed flip
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </Panel>
 
       <AnimatePresence mode="wait">
       {analyze.phase === "running" ? (
@@ -312,16 +445,19 @@ export default function MarchMadnessPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E0561F" }}>Track record &amp; method</div>
+          <div className="kicker" style={{ color: "#E9A23B" }}>Track record &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             The actual NCAA champion for every season since 2003 — from Syracuse in 2003 through the
             most recent title run — is the historical ground truth the bracket model is graded against.
             The field&rsquo;s teams and seeds are real; their efficiency, strength-of-schedule, and form
             ratings are representative season-grade inputs (no live ratings feed is bundled offline),
-            so the bracket is a transparent what-if, not a published forecast.
+            so the bracket is a transparent what-if, not a published forecast. The head-to-head card
+            runs the same weighted edge through a logistic win probability and scales the efficiency
+            gap to a ~70-possession score projection — every number is a deterministic function of
+            the listed inputs.
           </p>
         </div>
-        <TrackRecord slug="march-madness" accent="#E0561F" />
+        <TrackRecord slug="march-madness" accent="#E9A23B" />
       </div>
     </ToolShell>
   );

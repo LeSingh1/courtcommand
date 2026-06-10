@@ -17,7 +17,7 @@ import { gradeColor } from "@/lib/cn";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const ACCENT = "#E0561F";
+const ACCENT = "#E9A23B";
 const LEAGUE_AVG = 1.0;
 // Mirrors the engine's clamp(turnoverRate, 6, 22) ceiling in pickAndRoll().
 const TURNOVER_CEILING = 22;
@@ -61,7 +61,7 @@ export default function PickAndRollPage() {
           <PlayerPicker
             value={roller}
             onChange={setRoller}
-            accent="#7E8CA0"
+            accent="#8A8273"
             exclude={handler ? [handler.id] : []}
             placeholder="Pick the roll-man…"
           />
@@ -176,7 +176,30 @@ export default function PickAndRollPage() {
                     />
                   ))}
                 </div>
+                <div className="mt-4 space-y-4 border-t border-[var(--line)] pt-4">
+                  <Meter
+                    label="Lob threat"
+                    valueLabel={`${result.lob_rate}`}
+                    value={result.lob_rate}
+                    color={ACCENT}
+                  />
+                  <Meter
+                    label="Short-roll game"
+                    valueLabel={`${result.short_roll_efficiency}`}
+                    value={result.short_roll_efficiency}
+                    color="#CBB280"
+                  />
+                  <p className="text-[11px] leading-relaxed text-white/40">
+                    Lob threat = the roll-man's rim share scaled by the handler's assist volume;
+                    short-roll game = the roll-man's passing, mid-range touch, and finishing — both
+                    0-100 proxies computed from the same season stats as everything else here.
+                  </p>
+                </div>
               </Panel>
+            </Reveal>
+
+            <Reveal delay={0.08}>
+              <Insight accent="#CBB280">{result.tactical_explanation}</Insight>
             </Reveal>
 
             <Reveal delay={0.1}>
@@ -208,7 +231,7 @@ export default function PickAndRollPage() {
                 value={result.turnoverRate}
                 suffix="%"
                 decimals={1}
-                color={result.turnoverRate <= 12 ? "#5FA97E" : "#BF5B4E"}
+                color={result.turnoverRate <= 12 ? "#A3B79A" : "#C98A78"}
                 invert
               />
               <StatCard
@@ -220,7 +243,7 @@ export default function PickAndRollPage() {
                 label="Fouls drawn / 100"
                 value={result.foulsDrawn}
                 decimals={1}
-                color="#C9A14A"
+                color="#CBB280"
               />
             </div>
           </Reveal>
@@ -230,10 +253,10 @@ export default function PickAndRollPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">Each season since 2003, the playmaking and finishing ratings behind these grades are tested against what those players produced the following year — the bars show that year-over-year correlation (about r=0.89).</p>
         </div>
-        <TrackRecord slug="pick-and-roll" accent="#5FA97E" />
+        <TrackRecord slug="pick-and-roll" accent="#A3B79A" />
       </div>
     </ToolShell>
   );

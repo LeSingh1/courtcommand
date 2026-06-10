@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Check, X, RotateCcw, ArrowRight } from "lucide-react";
+import { Brain, Check, X, RotateCcw, ArrowRight, Flame } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
+import { Badge } from "@/components/ui/Controls";
 import { Gauge } from "@/components/ui/Gauge";
 import { getTool } from "@/lib/tools";
-import { QUIZ } from "@/lib/engine/content";
+import { QUIZ, quizResults } from "@/lib/engine/content";
 import { gradeColor } from "@/lib/cn";
 
-const ACCENT = "#B0688E"; // category color for "Player Tools"
-const GREEN = "#5FA97E"; // correct answer
+const ACCENT = "#C98A78"; // category color for "Player Tools"
+const GREEN = "#A3B79A"; // correct answer
 const WRONG = "#C57A47"; // muted negative tint for incorrect reads
 
 export default function IqQuizPage() {
@@ -20,6 +21,9 @@ export default function IqQuizPage() {
   const [chosen, setChosen] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [answers, setAnswers] = useState<(number | null)[]>([]);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
 
   const total = QUIZ.length;
   const question = QUIZ[step];
@@ -29,7 +33,19 @@ export default function IqQuizPage() {
   const pick = (i: number) => {
     if (answered) return;
     setChosen(i);
-    if (i === question.correct) setScore((s) => s + 1);
+    setAnswers((arr) => {
+      const next = [...arr];
+      next[step] = i;
+      return next;
+    });
+    if (i === question.correct) {
+      setScore((s) => s + 1);
+      const ns = streak + 1;
+      setStreak(ns);
+      setBestStreak((b) => Math.max(b, ns));
+    } else {
+      setStreak(0);
+    }
   };
 
   const next = () => {
@@ -46,8 +62,12 @@ export default function IqQuizPage() {
     setChosen(null);
     setScore(0);
     setFinished(false);
+    setAnswers([]);
+    setStreak(0);
+    setBestStreak(0);
   };
 
+  const summary = useMemo(() => quizResults(answers), [answers]);
   const pct = Math.round((score / total) * 100);
   const verdict = pct >= 80 ? "Court General" : pct >= 60 ? "Solid IQ" : "Keep studying";
   const verdictColor = gradeColor(pct);
@@ -96,6 +116,46 @@ export default function IqQuizPage() {
                       ? "Strong fundamentals with a few reads to sharpen. Review the scenarios you missed."
                       : "The reps will pay off — re-run the scenarios and lock in the help and coverage rules."}
                 </p>
+
+                <div className="mt-5 flex items-center gap-2 text-xs text-white/55">
+                  <Flame size={14} style={{ color: ACCENT }} />
+                  Best streak:{" "}
+                  <b className="stat-num text-white/80">{summary.best_streak}</b> correct in a row
+                </div>
+
+                {summary.missed_concepts.length > 0 ? (
+                  <div className="mt-6 w-full max-w-sm text-left">
+                    <div className="kicker mb-2" style={{ color: ACCENT }}>
+                      Missed concepts
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {summary.missed_concepts.map((m) => (
+                        <Badge key={m.category} color={WRONG}>
+                          {m.category}
+                          {m.count > 1 ? ` ×${m.count}` : ""}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="kicker mb-2 mt-5" style={{ color: ACCENT }}>
+                      Study next
+                    </div>
+                    <ul className="space-y-2">
+                      {summary.recommended_next_topics.map((t) => (
+                        <li
+                          key={t}
+                          className="flex items-start gap-2 text-xs leading-relaxed text-white/60"
+                        >
+                          <ArrowRight size={13} className="mt-0.5 shrink-0" style={{ color: ACCENT }} />
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="mt-4 text-xs text-white/45">
+                    No concepts missed — a clean sweep across every category.
+                  </p>
+                )}
                 <motion.button
                   onClick={reset}
                   whileTap={{ scale: 0.96 }}
@@ -203,9 +263,17 @@ export default function IqQuizPage() {
                 </AnimatePresence>
               </Panel>
 
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-white/60">
-                <Brain size={14} style={{ color: ACCENT }} />
-                Running score: <b className="stat-num text-white/70">{score}</b> / {step + (answered ? 1 : 0)}
+              <div className="mt-4 flex items-center justify-center gap-4 text-xs text-white/60">
+                <span className="flex items-center gap-2">
+                  <Brain size={14} style={{ color: ACCENT }} />
+                  Running score: <b className="stat-num text-white/70">{score}</b> /{" "}
+                  {step + (answered ? 1 : 0)}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Flame size={14} style={{ color: streak > 0 ? ACCENT : "rgba(255,255,255,0.25)" }} />
+                  Streak: <b className="stat-num text-white/70">{streak}</b>
+                  {bestStreak > 0 && <span className="text-white/40">(best {bestStreak})</span>}
+                </span>
               </div>
             </motion.div>
           )}
@@ -214,12 +282,14 @@ export default function IqQuizPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#B0688E" }}>Data &amp; method</div>
+          <div className="kicker" style={{ color: "#C98A78" }}>Data &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             These scenarios are hand-authored basketball decisions — spacing, help rotations,
             pick-and-roll coverages, and late-clock reads — each graded against a single coaching-standard
             answer with a written rationale. It is a knowledge check built from real on-court principles,
             not a trained model, so there is no learned prediction or validation metric behind it.
+            Misses are grouped by concept and mapped to fixed study topics; the streak counter simply
+            tracks consecutive correct reads.
           </p>
         </div>
       </div>

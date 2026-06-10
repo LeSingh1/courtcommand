@@ -21,17 +21,17 @@ import {
   type RealClip,
 } from "@/lib/data/clips";
 
-const ACCENT = "#E0561F";
-const MISS = "#BF5B4E";
-const MADE = "#5FA97E";
+const ACCENT = "#E9A23B";
+const MISS = "#C98A78";
+const MADE = "#A3B79A";
 
 const DEFAULT_PLAYER =
   REAL_CLIPS.find((c) => c.id === DEFAULT_CLIP_ID)?.player ?? CLIP_PLAYERS[0]?.player ?? "";
 
 function gradeBadgeColor(g: string): string {
   if (/A/.test(g)) return MADE;
-  if (/B/.test(g)) return "#C9A14A";
-  if (/C/.test(g)) return "#7E8CA0";
+  if (/B/.test(g)) return "#CBB280";
+  if (/C/.test(g)) return "#8A8273";
   return MISS;
 }
 

@@ -1,4 +1,4 @@
-import type { Player } from "@/lib/types";
+import type { Player, Position } from "@/lib/types";
 import { PLAYERS, getPlayer, TEAM_MAP } from "@/lib/data";
 import { letterGrade } from "@/lib/cn";
 import { predictMvpShare, predictInjuryProb } from "@/lib/model";
@@ -6,46 +6,122 @@ import { predictMvpShare, predictInjuryProb } from "@/lib/model";
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 // ---------------- Player Similarity (HoopRadar) ----------------
-const SIM_AXES: { key: keyof Player; label: string; weight: number; scale: number }[] = [
-  { key: "ppg", label: "Scoring", weight: 1.0, scale: 35 },
-  { key: "rpg", label: "Rebounding", weight: 0.9, scale: 14 },
-  { key: "apg", label: "Playmaking", weight: 1.0, scale: 12 },
-  { key: "usg", label: "Usage", weight: 1.1, scale: 36 },
-  { key: "tsp", label: "Efficiency", weight: 1.0, scale: 0.65 },
-  { key: "shotThree", label: "3PT Rate", weight: 1.0, scale: 0.8 },
-  { key: "defImpact", label: "Defense", weight: 0.9, scale: 100 },
-  { key: "spg", label: "Steals", weight: 0.6, scale: 2.2 },
-  { key: "bpg", label: "Blocks", weight: 0.6, scale: 3.8 },
+// Ten stat dimensions, z-scored over the full league pool, then compared with
+// cosine similarity over weighted z-vectors. Category weights: scoring .22,
+// efficiency .18, playmaking .16, defense .16, shot-diet .16, rebounding .12.
+const SIM_DIMS: { key: keyof Player; label: string; weight: number }[] = [
+  { key: "ppg", label: "Scoring volume", weight: 0.12 }, // scoring (.22 total)
+  { key: "usg", label: "Usage load", weight: 0.1 },
+  { key: "apg", label: "Playmaking", weight: 0.16 }, // playmaking
+  { key: "rpg", label: "Rebounding", weight: 0.12 }, // rebounding
+  { key: "tsp", label: "Efficiency (TS%)", weight: 0.18 }, // efficiency
+  { key: "defImpact", label: "Defensive impact", weight: 0.1 }, // defense (.16 total)
+  { key: "spg", label: "Steals", weight: 0.03 },
+  { key: "bpg", label: "Blocks", weight: 0.03 },
+  { key: "shotThree", label: "3PT shot diet", weight: 0.1 }, // shot-diet (.16 total)
+  { key: "shotRim", label: "Rim pressure", weight: 0.06 },
 ];
+
+let _poolStats: { mean: number; sd: number }[] | null = null;
+function poolStats(): { mean: number; sd: number }[] {
+  if (_poolStats) return _poolStats;
+  _poolStats = SIM_DIMS.map((d) => {
+    // A handful of derived dims (shot diet) are undefined for players with no
+    // recorded shot attempts — normalize over the finite values only.
+    const vals = PLAYERS.map((p) => Number(p[d.key])).filter((v) => Number.isFinite(v));
+    const mean = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
+    const sd =
+      Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / (vals.length || 1)) || 1;
+    return { mean, sd };
+  });
+  return _poolStats;
+}
+
+function zVector(p: Player): number[] {
+  const stats = poolStats();
+  return SIM_DIMS.map((d, i) => {
+    const v = Number(p[d.key]);
+    // No data on a dimension → sit at the league mean (z = 0) rather than NaN.
+    return Number.isFinite(v) ? (v - stats[i].mean) / stats[i].sd : 0;
+  });
+}
+
+export type PositionFilter = "same" | "adjacent" | "any";
+export type AgeBandFilter = "within3" | "any";
+
+const POS_ORDER: Record<Position, number> = { PG: 0, SG: 1, SF: 2, PF: 3, C: 4 };
+
+function passesPosition(target: Player, p: Player, f: PositionFilter): boolean {
+  if (f === "any") return true;
+  const d = Math.abs(POS_ORDER[target.pos] - POS_ORDER[p.pos]);
+  return f === "same" ? d === 0 : d <= 1;
+}
+
+export interface TraitDelta {
+  label: string;
+  delta: number; // |z(target) - z(comp)| on that dimension
+}
 
 export interface SimResult {
   player: Player;
   score: number; // 0-100 similarity
   reasons: string[];
+  topSharedTraits: TraitDelta[]; // 3 dims with smallest normalized distance
+  biggestDifferences: TraitDelta[]; // 2 dims with largest
+  matchedArchetype: string;
 }
 
-export function similarPlayers(id: string, limit = 6): SimResult[] {
+export function similarPlayers(
+  id: string,
+  limit = 6,
+  opts?: { position?: PositionFilter; ageBand?: AgeBandFilter },
+): SimResult[] {
   const target = getPlayer(id);
   if (!target) return [];
-  const vec = (p: Player) => SIM_AXES.map((a) => (Number(p[a.key]) / a.scale) * a.weight);
-  const tv = vec(target);
+  const posFilter = opts?.position ?? "any";
+  const ageFilter = opts?.ageBand ?? "any";
+  const tz = zVector(target);
+  const tw = tz.map((z, i) => z * SIM_DIMS[i].weight);
+  const tMag = Math.sqrt(tw.reduce((a, b) => a + b * b, 0)) || 1;
 
-  return PLAYERS.filter((p) => p.id !== id)
+  return PLAYERS.filter(
+    (p) =>
+      p.id !== id &&
+      passesPosition(target, p, posFilter) &&
+      (ageFilter === "any" || Math.abs(p.age - target.age) <= 3),
+  )
     .map((p) => {
-      const pv = vec(p);
-      let dist = 0;
-      for (let i = 0; i < tv.length; i++) dist += (tv[i] - pv[i]) ** 2;
-      dist = Math.sqrt(dist);
-      const score = clamp(100 - dist * 26, 0, 99);
+      const pz = zVector(p);
+      const pw = pz.map((z, i) => z * SIM_DIMS[i].weight);
+      const pMag = Math.sqrt(pw.reduce((a, b) => a + b * b, 0)) || 1;
+      let dot = 0;
+      for (let i = 0; i < tw.length; i++) dot += tw[i] * pw[i];
+      const cos = dot / (tMag * pMag);
+      const score = clamp(Math.round(((cos + 1) / 2) * 100), 0, 99);
+
+      const deltas: TraitDelta[] = SIM_DIMS.map((d, i) => ({
+        label: d.label,
+        delta: Math.round(Math.abs(tz[i] - pz[i]) * 100) / 100,
+      }));
+      const byCloseness = deltas.slice().sort((a, b) => a.delta - b.delta);
+
       const reasons: string[] = [];
       if (Math.abs(p.usg - target.usg) < 3) reasons.push("similar usage load");
       if (Math.abs(p.shotThree - target.shotThree) < 0.08) reasons.push("matching shot diet");
       if (Math.abs(p.apg - target.apg) < 1.5) reasons.push("comparable playmaking");
       if (Math.abs(p.defImpact - target.defImpact) < 10) reasons.push("same defensive tier");
       if (p.archetype === target.archetype) reasons.push(`both ${p.archetype.toLowerCase()}s`);
-      return { player: p, score: Math.round(score), reasons: reasons.slice(0, 3) };
+
+      return {
+        player: p,
+        score,
+        reasons: reasons.slice(0, 3),
+        topSharedTraits: byCloseness.slice(0, 3),
+        biggestDifferences: byCloseness.slice(-2).reverse(),
+        matchedArchetype: p.archetype,
+      };
     })
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score || a.player.id.localeCompare(b.player.id))
     .slice(0, limit);
 }
 
@@ -127,17 +203,17 @@ export interface RoleCluster {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  "Primary Creator": "#E0561F",
-  "Volume Scorer": "#E0561F",
-  "Secondary Playmaker": "#C9A14A",
-  "3 and D Wing": "#7E8CA0",
-  "Floor Spacer": "#7E8CA0",
-  "Perimeter Stopper": "#5FA97E",
-  "Rim Protector": "#7E8CA0",
+  "Primary Creator": "#E9A23B",
+  "Volume Scorer": "#E9A23B",
+  "Secondary Playmaker": "#CBB280",
+  "3 and D Wing": "#8A8273",
+  "Floor Spacer": "#8A8273",
+  "Perimeter Stopper": "#A3B79A",
+  "Rim Protector": "#8A8273",
   "Stretch Big": "#FF9A45",
-  "Playmaking Big": "#C9A14A",
-  Slasher: "#BF5B4E",
-  "Combo Guard": "#5FA97E",
+  "Playmaking Big": "#CBB280",
+  Slasher: "#C98A78",
+  "Combo Guard": "#A3B79A",
   Connector: "#9aa6b5",
 };
 
@@ -169,6 +245,225 @@ export function roleClusters(): RoleCluster[] {
       players: players.sort((a, b) => b.starPower - a.starPower),
     }))
     .sort((a, b) => b.players.length - a.players.length);
+}
+
+// Per-player role read: every role template is scored 0-100 from real
+// per-game stats; the gap between the top two scores (normalized by the top
+// score) is the confidence that the primary role is the right call.
+export interface RoleScore {
+  role: string;
+  score: number;
+}
+
+export interface RoleClassification {
+  player: Player;
+  role: string;
+  color: string;
+  scores: RoleScore[]; // all roles, sorted desc
+  secondaryRoles: RoleScore[]; // next 2 by score
+  confidence: number; // 0-100 normalized gap between top-1 and top-2
+  matchedTraits: string[]; // threshold rules that fired for the primary role
+  similarArchetypePlayers: Player[]; // 3 same-role players by closest starPower
+}
+
+interface RoleDef {
+  role: string;
+  score: (p: Player) => number;
+  rules: { when: (p: Player) => boolean; text: (p: Player) => string }[];
+}
+
+const isBig = (p: Player) => p.pos === "C" || p.pos === "PF";
+const isGuard = (p: Player) => p.pos === "PG" || p.pos === "SG";
+// Three-point accuracy only counts toward spacing roles when the volume backs
+// it up: a 75% mark on 1.6 attempts a game is small-sample noise, not a skill.
+const spacingGate = (p: Player) =>
+  clamp((p.shotThree - 0.2) / 0.2, 0, 1) * clamp(p.tpa / 4, 0, 1);
+
+const ROLE_DEFS: RoleDef[] = [
+  {
+    role: "Rim Protector",
+    score: (p) =>
+      clamp(
+        p.bpg * 28 + (p.pos === "C" ? 22 : p.pos === "PF" ? 12 : 0) + p.defReb * 2.2 - p.shotThree * 30,
+        0,
+        100,
+      ),
+    rules: [
+      { when: (p) => p.bpg >= 1.3, text: (p) => `${p.bpg} BPG clears the rim-protector bar (1.3)` },
+      { when: (p) => isBig(p), text: (p) => `${p.pos} frame anchors the paint` },
+      { when: (p) => p.defReb >= 6, text: (p) => `${p.defReb} defensive boards per game end possessions` },
+      {
+        when: (p) => p.shotThree <= 0.2,
+        text: (p) => `interior shot diet (${Math.round(p.shotThree * 100)}% of FGA from three)`,
+      },
+    ],
+  },
+  {
+    role: "Primary Creator",
+    score: (p) => clamp(p.apg * 7 + (p.usg - 18) * 2.2, 0, 100),
+    rules: [
+      { when: (p) => p.apg >= 7, text: (p) => `runs the offense at ${p.apg} APG` },
+      { when: (p) => p.usg >= 26, text: (p) => `carries a ${p.usg}% usage load` },
+    ],
+  },
+  {
+    role: "Volume Scorer",
+    score: (p) => clamp((p.ppg - 8) * 3 + (p.usg - 18) * 2, 0, 100),
+    rules: [
+      { when: (p) => p.ppg >= 24, text: (p) => `${p.ppg} PPG scoring volume` },
+      { when: (p) => p.usg >= 29, text: (p) => `top-shelf ${p.usg}% usage` },
+    ],
+  },
+  {
+    role: "Secondary Playmaker",
+    score: (p) => clamp(p.apg * 9 - Math.max(0, p.usg - 24) * 3, 0, 100),
+    rules: [
+      { when: (p) => p.apg >= 5, text: (p) => `${p.apg} APG of connective passing` },
+      { when: (p) => p.usg < 26, text: (p) => `creates without dominating the ball (${p.usg}% usage)` },
+    ],
+  },
+  {
+    role: "3 and D Wing",
+    score: (p) =>
+      clamp(
+        p.shotThree * 55 +
+          (p.tpp - 0.3) * 200 * spacingGate(p) +
+          (p.defImpact - 40) * 0.9 +
+          (p.pos === "SF" || p.pos === "SG" ? 8 : 0),
+        0,
+        100,
+      ),
+    rules: [
+      {
+        when: (p) => p.shotThree >= 0.45,
+        text: (p) => `${Math.round(p.shotThree * 100)}% of attempts from deep`,
+      },
+      {
+        when: (p) => p.tpp >= 0.36 && p.tpa >= 4,
+        text: (p) => `${(p.tpp * 100).toFixed(1)}% on ${p.tpa} 3PA/g`,
+      },
+      { when: (p) => p.defImpact >= 45, text: (p) => `defensive impact ${p.defImpact}/100` },
+    ],
+  },
+  {
+    role: "Floor Spacer",
+    score: (p) => clamp(p.shotThree * 65 + (p.tpp - 0.3) * 260 * spacingGate(p), 0, 100),
+    rules: [
+      {
+        when: (p) => p.shotThree >= 0.45,
+        text: (p) => `${Math.round(p.shotThree * 100)}% of attempts from deep`,
+      },
+      {
+        when: (p) => p.tpp >= 0.37 && p.tpa >= 4,
+        text: (p) => `${(p.tpp * 100).toFixed(1)}% on ${p.tpa} 3PA/g`,
+      },
+    ],
+  },
+  {
+    role: "Perimeter Stopper",
+    score: (p) =>
+      clamp(p.spg * 24 + (p.defImpact - 40) * 1.1 + (isGuard(p) || p.pos === "SF" ? 8 : 0), 0, 100),
+    rules: [
+      { when: (p) => p.spg >= 1.4, text: (p) => `${p.spg} SPG of ball pressure` },
+      { when: (p) => p.defImpact >= 50, text: (p) => `defensive impact ${p.defImpact}/100` },
+    ],
+  },
+  {
+    role: "Stretch Big",
+    score: (p) =>
+      isBig(p)
+        ? clamp(p.shotThree * 95 + (p.tpp - 0.3) * 220 * spacingGate(p) + p.rpg * 1.2, 0, 100)
+        : 0,
+    rules: [
+      { when: (p) => isBig(p), text: (p) => `${p.pos} who pulls his man to the arc` },
+      {
+        when: (p) => p.shotThree > 0.3,
+        text: (p) => `${Math.round(p.shotThree * 100)}% of attempts from three`,
+      },
+      {
+        when: (p) => p.tpp >= 0.36 && p.tpa >= 3,
+        text: (p) => `${(p.tpp * 100).toFixed(1)}% on ${p.tpa} 3PA/g`,
+      },
+    ],
+  },
+  {
+    role: "Playmaking Big",
+    score: (p) => (isBig(p) ? clamp(p.apg * 11 + p.rpg * 1.4, 0, 100) : 0),
+    rules: [
+      { when: (p) => isBig(p), text: (p) => `${p.pos} operating as an offensive hub` },
+      { when: (p) => p.apg >= 4, text: (p) => `${p.apg} APG from the elbow` },
+    ],
+  },
+  {
+    role: "Slasher",
+    score: (p) => clamp(p.shotRim * 70 + (p.ppg - 8) * 1.7, 0, 100),
+    rules: [
+      {
+        when: (p) => p.shotRim >= 0.4,
+        text: (p) => `${Math.round(p.shotRim * 100)}% of attempts at the rim`,
+      },
+      { when: (p) => p.ppg >= 18, text: (p) => `${p.ppg} PPG of downhill scoring` },
+    ],
+  },
+  {
+    role: "Combo Guard",
+    score: (p) => (isGuard(p) ? clamp(p.ppg * 1.5 + p.apg * 3.5 + 10, 0, 100) : 0),
+    rules: [
+      { when: (p) => isGuard(p), text: (p) => `${p.pos} who toggles on/off ball` },
+      {
+        when: (p) => p.ppg >= 12 && p.apg >= 3,
+        text: (p) => `balanced ${p.ppg} PPG / ${p.apg} APG line`,
+      },
+    ],
+  },
+  {
+    role: "Connector",
+    score: (p) => clamp(50 - (p.usg - 15) * 1.8 + p.bpm * 2 + p.spg * 5, 0, 100),
+    rules: [
+      { when: (p) => p.usg < 20, text: (p) => `low-maintenance ${p.usg}% usage` },
+      { when: (p) => p.bpm > 0, text: (p) => `positive impact metrics (+${p.bpm} BPM)` },
+    ],
+  },
+];
+
+export function classifyRole(id: string): RoleClassification | null {
+  const p = getPlayer(id);
+  if (!p) return null;
+  const scores: RoleScore[] = ROLE_DEFS.map((d) => ({
+    role: d.role,
+    score: Math.round(clamp(d.score(p), 0, 100)),
+  })).sort((a, b) => b.score - a.score || a.role.localeCompare(b.role));
+  const top = scores[0];
+  const second = scores[1];
+  const confidence = Math.round(clamp(((top.score - second.score) / Math.max(top.score, 1)) * 100, 0, 100));
+  const def = ROLE_DEFS.find((d) => d.role === top.role)!;
+  const fired = def.rules.filter((r) => r.when(p)).map((r) => r.text(p));
+  const matchedTraits = fired.length
+    ? fired
+    : [`closest statistical template at ${top.score}/100 (no single threshold dominates)`];
+  let pool = PLAYERS.filter((x) => x.id !== p.id && x.archetype === top.role);
+  if (pool.length < 3) {
+    const ids = new Set(pool.map((x) => x.id));
+    pool = pool.concat(PLAYERS.filter((x) => x.id !== p.id && x.pos === p.pos && !ids.has(x.id)));
+  }
+  const similarArchetypePlayers = pool
+    .slice()
+    .sort(
+      (a, b) =>
+        Math.abs(a.starPower - p.starPower) - Math.abs(b.starPower - p.starPower) ||
+        a.id.localeCompare(b.id),
+    )
+    .slice(0, 3);
+  return {
+    player: p,
+    role: top.role,
+    color: ROLE_COLORS[top.role] ?? "#9aa6b5",
+    scores,
+    secondaryRoles: scores.slice(1, 3),
+    confidence,
+    matchedTraits,
+    similarArchetypePlayers,
+  };
 }
 
 // ---------------- Underrated Finder ----------------
@@ -372,9 +667,62 @@ export interface ScoutReport {
   weaknesses: string[];
   role: string;
   comp: string;
-  priorities: string[];
+  priorities: string[]; // alias of developmentPriorities (kept for existing callers)
+  developmentPriorities: string[]; // 3 items from the player's weakest z-scored dimensions
+  riskFactors: string[]; // age / availability / efficiency-based flags
   summary: string;
   grades: { label: string; value: number }[];
+}
+
+// Development prescriptions keyed by the z-scored similarity dimensions.
+// usg is excluded — a low usage rate is a role decision, not a skill gap.
+const PRIORITY_TEXT: Partial<Record<string, (p: Player, z: string) => string>> = {
+  ppg: (p, z) => `Scoring volume: ${p.ppg} PPG (z ${z}) — manufacture easier points off cuts and transition`,
+  apg: (p, z) => `Playmaking: ${p.apg} APG (z ${z}) — develop pick-and-roll reads and kickout passing`,
+  rpg: (p, z) => `Rebounding: ${p.rpg} RPG (z ${z}) — improve box-out positioning and pursuit`,
+  tsp: (p, z) => `Efficiency: ${(p.tsp * 100).toFixed(1)}% TS (z ${z}) — trim long twos, raise rim and FT volume`,
+  defImpact: (p, z) => `Defense: impact ${p.defImpact}/100 (z ${z}) — sharpen closeouts and off-ball discipline`,
+  spg: (p, z) => `Ball pressure: ${p.spg} SPG (z ${z}) — generate more deflections and events`,
+  bpg: (p, z) => `Rim deterrence: ${p.bpg} BPG (z ${z}) — improve verticality and contest timing`,
+  shotThree: (p, z) =>
+    `Shot diet: ${Math.round(p.shotThree * 100)}% of FGA from three (z ${z}) — expand catch-and-shoot range`,
+  shotRim: (p, z) =>
+    `Rim pressure: ${Math.round(p.shotRim * 100)}% of FGA at the rim (z ${z}) — attack closeouts, get downhill`,
+};
+
+function developmentPrioritiesFor(p: Player): string[] {
+  const stats = poolStats();
+  return SIM_DIMS.map((d, i) => ({
+    key: String(d.key),
+    z: (Number(p[d.key]) - stats[i].mean) / stats[i].sd,
+  }))
+    .filter((d) => PRIORITY_TEXT[d.key])
+    .sort((a, b) => a.z - b.z)
+    .slice(0, 3)
+    .map((d) => {
+      const zStr = `${d.z >= 0 ? "+" : "−"}${Math.abs(d.z).toFixed(1)}`;
+      return PRIORITY_TEXT[d.key]!(p, zStr);
+    });
+}
+
+function riskFactorsFor(p: Player): string[] {
+  const out: string[] = [];
+  const missed = Math.max(0, 82 - p.gp);
+  const poolTs = poolStats()[SIM_DIMS.findIndex((d) => d.key === "tsp")];
+  if (p.age >= 33) out.push(`Age ${p.age} — on the wrong side of the historical aging curve`);
+  else if (p.age >= 30) out.push(`Age ${p.age} — entering the decline phase of the age curve`);
+  if (missed >= 15) out.push(`Availability — missed ${missed} games last season`);
+  if (p.injuryRisk >= 60) out.push(`Injury-risk composite ${p.injuryRisk}/100 (age, minutes, frame load)`);
+  if (p.tsp < poolTs.mean - 0.5 * poolTs.sd)
+    out.push(
+      `Efficiency — ${(p.tsp * 100).toFixed(1)}% TS runs below the league band (${(poolTs.mean * 100).toFixed(1)}% avg)`,
+    );
+  if (p.mpg >= 36) out.push(`Workload — ${p.mpg} MPG is a heavy nightly minutes load`);
+  if (!out.length)
+    out.push(
+      `No major red flags — age ${p.age}, ${p.gp} GP and ${(p.tsp * 100).toFixed(1)}% TS all sit in healthy bands`,
+    );
+  return out;
 }
 
 export function scoutingReport(id: string): ScoutReport | null {
@@ -398,26 +746,24 @@ export function scoutingReport(id: string): ScoutReport | null {
   if (p.injuryRisk > 60) weaknesses.push("Durability/availability concerns");
   if (weaknesses.length < 1) weaknesses.push("Limited counter when defenses load up");
 
-  const priorities: string[] = [];
-  if (p.age < 25) priorities.push("Add functional strength to finish through contact");
-  if (p.tpp < 0.36) priorities.push("Tighten and quicken the catch-and-shoot release");
-  if (p.defImpact < 55) priorities.push("Improve off-ball defensive discipline and closeouts");
-  if (p.apg < 4 && (p.pos === "PG" || p.pos === "SG")) priorities.push("Develop pick-and-roll reads");
-  if (priorities.length < 2) priorities.push("Expand shot diet to maintain efficiency at scale");
+  const priorities = developmentPrioritiesFor(p);
+  const riskFactors = riskFactorsFor(p);
 
   const comp =
     PLAYERS.filter((x) => x.id !== id && x.archetype === p.archetype).sort(
       (a, b) => Math.abs(a.starPower - p.starPower) - Math.abs(b.starPower - p.starPower),
     )[0]?.name ?? "unique profile";
 
-  const summary = `${p.name} projects as a ${p.archetype.toLowerCase()} (${p.pos}). At ${p.age}, the profile is built on ${strengths[0]?.toLowerCase() ?? "two-way feel"}, with development hinging on ${priorities[0]?.toLowerCase() ?? "consistency"}.`;
+  const summary = `${p.name} projects as a ${p.archetype.toLowerCase()} (${p.pos}). At ${p.age}, the profile is built on ${strengths[0]?.toLowerCase() ?? "two-way feel"}, with development hinging on ${priorities[0]?.split(":")[0].toLowerCase() ?? "consistency"}.`;
 
   return {
     strengths: strengths.slice(0, 5),
     weaknesses: weaknesses.slice(0, 4),
     role: p.archetype,
     comp,
-    priorities: priorities.slice(0, 4),
+    priorities,
+    developmentPriorities: priorities,
+    riskFactors,
     summary,
     grades: [
       { label: "Scoring", value: clamp(p.offImpact, 0, 100) },

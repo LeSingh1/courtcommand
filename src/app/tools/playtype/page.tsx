@@ -6,14 +6,16 @@ import { Shapes } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
-import { Badge } from "@/components/ui/Controls";
+import { Badge, Segmented } from "@/components/ui/Controls";
 import { AnalyzeOverlay } from "@/components/ui/Analyze";
 import { Reveal } from "@/components/ui/Reveal";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
-import { getPlayerByName } from "@/lib/data";
-import { playTypeMix, type PlayTypeMix } from "@/lib/engine/teams";
+import { getPlayerByName, TEAMS, TEAM_MAP } from "@/lib/data";
+import { playTypeMix, teamPlayTypeMix, type PlayTypeMix } from "@/lib/engine/teams";
 import type { Player } from "@/lib/types";
+
+type Mode = "player" | "team";
 
 const ANALYZE_STEPS = [
   "Mapping possessions…",
@@ -25,21 +27,27 @@ export default function PlayTypePage() {
   const tool = getTool("playtype")!;
   const ACCENT = categoryColor(tool.category);
   const [player, setPlayer] = useState<Player | null>(() => getPlayerByName("Luka Doncic") ?? null);
+  const [mode, setMode] = useState<Mode>("player");
+  const [team, setTeam] = useState("OKC");
   const [analyzing, setAnalyzing] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
 
-  const mix: PlayTypeMix[] = useMemo(() => (player ? playTypeMix(player) : []), [player]);
+  const mix: PlayTypeMix[] = useMemo(
+    () => (mode === "team" ? teamPlayTypeMix(team) : player ? playTypeMix(player) : []),
+    [mode, team, player],
+  );
   const primary = mix[0];
+  const subjectName = mode === "team" ? `the ${TEAM_MAP[team]?.name ?? team}` : player?.name ?? "";
   const bestEff = useMemo(
     () => (mix.length ? [...mix].sort((a, b) => b.ppp - a.ppp)[0] : null),
     [mix],
   );
 
-  // Brief analyzing affordance on each player change (skips the preloaded
+  // Brief analyzing affordance on each subject change (skips the preloaded
   // default so above-the-fold content paints immediately on first load).
   const firstLoad = useRef(true);
   useEffect(() => {
-    if (!player) {
+    if (mode === "player" && !player) {
       setAnalyzing(false);
       return;
     }
@@ -58,21 +66,47 @@ export default function PlayTypePage() {
       ticks.forEach(clearTimeout);
       clearTimeout(done);
     };
-  }, [player?.id]);
+  }, [player?.id, mode, team]);
 
   return (
     <ToolShell tool={tool}>
-      <div className="mb-6 max-w-md">
-        <PlayerPicker
-          value={player}
-          onChange={setPlayer}
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <Segmented<Mode>
           accent={ACCENT}
-          placeholder="Pick a player to map their offense…"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { label: "Player", value: "player" },
+            { label: "Team", value: "team" },
+          ]}
         />
+        {mode === "player" ? (
+          <div className="w-full max-w-md">
+            <PlayerPicker
+              value={player}
+              onChange={setPlayer}
+              accent={ACCENT}
+              placeholder="Pick a player to map their offense…"
+            />
+          </div>
+        ) : (
+          <select
+            aria-label="Team"
+            value={team}
+            onChange={(e) => setTeam(e.target.value)}
+            className="cursor-pointer rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none"
+          >
+            {TEAMS.map((t) => (
+              <option key={t.abbr} value={t.abbr} className="bg-ink-800">
+                {t.city} {t.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <AnimatePresence mode="wait" initial={false}>
-      {!player || !primary ? (
+      {(mode === "player" && !player) || !primary ? (
         <motion.div
           key="empty"
           initial={{ opacity: 0, y: 14 }}
@@ -101,7 +135,7 @@ export default function PlayTypePage() {
         </motion.div>
       ) : (
         <motion.div
-          key={player.id}
+          key={mode === "team" ? `team-${team}` : player!.id}
           className="grid gap-6 lg:grid-cols-[1fr_320px]"
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -135,6 +169,7 @@ export default function PlayTypePage() {
                     <Reveal key={m.type}>
                       <div
                         className="flex items-center gap-3 rounded-lg border p-3"
+                        title={m.alternative_labels}
                         style={{
                           borderColor: m === primary ? `${ACCENT}44` : "rgba(255,255,255,0.06)",
                           background: m === primary ? `${ACCENT}0d` : "transparent",
@@ -202,11 +237,30 @@ export default function PlayTypePage() {
                       </div>
                     </div>
                   )}
+                  {mode === "player" && player ? (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+                        Archetype
+                      </div>
+                      <div className="mt-1 text-sm text-[var(--text-muted)]">{player.archetype}</div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
+                        Blend
+                      </div>
+                      <div className="mt-1 text-sm text-[var(--text-muted)]">
+                        Usage-weighted mix of every tracked {TEAM_MAP[team]?.name ?? team} player
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <div className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">
-                      Archetype
+                      Label confidence
                     </div>
-                    <div className="mt-1 text-sm text-[var(--text-muted)]">{player.archetype}</div>
+                    <div className="mt-1 text-xs leading-relaxed text-[var(--text-faint)]">
+                      {primary.alternative_labels} Hover any row for its note.
+                    </div>
                   </div>
                 </div>
               </Panel>
@@ -214,18 +268,23 @@ export default function PlayTypePage() {
 
             <Reveal>
               <Insight accent={ACCENT}>
-                <b>{player.name}</b> runs offense primarily out of{" "}
+                <b>{mode === "team" ? subjectName : player!.name}</b>{" "}
+                {mode === "team" ? "run" : "runs"} offense primarily out of{" "}
                 <b>{primary.type.toLowerCase()}</b> ({primary.freq}% of possessions)
                 {bestEff && bestEff.type !== primary.type ? (
                   <>
                     {" "}
-                    but is most efficient on <b>{bestEff.type.toLowerCase()}</b> looks at{" "}
-                    {bestEff.ppp.toFixed(2)} PPP
+                    but {mode === "team" ? "are" : "is"} most efficient on{" "}
+                    <b>{bestEff.type.toLowerCase()}</b> looks at {bestEff.ppp.toFixed(2)} PPP
                   </>
                 ) : (
                   <> at {primary.ppp.toFixed(2)} PPP</>
                 )}
-                {" "}— a classic {player.archetype.toLowerCase()} profile.
+                {mode === "player" && player ? (
+                  <> — a classic {player.archetype.toLowerCase()} profile.</>
+                ) : (
+                  <>.</>
+                )}
               </Insight>
             </Reveal>
           </div>
@@ -235,12 +294,12 @@ export default function PlayTypePage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The model's possession classifier is checked against ESPN's own play-type labels on real plays — it agrees about 90% of the time — shown alongside the training data that has grown every season since 2003.
+            The model's possession classifier is checked against ESPN's own play-type labels on real plays — it agrees about 90% of the time — shown alongside the training data that has grown every season since 2003. Each play type carries a note on which labels trackers most often disagree about. Team mode blends every rostered player's mix weighted by usage, mirroring who actually ends possessions.
           </p>
         </div>
-        <TrackRecord slug="playtype" accent="#5FA97E" />
+        <TrackRecord slug="playtype" accent="#A3B79A" />
       </div>
     </ToolShell>
   );

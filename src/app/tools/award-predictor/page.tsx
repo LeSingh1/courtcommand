@@ -145,14 +145,14 @@ export default function AwardPredictorPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#E9A23B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Pick a season since 2003 to compare the model&apos;s projected MVP vote share against
             the documented balloting, with a per-season table of its projected MVP versus the actual
             winner — it has called 17 of 23 since 2003, retrained on each year&apos;s added data.
           </p>
         </div>
-        <TrackRecord slug="award-predictor" accent="#E0561F" />
+        <TrackRecord slug="award-predictor" accent="#E9A23B" />
       </div>
     </ToolShell>
   );

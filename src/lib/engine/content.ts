@@ -70,6 +70,120 @@ export function fantasyBoard(punt: PuntCategory = "none"): FantasyRow[] {
   return rows;
 }
 
+// ---------------- Draft-session assistant ----------------
+export type FantasyCat = "pts" | "reb" | "ast" | "stl" | "blk" | "threes";
+const FANTASY_CATS: FantasyCat[] = ["pts", "reb", "ast", "stl", "blk", "threes"];
+const CAT_LABEL: Record<FantasyCat, string> = {
+  pts: "PTS",
+  reb: "REB",
+  ast: "AST",
+  stl: "STL",
+  blk: "BLK",
+  threes: "3PM",
+};
+// Punted categories that map onto the six counting cats tracked per row.
+const PUNT_TO_CAT: Partial<Record<PuntCategory, FantasyCat>> = { ast: "ast", "3pt": "threes" };
+
+export interface DraftRecommendation {
+  player: Player;
+  fit_score: number; // 0-100 — how directly the player fills this roster's weakest categories
+  scarcity_score: number; // 0-100 — how thin the player's position is among undrafted players
+  risk_score: number; // 0-100 — availability proxy from games missed and age
+  score: number; // composite used for the recommendation ranking
+  reasoning: string;
+}
+
+function categoryTotals(
+  myRoster: Player[],
+  rowById: Map<string, FantasyRow>,
+): Record<FantasyCat, number> {
+  const totals = { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, threes: 0 };
+  for (const p of myRoster) {
+    const row = rowById.get(p.id);
+    if (!row) continue;
+    for (const c of FANTASY_CATS) totals[c] += row.cats[c];
+  }
+  return totals;
+}
+
+/** Roster category strength (summed z), weakest first — drives the fit weights. */
+export function rosterNeeds(
+  myRoster: Player[],
+  punt: PuntCategory = "none",
+): { cat: FantasyCat; label: string; total: number }[] {
+  const board = fantasyBoard(punt);
+  const rowById = new Map(board.map((r) => [r.player.id, r]));
+  const totals = categoryTotals(myRoster, rowById);
+  return FANTASY_CATS.filter((c) => PUNT_TO_CAT[punt] !== c)
+    .map((c) => ({ cat: c, label: CAT_LABEL[c], total: Math.round(totals[c] * 100) / 100 }))
+    .sort((a, b) => a.total - b.total);
+}
+
+export function draftRecommend(
+  myRoster: Player[],
+  drafted: Set<string>,
+  punt: PuntCategory = "none",
+): DraftRecommendation[] {
+  const board = fantasyBoard(punt);
+  const rowById = new Map(board.map((r) => [r.player.id, r]));
+  const taken = new Set(drafted);
+  for (const p of myRoster) taken.add(p.id);
+
+  const active = FANTASY_CATS.filter((c) => PUNT_TO_CAT[punt] !== c);
+  const totals = categoryTotals(myRoster, rowById);
+
+  // Need weights: the weaker my roster is in a category, the more a fill is worth.
+  // Squaring the gap concentrates weight on the truly weak categories.
+  // An empty (or perfectly balanced) roster weighs every category equally.
+  const maxTotal = Math.max(...active.map((c) => totals[c]));
+  const rawNeed = active.map((c) => (maxTotal - totals[c]) ** 2);
+  const needSum = rawNeed.reduce((a, v) => a + v, 0);
+  const weights = new Map<FantasyCat, number>();
+  active.forEach((c, i) =>
+    weights.set(c, needSum > 0 ? rawNeed[i] / needSum : 1 / active.length),
+  );
+  const weakest = [...active].sort((x, y) => totals[x] - totals[y]).slice(0, 2);
+
+  const available = board.filter((r) => !taken.has(r.player.id));
+
+  // Position scarcity: how many above-replacement players (z >= 2) remain per position.
+  const qualityLeft: Record<string, number> = {};
+  for (const r of available) {
+    if (r.zScore >= 2) qualityLeft[r.player.pos] = (qualityLeft[r.player.pos] ?? 0) + 1;
+  }
+
+  return available
+    .map((r) => {
+      const p = r.player;
+      const fitRaw = active.reduce((a, c) => a + (weights.get(c) ?? 0) * r.cats[c], 0);
+      const fit_score = Math.round(clamp(50 + fitRaw * 22, 0, 100));
+      const left = qualityLeft[p.pos] ?? 0;
+      const scarcity_score = Math.round(clamp(96 - left * 14, 4, 96));
+      const missed = Math.max(0, 78 - p.gp);
+      const risk_score = Math.round(clamp(missed * 2 + Math.max(0, p.age - 29) * 5 + 4, 2, 98));
+      const score =
+        Math.round(
+          (r.zScore * 6 + fit_score * 0.5 + scarcity_score * 0.18 - risk_score * 0.15) * 10,
+        ) / 10;
+      const bestCat = active.reduce((best, c) => (r.cats[c] > r.cats[best] ? c : best), active[0]);
+      const needHit = weakest.filter((c) => r.cats[c] > 0.25).map((c) => CAT_LABEL[c]);
+      const reasoning =
+        (needHit.length > 0
+          ? `Fills your thinnest categor${needHit.length > 1 ? "ies" : "y"} (${needHit.join(", ")})`
+          : `Best remaining ${CAT_LABEL[bestCat]} value`) +
+        ` at ${r.zScore >= 0 ? "+" : ""}${r.zScore} z overall; ${left} above-replacement ${p.pos}${left === 1 ? "" : "s"} left; ` +
+        `${p.gp} GP at age ${p.age} ${
+          risk_score >= 60
+            ? "is a real availability risk"
+            : risk_score >= 35
+              ? "carries some availability risk"
+              : "is a durable profile"
+        }.`;
+      return { player: p, fit_score, scarcity_score, risk_score, score, reasoning };
+    })
+    .sort((x, y) => y.score - x.score || x.player.name.localeCompare(y.player.name));
+}
+
 // ---------------- March Madness ----------------
 export interface NcaaTeam {
   name: string;
@@ -100,19 +214,90 @@ export const NCAA_FIELD: NcaaTeam[] = [
 
 export type BracketEmphasis = "balanced" | "efficiency" | "form";
 
-function winProb(a: NcaaTeam, b: NcaaTeam, emphasis: BracketEmphasis = "balanced"): number {
+interface EdgeBreakdown {
+  eff: number;
+  sos: number;
+  form: number;
+  seed: number;
+  total: number;
+}
+
+function edgeBreakdown(a: NcaaTeam, b: NcaaTeam, emphasis: BracketEmphasis = "balanced"): EdgeBreakdown {
   const w =
     emphasis === "efficiency"
       ? { eff: 1.35, sos: 0.5, form: 4, seed: 0.7 }
       : emphasis === "form"
         ? { eff: 0.7, sos: 0.3, form: 16, seed: 0.45 }
         : { eff: 1, sos: 0.4, form: 8, seed: 0.6 };
-  const edge =
-    (a.eff - b.eff) * w.eff +
-    (a.sos - b.sos) * w.sos +
-    (a.form - b.form) * w.form +
-    (b.seed - a.seed) * w.seed;
-  return clamp(1 / (1 + Math.exp(-edge / 7)), 0.05, 0.95);
+  const eff = (a.eff - b.eff) * w.eff;
+  const sos = (a.sos - b.sos) * w.sos;
+  const form = (a.form - b.form) * w.form;
+  const seed = (b.seed - a.seed) * w.seed;
+  return { eff, sos, form, seed, total: eff + sos + form + seed };
+}
+
+function winProb(a: NcaaTeam, b: NcaaTeam, emphasis: BracketEmphasis = "balanced"): number {
+  return clamp(1 / (1 + Math.exp(-edgeBreakdown(a, b, emphasis).total / 7)), 0.05, 0.95);
+}
+
+export interface MatchupFactor {
+  label: string;
+  edge: number; // signed contribution to the weighted edge (positive favors team a)
+  favors: string; // team name the factor leans toward
+}
+
+export interface MatchupResult {
+  a: NcaaTeam;
+  b: NcaaTeam;
+  win_probability: number; // % chance team a wins (5-95)
+  projected_score: { a: number; b: number };
+  key_factors: MatchupFactor[]; // top-2 edge components by absolute contribution
+  upset_risk: number; // 0-100 — the worse seed's chance of winning
+}
+
+export function simulateMatchup(
+  a: NcaaTeam,
+  b: NcaaTeam,
+  emphasis: BracketEmphasis = "balanced",
+): MatchupResult {
+  const parts = edgeBreakdown(a, b, emphasis);
+  const p = clamp(1 / (1 + Math.exp(-parts.total / 7)), 0.05, 0.95);
+
+  // Net efficiency is a per-100-possession margin. A tournament game runs about
+  // 70 possessions, so the efficiency gap scales by 0.7, and both teams' quality
+  // lifts the scoring baseline above 1.0 points per possession.
+  const base = 70 + ((a.eff + b.eff) / 2) * 0.2;
+  const margin = (a.eff - b.eff) * 0.7;
+  const projected_score = {
+    a: Math.round(base + margin / 2),
+    b: Math.round(base - margin / 2),
+  };
+
+  const key_factors: MatchupFactor[] = [
+    { label: "Net efficiency", edge: parts.eff },
+    { label: "Schedule strength", edge: parts.sos },
+    { label: "Recent form", edge: parts.form },
+    { label: "Seeding", edge: parts.seed },
+  ]
+    .sort((x, y) => Math.abs(y.edge) - Math.abs(x.edge))
+    .slice(0, 2)
+    .map((f) => ({
+      label: f.label,
+      edge: Math.round(f.edge * 10) / 10,
+      favors: f.edge >= 0 ? a.name : b.name,
+    }));
+
+  // Upset risk = the worse-seeded team's win chance; even seeds use the coin-flip margin.
+  const dogProb = a.seed === b.seed ? Math.min(p, 1 - p) : a.seed > b.seed ? p : 1 - p;
+
+  return {
+    a,
+    b,
+    win_probability: Math.round(p * 1000) / 10,
+    projected_score,
+    key_factors,
+    upset_risk: Math.round(dogProb * 100),
+  };
 }
 
 export interface BracketGame {
@@ -158,11 +343,23 @@ export interface DebateResult {
   b: DebateCase;
   verdict: string;
   edge: number; // -100..100 toward a
+  context_notes: string[]; // era/role caveats the raw edge can't see
+  confidence_score: number; // 50-95, mapped from abs(edge)
 }
-export function debate(idA: string, idB: string, lens: "offense" | "defense" | "overall" = "overall"): DebateResult | null {
-  const a = getPlayer(idA);
-  const b = getPlayer(idB);
-  if (!a || !b) return null;
+export function debate(
+  idA: string,
+  idB: string,
+  lens: "offense" | "defense" | "overall" = "overall",
+): DebateResult | string {
+  if (!idA?.trim() || !idB?.trim())
+    return "Pick two players to start the debate — both sides need a name.";
+  const a = getPlayer(idA.trim());
+  const b = getPlayer(idB.trim());
+  if (!a && !b)
+    return `Neither "${idA}" nor "${idB}" matches a player in the dataset — search both pickers by name.`;
+  if (!a) return `No player matches "${idA}" — pick side A from the player list.`;
+  if (!b) return `No player matches "${idB}" — pick side B from the player list.`;
+  if (a.id === b.id) return `${a.name} can't debate himself — pick two different players.`;
   const score = (p: Player) =>
     lens === "offense"
       ? p.offImpact + p.ppg + p.tsp * 40
@@ -182,12 +379,57 @@ export function debate(idA: string, idB: string, lens: "offense" | "defense" | "
   };
   const sa = score(a);
   const sb = score(b);
-  const edge = clamp(((sa - sb) / (sa + sb)) * 200, -100, 100);
+  const edge = Math.round(clamp(((sa - sb) / (sa + sb)) * 200, -100, 100));
   const verdict =
     Math.abs(edge) < 6
       ? `Statistically a coin-flip in the ${lens} lens — comes down to context and role.`
       : `${edge > 0 ? a.name : b.name} holds the edge in the ${lens} lens by the numbers.`;
-  return { a: { player: a, points: makeCase(a, b) }, b: { player: b, points: makeCase(b, a) }, verdict, edge: Math.round(edge) };
+
+  // Era/role caveats the box-score edge can't see.
+  const context_notes: string[] = [];
+  const ageGap = Math.abs(a.age - b.age);
+  if (ageGap >= 4) {
+    const older = a.age > b.age ? a : b;
+    const younger = older.id === a.id ? b : a;
+    context_notes.push(
+      `${older.name} (${older.age}) and ${younger.name} (${younger.age}) are ${ageGap} years apart — this compares current seasons, not career peaks.`,
+    );
+  }
+  const expGap = Math.abs(a.exp - b.exp);
+  if (expGap >= 5)
+    context_notes.push(
+      `${a.exp > b.exp ? a.name : b.name} has ${expGap} more seasons of track record; the younger player's curve is still bending.`,
+    );
+  if (a.pos !== b.pos)
+    context_notes.push(
+      `Cross-position call (${a.pos} vs ${b.pos}) — rebounds, assists, and blocks don't translate one-to-one across roles.`,
+    );
+  const usgGap = Math.abs(a.usg - b.usg);
+  if (usgGap >= 6) {
+    const heavy = a.usg > b.usg ? a : b;
+    const light = heavy.id === a.id ? b : a;
+    context_notes.push(
+      `${heavy.name} carries a much heavier offensive load (${heavy.usg} vs ${light.usg} usage) — efficiency gaps partly reflect role, not skill.`,
+    );
+  }
+  if (lens !== "overall")
+    context_notes.push(`Scored through the ${lens} lens only — the overall picture can flip the call.`);
+  if (context_notes.length === 0)
+    context_notes.push(
+      "Same position, similar age and role — about as clean as one-on-one comparisons get.",
+    );
+
+  // Confidence: |edge| 0 -> 50 (coin flip), |edge| 100 -> 95 (decisive).
+  const confidence_score = Math.round(50 + (Math.abs(edge) / 100) * 45);
+
+  return {
+    a: { player: a, points: makeCase(a, b) },
+    b: { player: b, points: makeCase(b, a) },
+    verdict,
+    edge,
+    context_notes,
+    confidence_score,
+  };
 }
 
 // News Sentiment lives in src/app/tools/news-sentiment — it now derives a real
@@ -204,6 +446,10 @@ export interface RecruitInput {
   position: string;
   level: "Varsity" | "AAU" | "Prep";
 }
+export interface CollegeFit {
+  tier: string;
+  why: string;
+}
 export interface RecruitResult {
   stars: number;
   grade: number;
@@ -211,7 +457,24 @@ export interface RecruitResult {
   comp: string;
   report: string;
   attributes: { label: string; value: number }[];
+  college_fit_suggestions: CollegeFit[]; // three program tiers, each with a reason
+  development_plan: string[]; // three items built from the weakest attributes
 }
+
+// Fixed drill plans keyed by attribute — the three weakest attributes pick from here.
+const DEV_PLAN: Record<string, (v: number) => string> = {
+  Scoring: (v) =>
+    `Scoring (${Math.round(v)}/100): add a pull-up counter and a 200-make daily shooting routine.`,
+  Rebounding: (v) =>
+    `Rebounding (${Math.round(v)}/100): box-out film work plus contact-finishing reps every practice.`,
+  Playmaking: (v) =>
+    `Playmaking (${Math.round(v)}/100): live pick-and-roll reads and two ball-handling circuits a week.`,
+  Size: (v) =>
+    `Size (${Math.round(v)}/100): strength program to play bigger — base, core, and leverage work.`,
+  Motor: (v) =>
+    `Motor (${Math.round(v)}/100): conditioning benchmarks and full-speed defensive shell drills.`,
+};
+
 export function recruitRank(i: RecruitInput): RecruitResult {
   const prod = i.ppg * 1.4 + i.rpg * 1.6 + i.apg * 2.2;
   const sizeBonus = clamp((i.heightIn - 72) * 1.4, -6, 16);
@@ -224,19 +487,76 @@ export function recruitRank(i: RecruitInput): RecruitResult {
   const report = `${i.name} profiles as ${comp} with ${i.ppg}/${i.rpg}/${i.apg} production at the ${i.level.toLowerCase()} level. ${
     stars >= 4 ? "High-major recruiters should prioritize an evaluation." : "A mid-major fit with developmental upside."
   }`;
+  const attributes = [
+    { label: "Scoring", value: clamp(i.ppg * 3.2, 0, 100) },
+    { label: "Rebounding", value: clamp(i.rpg * 6, 0, 100) },
+    { label: "Playmaking", value: clamp(i.apg * 9, 0, 100) },
+    { label: "Size", value: clamp((i.heightIn - 66) * 4, 0, 100) },
+    { label: "Motor", value: clamp(grade * 0.8 + 10, 0, 100) },
+  ];
+
+  const strongest = attributes.reduce((m, x) => (x.value > m.value ? x : m), attributes[0]);
+  const g = Math.round(grade);
+  const college_fit_suggestions: CollegeFit[] =
+    g >= 88
+      ? [
+          {
+            tier: "Blue-blood / top-10 program",
+            why: `A ${g} grade with ${strongest.label.toLowerCase()} as the carrying tool plays at the highest level immediately.`,
+          },
+          {
+            tier: "High-major starter",
+            why: "Day-one rotation minutes with a featured role by year two — the safest development path.",
+          },
+          {
+            tier: "Elite mid-major feature",
+            why: "Maximum usage from the opening tip; the fastest route to a pro evaluation.",
+          },
+        ]
+      : g >= 72
+        ? [
+            {
+              tier: "High-major rotation",
+              why: `The ${g} grade projects bench minutes early, with ${strongest.label.toLowerCase()} as the ticket to a bigger role.`,
+            },
+            {
+              tier: "Mid-major starter",
+              why: "Starts as a freshman and grows into a featured option by year two.",
+            },
+            {
+              tier: "Low-major feature",
+              why: "A go-to role from day one builds the tape for a transfer-up window.",
+            },
+          ]
+        : [
+            {
+              tier: "Mid-major development",
+              why: `A ${g} grade earns a development spot; a redshirt year closes the physical gap.`,
+            },
+            {
+              tier: "Low-major / D2 starter",
+              why: "Real minutes now beat bench minutes at a bigger program for this profile.",
+            },
+            {
+              tier: "JUCO / prep year",
+              why: "A bridge season to add production and re-enter recruiting with leverage.",
+            },
+          ];
+
+  const development_plan = [...attributes]
+    .sort((x, y) => x.value - y.value)
+    .slice(0, 3)
+    .map((a) => DEV_PLAN[a.label](a.value));
+
   return {
     stars,
-    grade: Math.round(grade),
+    grade: g,
     nationalRank,
     comp,
     report,
-    attributes: [
-      { label: "Scoring", value: clamp(i.ppg * 3.2, 0, 100) },
-      { label: "Rebounding", value: clamp(i.rpg * 6, 0, 100) },
-      { label: "Playmaking", value: clamp(i.apg * 9, 0, 100) },
-      { label: "Size", value: clamp((i.heightIn - 66) * 4, 0, 100) },
-      { label: "Motor", value: clamp(grade * 0.8 + 10, 0, 100) },
-    ],
+    attributes,
+    college_fit_suggestions,
+    development_plan,
   };
 }
 
@@ -247,6 +567,7 @@ export interface QuizQuestion {
   options: string[];
   correct: number;
   explain: string;
+  category: string; // concept bucket used to aggregate misses
 }
 export const QUIZ: QuizQuestion[] = [
   {
@@ -255,6 +576,7 @@ export const QUIZ: QuizQuestion[] = [
     options: ["Switch everything", "Drop coverage", "Hard hedge and recover", "Blitz the ball"],
     correct: 1,
     explain: "Drop coverage walls off the rim and dares the non-shooting big to pop — the safest read against an elite handler.",
+    category: "Pick-and-roll coverage",
   },
   {
     q: "Spacing principle",
@@ -262,6 +584,7 @@ export const QUIZ: QuizQuestion[] = [
     options: ["Crash baseline", "Lift to the wing", "Stay in the corner", "Cut to the dunker spot"],
     correct: 2,
     explain: "Staying in the corner stretches the help defender farthest from the ball, maximizing driving lanes.",
+    category: "Spacing & off-ball play",
   },
   {
     q: "Late-clock decision",
@@ -269,6 +592,7 @@ export const QUIZ: QuizQuestion[] = [
     options: ["Hold for a better look", "One-dribble pull-up", "Swing it cross-court", "Drive into traffic"],
     correct: 1,
     explain: "With the closeout flying and time short, attacking the closeout for a one-dribble pull-up is the highest-EV look.",
+    category: "Shot selection",
   },
   {
     q: "Transition defense",
@@ -276,6 +600,7 @@ export const QUIZ: QuizQuestion[] = [
     options: ["Foul immediately", "Protect the rim", "Pick up the ball", "Tag the trailer"],
     correct: 1,
     explain: "First man back protects the rim and forces a pass; stopping the ball is the second defender's job.",
+    category: "Transition defense",
   },
   {
     q: "Rebounding position",
@@ -283,6 +608,7 @@ export const QUIZ: QuizQuestion[] = [
     options: ["Same-side corner", "Opposite elbow", "Straight back to shooter", "Top of the key"],
     correct: 1,
     explain: "Misses tend to carom to the opposite-side elbow/wing — box out there for the long rebound.",
+    category: "Rebounding",
   },
   {
     q: "Help rotation",
@@ -290,5 +616,62 @@ export const QUIZ: QuizQuestion[] = [
     options: ["Stay home", "Rotate to the rim", "Double the ball up top", "Foul the driver"],
     correct: 1,
     explain: "The low man rotates to stop the ball at the rim; the next pass triggers an X-out closeout behind you.",
+    category: "Help rotations",
   },
 ];
+
+// Fixed study topics keyed by concept — recommended when that concept is missed.
+const NEXT_TOPIC: Record<string, string> = {
+  "Pick-and-roll coverage":
+    "Drop vs. hedge vs. switch rules — when each coverage wins against elite handlers.",
+  "Spacing & off-ball play":
+    "Corner spacing and the half-second decision rule for weak-side shooters.",
+  "Shot selection":
+    "Late-clock shot math — why attacking a closeout beats holding for a contested look.",
+  "Transition defense":
+    "First-man-back priorities: protect the rim, force the pass, trust the second defender.",
+  Rebounding: "Long-rebound geometry — where misses carom by shot location.",
+  "Help rotations": "Low-man rules and the X-out closeout chain behind a baseline drive.",
+};
+
+export interface QuizSummary {
+  score: number;
+  total: number;
+  pct: number;
+  best_streak: number; // longest run of consecutive correct answers
+  missed_concepts: { category: string; count: number }[]; // wrong answers grouped by concept
+  recommended_next_topics: string[]; // study topics for the most-missed concepts
+}
+
+/** Grade an answer sheet (index per question, null = unanswered) against QUIZ. */
+export function quizResults(answers: ReadonlyArray<number | null>): QuizSummary {
+  let score = 0;
+  let streak = 0;
+  let best_streak = 0;
+  const missed = new Map<string, number>();
+  QUIZ.forEach((q, i) => {
+    if (answers[i] === q.correct) {
+      score += 1;
+      streak += 1;
+      if (streak > best_streak) best_streak = streak;
+    } else {
+      streak = 0;
+      missed.set(q.category, (missed.get(q.category) ?? 0) + 1);
+    }
+  });
+  const missed_concepts = [...missed.entries()]
+    .map(([category, count]) => ({ category, count }))
+    .sort((x, y) => y.count - x.count || x.category.localeCompare(y.category));
+  const recommended_next_topics = missed_concepts
+    .slice(0, 3)
+    .map((m) => NEXT_TOPIC[m.category])
+    .filter((t): t is string => Boolean(t));
+  return {
+    score,
+    total: QUIZ.length,
+    pct: Math.round((score / QUIZ.length) * 100),
+    best_streak,
+    missed_concepts,
+    recommended_next_topics,
+  };
+}

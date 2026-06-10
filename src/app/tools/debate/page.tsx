@@ -3,10 +3,10 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
-import { MessagesSquare, Check } from "lucide-react";
+import { MessagesSquare, Check, Info } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
-import { Diverging } from "@/components/ui/Meter";
+import { Diverging, Meter } from "@/components/ui/Meter";
 import { Segmented, Badge } from "@/components/ui/Controls";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TrackRecord } from "@/components/ui/TrackRecord";
@@ -16,7 +16,7 @@ import { debate } from "@/lib/engine/content";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const TEAL = "#4E8FA8";
+const TEAL = "#9FB6C4";
 type Lens = "overall" | "offense" | "defense";
 
 export default function DebatePage() {
@@ -48,7 +48,7 @@ function DebateInner() {
     }
   }, [params]);
 
-  const result = useMemo(() => (a && b ? debate(a.id, b.id, lens) : null), [a, b, lens]);
+  const result = useMemo(() => debate(a?.id ?? "", b?.id ?? "", lens), [a, b, lens]);
 
   return (
     <ToolShell tool={tool}>
@@ -70,12 +70,13 @@ function DebateInner() {
       </div>
 
       <AnimatePresence mode="wait">
-      {!result ? (
+      {typeof result === "string" ? (
         <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
-          <MessagesSquare size={40} className="mb-4 text-[#C9A14A]" />
-          <p className="max-w-xs text-sm text-white/50">
-            Pick two players and a lens — the engine builds an evidence-backed case for each side and
-            calls the edge by the numbers.
+          <MessagesSquare size={40} className="mb-4 text-[#CBB280]" />
+          <p className="max-w-xs text-sm text-white/50">{result}</p>
+          <p className="mt-3 max-w-xs text-xs text-white/35">
+            The engine builds an evidence-backed case for each side and calls the edge by the
+            numbers.
           </p>
         </Panel>
       ) : (
@@ -115,18 +116,55 @@ function DebateInner() {
               <b>Verdict:</b> {result.verdict}
             </Insight>
           </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-[240px_1fr]">
+            <Panel title="Verdict confidence">
+              <div className="flex items-end gap-2">
+                <span className="scoreboard text-4xl" style={{ color: GOLD }}>
+                  {result.confidence_score}
+                </span>
+                <span className="mb-1 text-[10px] uppercase tracking-wide text-white/40">
+                  / 95 max
+                </span>
+              </div>
+              <div className="mt-3">
+                <Meter
+                  value={((result.confidence_score - 50) / 45) * 100}
+                  color={GOLD}
+                  height={6}
+                />
+              </div>
+              <p className="mt-3 text-[11px] leading-snug text-white/45">
+                Scaled from the size of the statistical edge: 50 is a coin flip, 95 is a decisive
+                gap in the {lens} lens.
+              </p>
+            </Panel>
+            <Panel title="Context notes">
+              <div className="space-y-2.5">
+                {result.context_notes.map((note) => (
+                  <div
+                    key={note}
+                    className="flex items-start gap-2.5 text-sm leading-relaxed text-white/65"
+                  >
+                    <Info size={15} className="mt-0.5 shrink-0" style={{ color: TEAL }} />
+                    <span>{note}</span>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          </div>
         </motion.div>
       )}
       </AnimatePresence>
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#C9A14A" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#CBB280" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            Each season since 2003, the player ratings these head-to-head edges draw on are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89).
+            Each season since 2003, the player ratings these head-to-head edges draw on are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89). Context notes flag age, role, and usage gaps the raw edge can&rsquo;t see, and the confidence score is a fixed mapping of the edge size (50 = coin flip, 95 = decisive).
           </p>
         </div>
-        <TrackRecord slug="debate" accent="#C9A14A" />
+        <TrackRecord slug="debate" accent="#CBB280" />
       </div>
     </ToolShell>
   );

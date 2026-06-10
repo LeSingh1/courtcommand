@@ -5,12 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Gem } from "lucide-react";
 import { spring, staggerParent, staggerItem } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
-import { Slider } from "@/components/ui/Controls";
+import { Slider, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { TeamLogo } from "@/components/ui/TeamLogo";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { underratedBoard } from "@/lib/engine/players";
+import { underratedWhy, UNDERRATED_USAGE_CAP, type UnderratedProfile } from "@/lib/engine/value";
 
 export default function UnderratedPage() {
   const tool = getTool("underrated")!;
@@ -18,9 +20,19 @@ export default function UnderratedPage() {
   const [maxSalary, setMaxSalary] = useState(25);
   const [analyzing, setAnalyzing] = useState(false);
 
-  const board = useMemo(() => underratedBoard(maxSalary), [maxSalary]);
+  // High-usage featured options are excluded structurally — they cannot be
+  // "underrated" no matter how cheap the deal looks.
+  const board = useMemo(
+    () => underratedBoard(maxSalary).filter((r) => r.player.usg < UNDERRATED_USAGE_CAP),
+    [maxSalary],
+  );
+  const profiles = useMemo(
+    () => new Map<string, UnderratedProfile>(board.map((r) => [r.player.id, underratedWhy(r.player)])),
+    [board],
+  );
   const top = board.slice(0, 3);
   const sleeper = board[0];
+  const sleeperProfile = sleeper ? profiles.get(sleeper.player.id) : undefined;
 
   useEffect(() => {
     setAnalyzing(true);
@@ -45,7 +57,8 @@ export default function UnderratedPage() {
             <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
               Showing <b className="text-white">{board.length}</b> players under{" "}
               <b style={{ color: ACCENT }}>${maxSalary}M</b>. Score blends true shooting, BPM, on-court
-              net, cheapness, and low-usage &ldquo;under-the-radar&rdquo; value.
+              net, cheapness, and low-usage &ldquo;under-the-radar&rdquo; value. Featured options at{" "}
+              {UNDERRATED_USAGE_CAP}%+ usage are excluded structurally; thin samples are flagged.
             </div>
           </div>
         </Panel>
@@ -144,6 +157,72 @@ export default function UnderratedPage() {
         )
       )}
 
+      {/* Why / fits / risks for the top sleeper */}
+      {!analyzing && sleeper && sleeperProfile && (
+        <div className="mb-6">
+          <Panel title={`Why ${sleeper.player.name} is underrated`}>
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div>
+                <div className="kicker mb-2" style={{ color: ACCENT }}>
+                  Why underrated
+                </div>
+                <ul className="space-y-1.5">
+                  {sleeperProfile.whyUnderrated.map((w) => (
+                    <li key={w} className="flex items-start gap-2 text-sm text-white/70">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: ACCENT }} />
+                      {w}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="kicker mb-2" style={{ color: ACCENT }}>
+                  Ideal team fits
+                </div>
+                <div className="space-y-2">
+                  {sleeperProfile.idealTeamFits.map((fit) => (
+                    <div
+                      key={fit.team.abbr}
+                      className="flex items-start gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5"
+                    >
+                      <TeamLogo abbr={fit.team.abbr} size={26} />
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-white">
+                          {fit.team.city} {fit.team.name}
+                          <span className="stat-num ml-2 text-xs font-normal" style={{ color: ACCENT }}>
+                            fit {fit.fitScore}
+                          </span>
+                        </div>
+                        <div className="text-[11px] leading-snug text-white/50">
+                          {fit.reasons.join("; ")}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="kicker mb-2" style={{ color: "#C98A78" }}>
+                  Risk factors
+                </div>
+                <ul className="space-y-1.5">
+                  {sleeperProfile.riskFactors.map((r) => (
+                    <li key={r} className="flex items-start gap-2 text-sm text-white/70">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C98A78]" />
+                      {r}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-[11px] leading-relaxed text-white/35">
+                  Team fits rank rosters by their three-point and defensive gaps (computed from real
+                  per-team player stats) against what this player supplies.
+                </p>
+              </div>
+            </div>
+          </Panel>
+        </div>
+      )}
+
       <Panel title="Underrated rankings">
         {analyzing ? (
           <div className="space-y-2">
@@ -172,7 +251,14 @@ export default function UnderratedPage() {
                 <span className="stat-num w-6 text-center text-sm text-white/35">{i + 1}</span>
                 <PlayerAvatar player={r.player} size={32} />
                 <div className="min-w-[120px]">
-                  <div className="text-sm font-semibold text-white">{r.player.name}</div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    {r.player.name}
+                    {profiles.get(r.player.id)?.smallSample && (
+                      <Badge color="#CBB280" className="text-[9px]">
+                        small sample
+                      </Badge>
+                    )}
+                  </div>
                   <div className="stat-num text-[11px] text-white/45">
                     {r.player.pos} · {r.player.archetype}
                   </div>
@@ -209,12 +295,12 @@ export default function UnderratedPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the bars show what share of the players the model flagged as the best value (high production, low pay) actually held or improved their production the next year — about 78% across the span.
           </p>
         </div>
-        <TrackRecord slug="underrated" accent="#4E8FA8" />
+        <TrackRecord slug="underrated" accent="#9FB6C4" />
       </div>
     </ToolShell>
   );

@@ -5,24 +5,50 @@ import { motion } from "framer-motion";
 import { Flame, Loader2 } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
-import { Segmented } from "@/components/ui/Controls";
+import { Segmented, Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { PLAYERS } from "@/lib/data";
-import { loadRealShots, clutchLeaders, type ClutchLeader } from "@/lib/data/shots";
+import { loadRealShots, clutchLeaders, type ClutchLeader, type ClutchOptions } from "@/lib/data/shots";
 import { gradeColor } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
 const playerByEspn = (id: number): Player | undefined => PLAYERS.find((p) => p.espnId === id);
 type SortKey = "pts" | "efg" | "att";
+type DefKey = "5" | "2" | "ot";
+
+const DEFS: Record<DefKey, { label: string; opts: ClutchOptions; minAtt: number; title: string; phrase: string }> = {
+  "5": {
+    label: "Last 5:00",
+    opts: { lastMinutes: 5 },
+    minAtt: 6,
+    title: "last 5:00, Q4 + OT",
+    phrase: "the final five minutes of the fourth quarter and overtime",
+  },
+  "2": {
+    label: "Last 2:00",
+    opts: { lastMinutes: 2 },
+    minAtt: 3,
+    title: "last 2:00, Q4 + OT",
+    phrase: "the final two minutes of the fourth quarter and overtime",
+  },
+  ot: {
+    label: "OT only",
+    opts: { otOnly: true },
+    minAtt: 2,
+    title: "overtime periods only",
+    phrase: "overtime periods",
+  },
+};
 
 export default function ClutchPage() {
   const tool = getTool("clutch")!;
   const accent = categoryColor(tool.category);
   const [sort, setSort] = useState<SortKey>("pts");
+  const [def, setDef] = useState<DefKey>("5");
   const [shots, setShots] = useState<Awaited<ReturnType<typeof loadRealShots>> | null>(null);
   useEffect(() => {
     let alive = true;
@@ -34,11 +60,11 @@ export default function ClutchPage() {
 
   const board = useMemo<ClutchLeader[]>(() => {
     if (!shots) return [];
-    const b = clutchLeaders(shots);
+    const b = clutchLeaders(shots, DEFS[def].minAtt, DEFS[def].opts);
     return [...b].sort((a, b) =>
       sort === "pts" ? b.pts - a.pts : sort === "efg" ? b.efg - a.efg : b.att - a.att,
     );
-  }, [shots, sort]);
+  }, [shots, sort, def]);
 
   if (!shots) {
     return (
@@ -61,27 +87,39 @@ export default function ClutchPage() {
           {leader ? (
             <>
               <b>{leader.player}</b> leads the 2026 playoffs in clutch-time scoring —{" "}
-              <b>{leader.pts} points</b> on {Math.round(leader.fgPct * 100)}% shooting in the final five
-              minutes of the fourth quarter and overtime. Every number here is counted from the real
-              playoff play-by-play.
+              <b>{leader.pts} points</b> on {Math.round(leader.fgPct * 100)}% shooting in {DEFS[def].phrase}.
+              Every number here is counted from the real playoff play-by-play; rows under 10 attempts
+              carry a small-sample flag.
             </>
           ) : (
-            "No clutch-time shots tracked yet."
+            "No shots match this clutch definition yet."
           )}
         </Insight>
-        <Segmented
-          accent={accent}
-          value={sort}
-          onChange={setSort}
-          options={[
-            { label: "Points", value: "pts" },
-            { label: "Efficiency", value: "efg" },
-            { label: "Volume", value: "att" },
-          ]}
-        />
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <Segmented
+            accent={accent}
+            value={def}
+            onChange={setDef}
+            options={[
+              { label: "Last 5:00", value: "5" },
+              { label: "Last 2:00", value: "2" },
+              { label: "OT only", value: "ot" },
+            ]}
+          />
+          <Segmented
+            accent={accent}
+            value={sort}
+            onChange={setSort}
+            options={[
+              { label: "Points", value: "pts" },
+              { label: "Efficiency", value: "efg" },
+              { label: "Volume", value: "att" },
+            ]}
+          />
+        </div>
       </div>
 
-      <div key={sort} className="enter">
+      <div key={`${sort}-${def}`} className="enter">
         {/* podium */}
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           {board.slice(0, 3).map((r, i) => {
@@ -101,6 +139,7 @@ export default function ClutchPage() {
                   <div className="mt-2 flex items-center gap-2.5">
                     {p ? <PlayerAvatar player={p} size={44} /> : null}
                     <span className="font-semibold text-white">{r.player}</span>
+                    {r.smallSample && <Badge color="#8E96A4">{r.att} att</Badge>}
                   </div>
                   <div className="mt-4 flex items-end justify-between">
                     <div>
@@ -123,7 +162,7 @@ export default function ClutchPage() {
           })}
         </div>
 
-        <Panel title="Clutch-time leaderboard · last 5:00, Q4 + OT">
+        <Panel title={`Clutch-time leaderboard · ${DEFS[def].title}`}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
@@ -147,6 +186,7 @@ export default function ClutchPage() {
                         <div className="flex items-center gap-2.5">
                           {p ? <PlayerAvatar player={p} size={28} /> : null}
                           <span className="text-white/85">{r.player}</span>
+                          {r.smallSample && <Badge color="#8E96A4">small sample</Badge>}
                         </div>
                       </td>
                       <td className="stat-num py-2.5 font-semibold text-white/85">{r.pts}</td>
@@ -182,9 +222,12 @@ export default function ClutchPage() {
             Model track record
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The leaderboard above is counted directly from real 2026 playoff play-by-play. The panel
-            below validates the player-rating model the clutch grades lean on, season by season since
-            2003 (about r=0.89).
+            The leaderboard above is counted directly from real 2026 playoff play-by-play under the
+            selected clutch definition (the time window applies to the end of Q4 and of each overtime;
+            OT-only counts any overtime shot). Rows under 10 attempts are flagged as small samples and
+            tighter windows use a lower attempt floor, so read those rates loosely. The panel below
+            validates the player-rating model the clutch grades lean on, season by season since 2003
+            (about r=0.89).
           </p>
         </div>
         <TrackRecord slug="clutch" accent={accent} />

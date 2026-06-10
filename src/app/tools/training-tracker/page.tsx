@@ -11,9 +11,17 @@ import { Reveal } from "@/components/ui/Reveal";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { getTool } from "@/lib/tools";
 import { spring } from "@/lib/motion";
+// Pure session math lives in the engine layer so it stays unit-tested.
+import {
+  consistencyScore,
+  skillBalance,
+  trainingBadges,
+  weeklySummary,
+  BADGE_THRESHOLDS,
+} from "@/lib/engine/betting";
 
-const ACCENT = "#B0688E";
-const TIME = "#4E8FA8";
+const ACCENT = "#C98A78";
+const TIME = "#9FB6C4";
 
 type SessionType = "Shooting" | "Conditioning" | "Strength" | "Skills";
 
@@ -26,10 +34,10 @@ interface Session {
 }
 
 const TYPE_COLOR: Record<SessionType, string> = {
-  Shooting: "#C9A14A",
-  Conditioning: "#4E8FA8",
-  Strength: "#E0561F",
-  Skills: "#5FA97E",
+  Shooting: "#CBB280",
+  Conditioning: "#9FB6C4",
+  Strength: "#E9A23B",
+  Skills: "#A3B79A",
 };
 
 const SEED: Session[] = [
@@ -54,7 +62,11 @@ export default function TrainingTrackerPage() {
 
   const totalReps = useMemo(() => sessions.reduce((a, s) => a + s.reps, 0), [sessions]);
   const totalMinutes = useMemo(() => sessions.reduce((a, s) => a + s.minutes, 0), [sessions]);
-  const streak = sessions.length; // consecutive logged days
+  const activeDays = useMemo(() => new Set(sessions.map((s) => s.day)).size, [sessions]);
+  const consistency = useMemo(() => consistencyScore(sessions), [sessions]);
+  const balance = useMemo(() => skillBalance(sessions), [sessions]);
+  const badges = useMemo(() => trainingBadges(sessions), [sessions]);
+  const summary = useMemo(() => weeklySummary(sessions), [sessions]);
 
   const recent = useMemo(() => [...sessions].slice(0, 6).reverse(), [sessions]);
 
@@ -77,19 +89,21 @@ export default function TrainingTrackerPage() {
           <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
               <Flame size={16} style={{ color: ACCENT }} />
-              <span className="text-xs uppercase tracking-wide">Day streak</span>
+              <span className="text-xs uppercase tracking-wide">Active days</span>
             </div>
-            <AnimatedNumber value={streak} className="scoreboard mt-2 block text-5xl" />
-            <p className="mt-1 text-xs text-white/45">Keep the chain alive — log every day.</p>
+            <AnimatedNumber value={activeDays} className="scoreboard mt-2 block text-5xl" />
+            <p className="mt-1 text-xs text-white/45">
+              Distinct days logged this week — {consistency}% consistency.
+            </p>
           </div>
         </Reveal>
         <Reveal delay={0.06}>
           <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
-              <Target size={16} style={{ color: "#C9A14A" }} />
+              <Target size={16} style={{ color: "#CBB280" }} />
               <span className="text-xs uppercase tracking-wide">Total reps</span>
             </div>
-            <span style={{ color: "#C9A14A" }}>
+            <span style={{ color: "#CBB280" }}>
               <AnimatedNumber value={totalReps} className="scoreboard mt-2 block text-5xl" />
             </span>
             <p className="mt-1 text-xs text-white/45">Makes & finishes across all sessions.</p>
@@ -202,9 +216,65 @@ export default function TrainingTrackerPage() {
             )}
           </Panel>
 
+          <Panel title="Consistency & balance">
+            <div className="space-y-5">
+              <div>
+                <Meter
+                  value={consistency}
+                  max={100}
+                  color={ACCENT}
+                  label="Consistency — active days / 7"
+                  valueLabel={`${activeDays} / 7 days · ${consistency}%`}
+                />
+                <p className="mt-1.5 text-[11px] text-white/40">
+                  Same-day double sessions count once — this tracks showing up.
+                </p>
+              </div>
+              <div>
+                <Meter
+                  value={balance}
+                  max={100}
+                  color="#A3B79A"
+                  label="Skill balance — spread of minutes across session types"
+                  valueLabel={`${balance} / 100`}
+                />
+                <p className="mt-1.5 text-[11px] text-white/40">
+                  100 means minutes split evenly across shooting, conditioning, strength, and skills.
+                </p>
+              </div>
+              <div>
+                <div className="mb-2 text-xs font-medium text-white/60">Badges</div>
+                <div className="flex flex-wrap gap-2">
+                  {badges.map((b) => (
+                    <div
+                      key={b.id}
+                      className="rounded-lg border px-3 py-2"
+                      style={{
+                        borderColor: b.earned ? `${ACCENT}66` : "rgba(255,255,255,0.08)",
+                        opacity: b.earned ? 1 : 0.55,
+                      }}
+                    >
+                      <div
+                        className="text-xs font-semibold"
+                        style={{ color: b.earned ? ACCENT : "rgba(255,255,255,0.6)" }}
+                      >
+                        {b.label} {b.earned ? "· earned" : ""}
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-white/45">
+                        {b.threshold} — {b.detail}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Panel>
+
           <Insight accent={ACCENT}>
-            You&apos;re on a <b>{streak}-day streak</b> with <b>{totalReps.toLocaleString()} total reps</b>{" "}
-            logged. {totalReps >= REP_GOAL ? "You hit the weekly makes goal — set a new ceiling." : `Stay locked in — ${REP_GOAL - totalReps} makes from the weekly goal.`}
+            {summary}{" "}
+            {totalReps >= REP_GOAL
+              ? "You hit the weekly makes goal — set a new ceiling."
+              : `Stay locked in — ${REP_GOAL - totalReps} makes from the weekly goal.`}
           </Insight>
 
           <Panel title="Session log">
@@ -244,12 +314,17 @@ export default function TrainingTrackerPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#B0688E" }}>Data &amp; method</div>
+          <div className="kicker" style={{ color: "#C98A78" }}>Data &amp; method</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             This is a personal planning tool: every chart and total is computed directly from the
             sessions you log above — volume by type, weekly load, and balance across shooting,
-            conditioning, strength, and skills. There is no external dataset or prediction model
-            involved; it organizes your own inputs into a readable training picture.
+            conditioning, strength, and skills. Consistency is distinct active days divided by 7;
+            skill balance is the normalized entropy of minutes across the four session types (100
+            = perfectly even); badges unlock at fixed thresholds (
+            {BADGE_THRESHOLDS.volumeReps.toLocaleString()} weekly reps, {BADGE_THRESHOLDS.streakDays}{" "}
+            active days, {BADGE_THRESHOLDS.balanceScore}+ balance). There is no external dataset or
+            prediction model involved; it organizes your own inputs into a readable training
+            picture.
           </p>
         </div>
       </div>

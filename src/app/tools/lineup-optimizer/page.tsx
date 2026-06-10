@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Check, Plus, Zap, Star } from "lucide-react";
+import { Users, Check, Plus, Zap, Star, AlertTriangle } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Meter } from "@/components/ui/Meter";
@@ -11,19 +11,27 @@ import { Reveal } from "@/components/ui/Reveal";
 import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TrackRecord } from "@/components/ui/TrackRecord";
+import { Segmented } from "@/components/ui/Controls";
 import { getTool } from "@/lib/tools";
 import { PLAYERS, TEAMS, playersByTeam } from "@/lib/data";
-import { bestLineup, scoreLineup, type LineupScore } from "@/lib/engine/teams";
+import {
+  bestLineup,
+  scoreLineup,
+  LINEUP_GOALS,
+  type LineupGoal,
+  type LineupScore,
+} from "@/lib/engine/teams";
 import { gradeColor, letterGrade } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
-const ACCENT = "#5FA97E";
+const ACCENT = "#A3B79A";
 
 export default function LineupOptimizerPage() {
   const tool = getTool("lineup-optimizer")!;
   const [team, setTeam] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [optimized, setOptimized] = useState<LineupScore | null>(null);
+  const [goal, setGoal] = useState<LineupGoal>("best_overall");
 
   const analyze = useAnalyze([
     "Loading candidate pool…",
@@ -45,8 +53,8 @@ export default function LineupOptimizerPage() {
     [selected],
   );
   const liveScore: LineupScore | null = useMemo(
-    () => (customFive.length === 5 ? scoreLineup(customFive) : null),
-    [customFive],
+    () => (customFive.length === 5 ? scoreLineup(customFive, goal) : null),
+    [customFive, goal],
   );
 
   const toggle = (id: string) => {
@@ -56,7 +64,7 @@ export default function LineupOptimizerPage() {
 
   const optimize = () => {
     const usePool = team ? playersByTeam(team) : PLAYERS;
-    analyze.run(() => setOptimized(bestLineup(usePool)));
+    analyze.run(() => setOptimized(bestLineup(usePool, goal)));
   };
 
   // what's shown in the stats panel: live custom-5 takes priority, else optimized
@@ -134,6 +142,23 @@ export default function LineupOptimizerPage() {
             </div>
           </Panel>
 
+          <div>
+            <div className="kicker mb-2" style={{ color: ACCENT }}>
+              Optimization goal
+            </div>
+            <Segmented
+              accent={ACCENT}
+              value={goal}
+              onChange={(g) => {
+                setGoal(g);
+                // re-run the search under the new weight preset so the shown
+                // five always matches the selected goal
+                if (optimized) setOptimized(bestLineup(team ? playersByTeam(team) : PLAYERS, g));
+              }}
+              options={LINEUP_GOALS}
+            />
+          </div>
+
           <motion.button
             onClick={optimize}
             disabled={pool.length < 5}
@@ -180,6 +205,8 @@ export default function LineupOptimizerPage() {
                 <p className="max-w-sm text-sm text-white/50">
                   Optimize a pool to surface the best 5-man unit, or hand-pick exactly five players to
                   score a custom lineup live across spacing, defense, scoring, playmaking, and balance.
+                  The goal presets reweight those same five sub-scores — defense-first, shooting-first,
+                  or a closing five tilted toward scoring.
                 </p>
               </Panel>
             </motion.div>
@@ -237,31 +264,31 @@ export default function LineupOptimizerPage() {
                         label="Spacing"
                         valueLabel={`${shown.spacing}`}
                         value={shown.spacing}
-                        color="#7E8CA0"
+                        color="#8A8273"
                       />
                       <Meter
                         label="Defense"
                         valueLabel={`${shown.defense}`}
                         value={shown.defense}
-                        color="#5FA97E"
+                        color="#A3B79A"
                       />
                       <Meter
                         label="Scoring"
                         valueLabel={`${shown.scoring}`}
                         value={shown.scoring}
-                        color="#E0561F"
+                        color="#E9A23B"
                       />
                       <Meter
                         label="Playmaking"
                         valueLabel={`${shown.playmaking}`}
                         value={shown.playmaking}
-                        color="#C9A14A"
+                        color="#CBB280"
                       />
                       <Meter
                         label="Balance"
                         valueLabel={`${shown.balance}`}
                         value={shown.balance}
-                        color="#BF5B4E"
+                        color="#C98A78"
                       />
                     </div>
                   </Panel>
@@ -270,9 +297,63 @@ export default function LineupOptimizerPage() {
                 <Reveal delay={0.08}>
                   <Panel className="flex flex-col items-center justify-center">
                     <Gauge value={shown.overall} label="Overall" color={gradeColor(shown.overall)} />
+                    <p className="mt-3 text-center text-[10px] uppercase tracking-widest text-white/35">
+                      {LINEUP_GOALS.find((g) => g.value === goal)?.label} weights
+                    </p>
                   </Panel>
                 </Reveal>
               </div>
+
+              <Reveal delay={0.1}>
+                <Panel title="Roles & balance">
+                  {shown.role_conflicts.length > 0 ? (
+                    <ul className="mb-4 space-y-2">
+                      {shown.role_conflicts.map((c) => (
+                        <li key={c} className="flex items-start gap-2 text-sm text-[#CBB280]">
+                          <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mb-4 text-sm text-white/50">
+                      No role conflicts — usage and positions distribute cleanly.
+                    </p>
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <div className="kicker mb-2" style={{ color: "#A3B79A" }}>
+                        Strengths
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {shown.strengths.map((s) => (
+                          <span
+                            key={s}
+                            className="rounded-lg border border-[#A3B79A]/30 bg-[#A3B79A]/10 px-2 py-1 text-xs text-[#A3B79A]"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="kicker mb-2" style={{ color: "#C98A78" }}>
+                        Weaknesses
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {shown.weaknesses.map((s) => (
+                          <span
+                            key={s}
+                            className="rounded-lg border border-[#C98A78]/30 bg-[#C98A78]/10 px-2 py-1 text-xs text-[#C98A78]"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </Panel>
+              </Reveal>
 
               <Insight accent={ACCENT}>
                 This unit grades{" "}
@@ -297,12 +378,12 @@ export default function LineupOptimizerPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            Each season since 2003, the player-impact ratings behind the lineup scoring are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89).
+            Each season since 2003, the player-impact ratings behind the lineup scoring are checked against what those players produced the next year — the bars show that season-by-season correlation (about r=0.89). Goal presets only reweight the five sub-scores (spacing, defense, scoring, playmaking, balance); the underlying ratings are identical for every goal.
           </p>
         </div>
-        <TrackRecord slug="lineup-optimizer" accent="#5FA97E" />
+        <TrackRecord slug="lineup-optimizer" accent="#A3B79A" />
       </div>
     </ToolShell>
   );

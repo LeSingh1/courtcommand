@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Atom } from "lucide-react";
+import { Atom, AlertTriangle } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
@@ -13,11 +13,11 @@ import { Reveal } from "@/components/ui/Reveal";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { TEAMS, TEAM_MAP, playersByTeam } from "@/lib/data";
-import { teamChemistry, type ChemistryResult } from "@/lib/engine/teams";
+import { teamChemistry, best_team_matches, type ChemistryResult } from "@/lib/engine/teams";
 import { gradeColor } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
-const ACCENT = "#5FA97E";
+const ACCENT = "#A3B79A";
 
 export default function TeamChemistryPage() {
   const tool = getTool("team-chemistry")!;
@@ -28,6 +28,7 @@ export default function TeamChemistryPage() {
     () => (player ? teamChemistry(player, team) : null),
     [player, team],
   );
+  const bestFits = useMemo(() => (player ? best_team_matches(player) : []), [player]);
 
   // Brief analyzing beat whenever the fit inputs change, so the synchronous
   // result still surfaces a loading state like sibling tools.
@@ -156,29 +157,44 @@ export default function TeamChemistryPage() {
                     label="Usage overlap"
                     valueLabel={`${result.usageOverlap}`}
                     value={result.usageOverlap}
-                    color="#7E8CA0"
+                    color="#8A8273"
                   />
                   <Meter
                     label="Spacing gain"
                     valueLabel={`${result.spacingGain}`}
                     value={result.spacingGain}
-                    color="#5FA97E"
+                    color="#A3B79A"
                   />
                   <Meter
                     label="Defense gain"
                     valueLabel={`${result.defenseGain}`}
                     value={result.defenseGain}
-                    color="#C9A14A"
+                    color="#CBB280"
                   />
                   <Meter
                     label="Positional need"
                     valueLabel={`${result.positionalNeed}`}
                     value={result.positionalNeed}
-                    color="#E0561F"
+                    color="#E9A23B"
                   />
                 </div>
               </Panel>
             </Reveal>
+
+            {result.red_flags.length > 0 && (
+              <Reveal delay={0.08}>
+                <Panel title="Red flags">
+                  <ul className="space-y-2">
+                    {result.red_flags.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-sm text-[#C98A78]">
+                        <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Panel>
+              </Reveal>
+            )}
 
             <Reveal delay={0.1}>
               <Insight accent={ACCENT}>
@@ -189,6 +205,44 @@ export default function TeamChemistryPage() {
                 </ul>
               </Insight>
             </Reveal>
+
+            {bestFits.length > 0 && (
+              <Reveal delay={0.12}>
+                <Panel title="Best fits around the league">
+                  <p className="mb-3 text-[11px] text-white/40">
+                    Every team scored with the same fit model — top five destinations for{" "}
+                    {player!.name} (current team excluded).
+                  </p>
+                  <div className="space-y-2">
+                    {bestFits.map((m, i) => (
+                      <button
+                        key={m.team.abbr}
+                        onClick={() => setTeam(m.team.abbr)}
+                        className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-left transition hover:border-white/20"
+                      >
+                        <span className="stat-num w-5 text-xs text-white/35">{i + 1}</span>
+                        <span
+                          className="flex h-7 w-9 items-center justify-center rounded-lg text-[10px] font-bold text-white"
+                          style={{ background: m.team.color }}
+                        >
+                          {m.team.abbr}
+                        </span>
+                        <span className="flex-1 truncate text-sm text-white/80">
+                          {m.team.city} {m.team.name}
+                        </span>
+                        <span className="w-24">
+                          <Meter value={m.fit} color={gradeColor(m.fit)} height={5} />
+                        </span>
+                        <span className="stat-num w-8 text-right text-sm font-semibold text-white">
+                          {m.fit}
+                        </span>
+                        <Badge color={gradeColor(m.fit)}>{m.grade}</Badge>
+                      </button>
+                    ))}
+                  </div>
+                </Panel>
+              </Reveal>
+            )}
 
             {roster.length > 0 && (
               <Reveal delay={0.14}>
@@ -215,12 +269,12 @@ export default function TeamChemistryPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#A3B79A" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            Each season since 2003, the player ratings behind the fit scoring are tested against what those players actually produced the following year — the bars show that year-over-year correlation (about r=0.89).
+            Each season since 2003, the player ratings behind the fit scoring are tested against what those players actually produced the following year — the bars show that year-over-year correlation (about r=0.89). Red flags are rule-based: stacked 28%+ usage, three-deep position groups, and a 3+ possession pace gap between the player's current team and the destination. The league-wide list runs the identical fit model on all 29 other teams.
           </p>
         </div>
-        <TrackRecord slug="team-chemistry" accent="#5FA97E" />
+        <TrackRecord slug="team-chemistry" accent="#A3B79A" />
       </div>
     </ToolShell>
   );

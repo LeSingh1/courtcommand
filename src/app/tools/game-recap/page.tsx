@@ -16,7 +16,13 @@ import { gameRecap, type BoxLine } from "@/lib/engine/game";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const EMBER = "#E0561F";
+const EMBER = "#E9A23B";
+
+const HEADLINE_LABELS: Record<string, string> = {
+  straight: "Straight",
+  dramatic: "Dramatic",
+  "stat-led": "Stat-led",
+};
 
 // build star BoxLines from the team's top-2 scorers
 function starsFor(abbr: string): BoxLine[] {
@@ -38,6 +44,7 @@ export default function GameRecapPage() {
   const [homeScore, setHomeScore] = useState(118);
   const [awayScore, setAwayScore] = useState(112);
   const [recap, setRecap] = useState<ReturnType<typeof gameRecap> | null>(null);
+  const [headlineIdx, setHeadlineIdx] = useState(0);
 
   const analyze = useAnalyze([
     "Parsing the box score…",
@@ -63,9 +70,10 @@ export default function GameRecapPage() {
 
   const generate = () => {
     if (homeTeam === awayTeam) return;
-    analyze.run(() =>
-      setRecap(gameRecap({ homeTeam, awayTeam, homeScore, awayScore, homeStars, awayStars })),
-    );
+    analyze.run(() => {
+      setHeadlineIdx(0);
+      setRecap(gameRecap({ homeTeam, awayTeam, homeScore, awayScore, homeStars, awayStars }));
+    });
   };
 
   return (
@@ -137,8 +145,26 @@ export default function GameRecapPage() {
             >
             <Panel>
               <div className="eyebrow mb-2 text-ember">Final · Recap</div>
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {recap.headline_options.map((o, i) => (
+                  <button
+                    key={o.style}
+                    onClick={() => setHeadlineIdx(i)}
+                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E9A23B]"
+                    style={
+                      i === headlineIdx
+                        ? { background: EMBER, color: "#160600" }
+                        : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" }
+                    }
+                  >
+                    {HEADLINE_LABELS[o.style] ?? o.style}
+                  </button>
+                ))}
+              </div>
               <Reveal>
-                <h2 className="display text-2xl leading-tight text-white sm:text-3xl">{recap.headline}</h2>
+                <h2 className="display text-2xl leading-tight text-white sm:text-3xl">
+                  {recap.headline_options[headlineIdx]?.text ?? recap.headline}
+                </h2>
               </Reveal>
 
               {/* score line */}
@@ -156,28 +182,47 @@ export default function GameRecapPage() {
                 ))}
               </div>
 
-              {/* player of the game */}
+              {/* key facts */}
               <Reveal>
-                <div className="mt-6 flex items-center gap-4 rounded-lg border border-[#C9A14A33] bg-[#C9A14A0d] p-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#C9A14A22]">
-                    <Trophy size={22} className="text-gold" />
+                <div className="mt-5 rounded-lg border border-white/[0.07] bg-white/[0.02] p-4">
+                  <div className="kicker mb-2" style={{ color: EMBER }}>
+                    Key facts
                   </div>
-                  <div className="flex flex-1 items-center gap-3">
-                    {playerByName.get(recap.topPerformer.name) && (
-                      <PlayerAvatar player={playerByName.get(recap.topPerformer.name)!} size={40} />
-                    )}
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-white/45">Player of the Game</div>
-                      <div className="font-semibold text-white">{recap.topPerformer.name}</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 text-right">
-                    <StatCell value={recap.topPerformer.pts} label="PTS" />
-                    <StatCell value={recap.topPerformer.reb} label="REB" />
-                    <StatCell value={recap.topPerformer.ast} label="AST" />
-                  </div>
+                  <ul className="space-y-1.5">
+                    {recap.key_facts.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-xs text-white/65">
+                        <span className="mt-[5px] h-1 w-1 shrink-0 rounded-lg" style={{ background: EMBER }} />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </Reveal>
+
+              {/* player of the game */}
+              {recap.topPerformer && (
+                <Reveal>
+                  <div className="mt-6 flex items-center gap-4 rounded-lg border border-[#CBB28033] bg-[#CBB2800d] p-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#CBB28022]">
+                      <Trophy size={22} className="text-gold" />
+                    </div>
+                    <div className="flex flex-1 items-center gap-3">
+                      {playerByName.get(recap.topPerformer.name) && (
+                        <PlayerAvatar player={playerByName.get(recap.topPerformer.name)!} size={40} />
+                      )}
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-white/45">Player of the Game</div>
+                        <div className="font-semibold text-white">{recap.topPerformer.name}</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-4 text-right">
+                      <StatCell value={recap.topPerformer.pts} label="PTS" />
+                      <StatCell value={recap.topPerformer.reb} label="REB" />
+                      <StatCell value={recap.topPerformer.ast} label="AST" />
+                    </div>
+                  </div>
+                </Reveal>
+              )}
             </Panel>
             </motion.div>
             </AnimatePresence>
@@ -191,7 +236,7 @@ export default function GameRecapPage() {
             </Panel>
           )}
 
-          {recap && home && away && (
+          {recap && recap.topPerformer && home && away && (
             <Insight accent={EMBER}>
               <b>{recap.topPerformer.name}</b> headlines the night with a {recap.topPerformer.pts}/
               {recap.topPerformer.reb}/{recap.topPerformer.ast} line in a{" "}
@@ -203,13 +248,15 @@ export default function GameRecapPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#C9A14A" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#CBB280" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             The recap writer is built on real player-season data that deepens each year from 2003 to today — the panel
             below shows that growing season count along with the model's validation metric and how it was measured.
+            The headline variants and key facts are deterministic templates filled only from the box score you enter
+            (teams, final score, and the auto star lines) — nothing in them is invented beyond that input.
           </p>
         </div>
-        <TrackRecord slug="game-recap" accent="#C9A14A" />
+        <TrackRecord slug="game-recap" accent="#CBB280" />
       </div>
     </ToolShell>
   );

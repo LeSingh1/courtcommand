@@ -10,7 +10,7 @@ import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { LineChart } from "@/components/ui/LineChart";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { getTool, categoryColor } from "@/lib/tools";
-import { winProbability, gameWinProbCurve } from "@/lib/engine/game";
+import { winProbability, gameWinProbCurve, biggestSwings } from "@/lib/engine/game";
 import { loadRealShots, playoffGames, type RealShot } from "@/lib/data/shots";
 
 const STRENGTHS: { label: string; value: string }[] = [
@@ -75,6 +75,7 @@ export default function WinProbabilityPage() {
     if (!gameId && games[0]) setGameId(games[0].gameId);
   }, [games, gameId]);
   const curve = useMemo(() => (shots && gameId ? gameWinProbCurve(shots, gameId) : null), [shots, gameId]);
+  const swingReport = useMemo(() => (curve ? biggestSwings(curve) : null), [curve]);
   const game = games.find((g) => g.gameId === gameId);
   const [A, B] = curve?.teams ?? ["", ""];
 
@@ -187,6 +188,41 @@ export default function WinProbabilityPage() {
                       {B} <TeamLogo abbr={B} size={14} />
                     </span>
                   </div>
+                  {swingReport && (
+                    <div className="mt-4 border-t border-white/[0.07] pt-3">
+                      <div className="kicker mb-2" style={{ color: accent }}>
+                        Biggest swings
+                      </div>
+                      {swingReport.swings.length ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {swingReport.swings.map((s) => (
+                            <span
+                              key={s.index}
+                              className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-white/75"
+                            >
+                              <span
+                                className="stat-num mr-1.5 font-semibold"
+                                style={{ color: s.delta > 0 ? accent : "#C98A78" }}
+                              >
+                                {s.delta > 0 ? "+" : ""}
+                                {s.delta}%
+                              </span>
+                              {s.label}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-white/40">No single make moved the needle in this game.</p>
+                      )}
+                      <div className="stat-num mt-2 text-[11px] text-white/55">
+                        {swingReport.turningPoint
+                          ? `Turning point: ${swingReport.turningPoint.label} — make ${
+                              swingReport.turningPoint.index + 1
+                            } of ${curve.home.length}, ${swingReport.turningPoint.wp}% ${A} WP.`
+                          : `Wire-to-wire: the WP lead never changed hands.`}
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="flex min-h-[220px] items-center justify-center text-sm text-white/40">
@@ -243,7 +279,7 @@ export default function WinProbabilityPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E0561F" }}>
+          <div className="kicker" style={{ color: "#E9A23B" }}>
             Data &amp; method
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
@@ -252,6 +288,9 @@ export default function WinProbabilityPage() {
             point is the live margin after each made field goal, with team strength set from each
             side&rsquo;s real season net rating. Margin is field-goal only (free throws aren&rsquo;t in
             public play-by-play), so the curve is a faithful approximation of the real game.
+            &ldquo;Biggest swings&rdquo; are simply the three largest single-step moves in that computed
+            curve, and the turning point is the last time the modeled probability lead crossed 50% —
+            both are derived from the curve, not estimated separately.
           </p>
         </div>
       </div>

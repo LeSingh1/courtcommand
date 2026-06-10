@@ -18,13 +18,14 @@ import {
   shotPlayerIds,
   type RealShot,
   type PlayerForm,
+  type FormShift,
 } from "@/lib/data/shots";
 import type { Player } from "@/lib/types";
 
 // Category accent for "Content & Media" (gold), matching the ToolShell header.
-const ACCENT = "#C9A14A";
-const POS = "#5FA97E"; // Team & Strategy green
-const NEG = "#E0561F"; // app accent ember (negative/cooling)
+const ACCENT = "#CBB280";
+const POS = "#A3B79A"; // Team & Strategy green
+const NEG = "#E9A23B"; // app accent ember (negative/cooling)
 const STEADY = "#6c6c72"; // neutral
 
 const TREND = {
@@ -121,14 +122,49 @@ export default function NewsSentimentPage() {
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             This is a <b>narrative-momentum</b> signal modeled from a player&rsquo;s real game-by-game
             playoff production — points and shooting efficiency counted directly from the 2026
-            play-by-play, scored against the player&rsquo;s own postseason baseline. It is performance
-            buzz, not scraped media: there is no live news feed offline, so the &ldquo;headlines&rdquo;
-            below are factual game lines, not generated quotes.
+            play-by-play, scored against the player&rsquo;s own postseason baseline. The biggest
+            jump/dip cards are the largest game-over-game change in that score, labeled with the real
+            opponents. It is performance buzz, not scraped media: there is no live news feed offline,
+            so the &ldquo;headlines&rdquo; below are factual game lines, not generated quotes.
           </p>
         </div>
         <TrackRecord slug="news-sentiment" accent={ACCENT} />
       </div>
     </ToolShell>
+  );
+}
+
+function ShiftCard({
+  title,
+  shift,
+  color,
+  empty,
+}: {
+  title: string;
+  shift: FormShift | null;
+  color: string;
+  empty: string;
+}) {
+  return (
+    <div className="glass rounded-lg p-3">
+      <div className="text-[10px] uppercase tracking-widest text-white/40">{title}</div>
+      {shift ? (
+        <>
+          <div className="stat-num mt-1 text-2xl font-bold" style={{ color }}>
+            {shift.delta > 0 ? "+" : ""}
+            {shift.delta}
+          </div>
+          <div className="mt-1 text-[11px] leading-snug text-white/60">
+            vs {shift.fromGame.opp || "opp"} → vs {shift.toGame.opp || "opp"}
+          </div>
+          <div className="stat-num mt-0.5 text-[10px] text-white/40">
+            {shift.fromGame.pts} → {shift.toGame.pts} FG pts
+          </div>
+        </>
+      ) : (
+        <p className="mt-2 text-[11px] text-white/45">{empty}</p>
+      )}
+    </div>
   );
 }
 
@@ -205,6 +241,21 @@ function FormView({ player, result }: { player: Player; result: PlayerForm }) {
             ({result.avgPts} FG pts/g)
           </p>
         </Panel>
+
+        <div className="grid grid-cols-2 gap-3">
+          <ShiftCard
+            title="Biggest jump"
+            shift={result.biggestPositiveShift}
+            color={POS}
+            empty="No game-over-game jump yet"
+          />
+          <ShiftCard
+            title="Biggest dip"
+            shift={result.biggestNegativeShift}
+            color={NEG}
+            empty="No game-over-game dip yet"
+          />
+        </div>
 
         <Panel title="Recent games">
           <motion.div className="space-y-2.5" variants={staggerParent} initial="initial" animate="animate">

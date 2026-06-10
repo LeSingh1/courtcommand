@@ -2,19 +2,25 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Boxes, X } from "lucide-react";
+import { X } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { PlayerPicker } from "@/components/ui/PlayerPicker";
+import { Badge } from "@/components/ui/Controls";
+import { Meter } from "@/components/ui/Meter";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
-import { roleClusters } from "@/lib/engine/players";
+import { roleClusters, classifyRole } from "@/lib/engine/players";
 import { spring, staggerParent, staggerItem } from "@/lib/motion";
+import type { Player } from "@/lib/types";
 
 export default function RoleClassifierPage() {
   const tool = getTool("role-classifier")!;
   const accent = categoryColor(tool.category);
   const clusters = useMemo(() => roleClusters(), []);
   const [activeRole, setActiveRole] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Player | null>(null);
+  const cls = useMemo(() => (picked ? classifyRole(picked.id) : null), [picked]);
 
   const totalPlayers = clusters.reduce((s, c) => s + c.players.length, 0);
   const active = clusters.find((c) => c.role === activeRole) ?? null;
@@ -35,9 +41,107 @@ export default function RoleClassifierPage() {
         <Insight accent={accent}>
           <b>{totalPlayers}</b> players cluster into <b>{clusters.length}</b> on-court roles by
           archetype. The largest group is <b>{clusters[0].role}</b> ({clusters[0].players.length}).
-          Tap any cluster to scout its players.
+          Tap any cluster to scout its players, or pick a player for a full role read.
         </Insight>
       </div>
+
+      {/* Per-player role read */}
+      <div className="mb-6 max-w-md">
+        <PlayerPicker
+          value={picked}
+          onChange={setPicked}
+          accent={accent}
+          placeholder="Classify a single player…"
+        />
+      </div>
+
+      <AnimatePresence mode="wait">
+      {cls && (
+        <motion.div
+          key={cls.player.id}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={spring.soft}
+          className="mb-8"
+        >
+          <Panel title={`Role read · ${cls.player.name}`}>
+            <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge color={cls.color}>{cls.role}</Badge>
+                  {cls.secondaryRoles.map((r) => (
+                    <span
+                      key={r.role}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/60"
+                    >
+                      {r.role}
+                      <span className="stat-num text-white/40">{r.score}</span>
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <Meter
+                    value={cls.confidence}
+                    color={cls.color}
+                    label="Confidence (gap between top two role scores)"
+                    valueLabel={`${cls.confidence}/100`}
+                  />
+                </div>
+                <div className="mt-4">
+                  <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">
+                    Why this role — rules that fired
+                  </div>
+                  <ul className="space-y-1.5">
+                    {cls.matchedTraits.map((t) => (
+                      <li key={t} className="flex items-start gap-2 text-xs text-white/70">
+                        <span
+                          className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-lg"
+                          style={{ background: cls.color }}
+                        />
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div>
+                <div className="mb-2 text-[10px] uppercase tracking-wider text-white/40">
+                  Same-role players, closest star power
+                </div>
+                <div className="space-y-2.5">
+                  {cls.similarArchetypePlayers.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
+                    >
+                      <PlayerAvatar player={p} size={36} />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold text-white">{p.name}</div>
+                        <div className="stat-num text-[11px] text-white/45">
+                          {p.pos} · {p.archetype}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="stat-num text-sm font-bold" style={{ color: cls.color }}>
+                          {Math.round(p.starPower)}
+                        </div>
+                        <div className="text-[9px] uppercase text-white/35">star pwr</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-[11px] leading-relaxed text-white/40">
+                  All 12 role templates are scored 0-100 from this player&rsquo;s real per-game
+                  stats; secondary roles are the next two scores. Confidence is the normalized gap
+                  between the top two — hybrids score low by design.
+                </p>
+              </div>
+            </div>
+          </Panel>
+        </motion.div>
+      )}
+      </AnimatePresence>
 
       {/* Legend */}
       <div className="mb-6 flex flex-wrap gap-2">
@@ -165,12 +269,12 @@ export default function RoleClassifierPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#4E8FA8" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#9FB6C4" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Each season since 2003, the bars show how often a player's assigned on-court archetype actually held the following year — stable about 70% of the time, the consistency the classifier is graded on.
           </p>
         </div>
-        <TrackRecord slug="role-classifier" accent="#4E8FA8" />
+        <TrackRecord slug="role-classifier" accent="#9FB6C4" />
       </div>
     </ToolShell>
   );

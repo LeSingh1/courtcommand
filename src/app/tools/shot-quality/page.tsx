@@ -72,7 +72,7 @@ export default function ShotQualityPage() {
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Segmented
-          accent="#E0561F"
+          accent="#E9A23B"
           value={mode}
           onChange={setMode}
           options={[
@@ -105,10 +105,10 @@ export default function ShotQualityPage() {
                   <button
                     key={s.value}
                     onClick={() => setShotType(s.value)}
-                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E0561F]"
+                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E9A23B]"
                     style={
                       shotType === s.value
-                        ? { background: "#E0561F", color: "#160600" }
+                        ? { background: "#E9A23B", color: "#160600" }
                         : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)" }
                     }
                   >
@@ -162,6 +162,9 @@ export default function ShotQualityPage() {
                     <div className="stat-num mt-1 text-xs text-white/45">
                       {result.expFg}% expected · {result.expPoints} pts/shot
                     </div>
+                    <div className="stat-num mt-1 text-xs text-white/45">
+                      Difficulty {result.difficulty_score}/100
+                    </div>
                   </div>
                 </Panel>
                 <Panel title="Quality drivers">
@@ -177,7 +180,7 @@ export default function ShotQualityPage() {
                               <div
                                 className="absolute top-0 h-full"
                                 style={{
-                                  background: pos ? "#5FA97E" : "#BF5B4E",
+                                  background: pos ? "#A3B79A" : "#C98A78",
                                   width: `${Math.min(50, Math.abs(d.impact) * 400)}%`,
                                   left: pos ? "50%" : `${50 - Math.min(50, Math.abs(d.impact) * 400)}%`,
                                 }}
@@ -186,7 +189,7 @@ export default function ShotQualityPage() {
                           </div>
                           <span
                             className="stat-num flex w-14 items-center justify-end gap-1 text-xs font-semibold"
-                            style={{ color: pos ? "#5FA97E" : "#BF5B4E" }}
+                            style={{ color: pos ? "#A3B79A" : "#C98A78" }}
                           >
                             {pos ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                             {pos ? "+" : ""}
@@ -198,7 +201,36 @@ export default function ShotQualityPage() {
                   </div>
                 </Panel>
               </div>
-              <Insight accent="#E0561F">
+              <Panel title="Difficulty read">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="shrink-0">
+                    <div className="scoreboard text-3xl" style={{ color: gradeColor(100 - result.difficulty_score) }}>
+                      {result.difficulty_score}
+                    </div>
+                    <div className="kicker mt-1">Difficulty / 100</div>
+                  </div>
+                  <div className="flex flex-1 flex-wrap gap-1.5">
+                    {result.risk_factors.length ? (
+                      result.risk_factors.map((r) => (
+                        <span
+                          key={r}
+                          className="rounded-lg border border-[#E9A23B44] bg-[#E9A23B14] px-2.5 py-1 text-[11px] font-medium text-[#E9A23B]"
+                        >
+                          {r}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-white/45">No risk flags — a clean, in-rhythm look.</span>
+                    )}
+                  </div>
+                </div>
+                <p className="mt-3 text-[11px] text-[var(--text-faint)]">
+                  Difficulty is a fixed-weight index of the same inputs the model sees — contest distance,
+                  shot clock, dribbles, touch time, and attempt type. Risk flags fire on hard thresholds
+                  (clock ≤ 4s, defender &lt; 3 ft, 5+ dribbles, touch ≥ 5s, step-back/pull-up threes).
+                </p>
+              </Panel>
+              <Insight accent="#E9A23B">
                 A {result.rating.toLowerCase()} worth <b>{result.expPoints} expected points</b>. The
                 biggest factor was <b>{result.drivers[0]?.label.toLowerCase() ?? "the shot context"}</b>. League-average
                 halfcourt shots sit near 1.04 pts/shot — this look {result.expPoints >= 1.04 ? "beats" : "trails"} that
@@ -239,14 +271,14 @@ export default function ShotQualityPage() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#E9A23B" }}>Model track record</div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             A calibration view: the model&apos;s predicted make% against what 3,062 real NBA shots
             actually converted, broken out by shot type and zone, drawn from training data that has
             grown every season since 2003.
           </p>
         </div>
-        <TrackRecord slug="shot-quality" accent="#E0561F" />
+        <TrackRecord slug="shot-quality" accent="#E9A23B" />
       </div>
     </ToolShell>
   );

@@ -20,15 +20,15 @@ import {
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
 
-const EMBER = "#E0561F";
+const EMBER = "#E9A23B";
 
 // Mirrors CourtChart.heatColor exactly (>=0.58, >=0.50, >=0.44, >=0.38, else).
 const LEGEND = [
-  { label: "Hot · 58%+ eFG", color: "#E0561F" },
-  { label: "Warm · 50–57%", color: "#C9A14A" },
+  { label: "Hot · 58%+ eFG", color: "#E9A23B" },
+  { label: "Warm · 50–57%", color: "#CBB280" },
   { label: "Neutral · 44–49%", color: "#9FB07A" },
   { label: "Cool · 38–43%", color: "#8E96A4" },
-  { label: "Cold · <38%", color: "#7E8CA0" },
+  { label: "Cold · <38%", color: "#8A8273" },
 ];
 
 export default function ShotChartPage() {
@@ -44,7 +44,10 @@ function ShotChartInner() {
   const params = useSearchParams();
   const [shots, setShots] = useState<RealShot[] | null>(null);
   const [view, setView] = useState<"shots" | "zones">("shots");
+  const [periodKey, setPeriodKey] = useState<"0" | "1" | "2" | "3" | "4" | "5">("0");
   const [player, setPlayer] = useState<Player | null>(null);
+  const period = parseInt(periodKey, 10); // 0 = full game, 5 = any OT
+  const windowLabel = period === 0 ? "" : period >= 5 ? "OT" : `Q${period}`;
 
   useEffect(() => {
     let alive = true;
@@ -72,8 +75,11 @@ function ShotChartInner() {
   }, [pool, params, player]);
 
   const chart = useMemo(
-    () => (shots && player?.espnId != null ? realShotChart(shots, player.espnId) : null),
-    [shots, player],
+    () =>
+      shots && player?.espnId != null
+        ? realShotChart(shots, player.espnId, period ? { period } : {})
+        : null,
+    [shots, player, period],
   );
 
   const { best, worst } = useMemo(() => {
@@ -105,15 +111,30 @@ function ShotChartInner() {
             placeholder="Pick a playoff player to map…"
           />
         </div>
-        <Segmented
-          accent={EMBER}
-          value={view}
-          onChange={setView}
-          options={[
-            { label: "Shots", value: "shots" },
-            { label: "Hot Zones", value: "zones" },
-          ]}
-        />
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <Segmented
+            accent={EMBER}
+            value={view}
+            onChange={setView}
+            options={[
+              { label: "Shots", value: "shots" },
+              { label: "Hot Zones", value: "zones" },
+            ]}
+          />
+          <Segmented
+            accent={EMBER}
+            value={periodKey}
+            onChange={setPeriodKey}
+            options={[
+              { label: "Full game", value: "0" },
+              { label: "Q1", value: "1" },
+              { label: "Q2", value: "2" },
+              { label: "Q3", value: "3" },
+              { label: "Q4", value: "4" },
+              { label: "OT", value: "5" },
+            ]}
+          />
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -122,7 +143,9 @@ function ShotChartInner() {
             <Target size={40} className="mb-4 text-ember" />
             <p className="max-w-xs text-sm text-white/50">
               {player
-                ? `No 2026 playoff shot data for ${player.name}. Pick a player from this year's postseason field.`
+                ? period
+                  ? `No ${windowLabel} attempts for ${player.name} in the 2026 playoff data — switch back to the full game.`
+                  : `No 2026 playoff shot data for ${player.name}. Pick a player from this year's postseason field.`
                 : "Choose a playoff player to plot every real attempt on the floor — flip to Hot Zones for an efficiency heatmap by area."}
             </p>
           </Panel>
@@ -136,7 +159,10 @@ function ShotChartInner() {
             className="grid gap-6 lg:grid-cols-[1fr_320px]"
           >
             <Panel
-              title={view === "shots" ? "Playoff shot distribution" : "Zone efficiency (eFG%)"}
+              title={
+                (view === "shots" ? "Playoff shot distribution" : "Zone efficiency (eFG%)") +
+                (period ? ` · ${windowLabel} only` : "")
+              }
               right={
                 <span className="stat-num text-xs text-white/45">
                   {chart.made}/{chart.total} makes · {chart.total ? Math.round((chart.made / chart.total) * 100) : 0}%
@@ -145,7 +171,7 @@ function ShotChartInner() {
             >
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={view}
+                  key={`${view}-${periodKey}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -159,6 +185,13 @@ function ShotChartInner() {
                   />
                 </motion.div>
               </AnimatePresence>
+              <div className="mt-3 border-t border-white/[0.06] pt-2.5 text-[11px] leading-relaxed text-white/55">
+                <span className="stat-num text-white/80">
+                  Shot diet: {Math.round(chart.diet.rim * 100)}% rim · {Math.round(chart.diet.mid * 100)}% mid ·{" "}
+                  {Math.round(chart.diet.three * 100)}% three
+                </span>{" "}
+                — {chart.diet.note}
+              </div>
             </Panel>
 
             <div className="space-y-6">
@@ -174,12 +207,12 @@ function ShotChartInner() {
                 {view === "shots" && (
                   <div className="mt-4 flex items-center gap-4 border-t border-white/[0.06] pt-3 text-[11px] text-white/50">
                     <span className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#E0561F" }} /> Make
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#E9A23B" }} /> Make
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span
                         className="h-2.5 w-2.5 rounded-full border"
-                        style={{ borderColor: "#7E8CA0", background: "transparent" }}
+                        style={{ borderColor: "#8A8273", background: "transparent" }}
                       />{" "}
                       Miss
                     </span>
@@ -191,7 +224,7 @@ function ShotChartInner() {
                 <Panel title="Best & worst zones">
                   <div className="space-y-3">
                     <Reveal>
-                      <div className="flex items-center justify-between rounded-lg border border-[#E0561F33] bg-[#E0561F0f] p-3">
+                      <div className="flex items-center justify-between rounded-lg border border-[#E9A23B33] bg-[#E9A23B0f] p-3">
                         <div className="flex items-center gap-2.5">
                           <Flame size={16} className="text-ember" />
                           <div>
@@ -206,7 +239,7 @@ function ShotChartInner() {
                       </div>
                     </Reveal>
                     <Reveal delay={0.06}>
-                      <div className="flex items-center justify-between rounded-lg border border-[#7E8CA033] bg-[#7E8CA00f] p-3">
+                      <div className="flex items-center justify-between rounded-lg border border-[#8A827333] bg-[#8A82730f] p-3">
                         <div className="flex items-center gap-2.5">
                           <Snowflake size={16} className="text-cyan" />
                           <div>
@@ -226,8 +259,8 @@ function ShotChartInner() {
 
               <div className="flex flex-wrap gap-1.5">
                 <Badge color={EMBER}>{player.archetype}</Badge>
-                <Badge color="#7E8CA0">{Math.round(player.shotThree * 100)}% 3PA share</Badge>
-                <Badge color="#C9A14A">{Math.round(player.shotRim * 100)}% rim share</Badge>
+                <Badge color="#8A8273">{Math.round(player.shotThree * 100)}% 3PA share</Badge>
+                <Badge color="#CBB280">{Math.round(player.shotRim * 100)}% rim share</Badge>
               </div>
             </div>
           </motion.div>
@@ -237,9 +270,9 @@ function ShotChartInner() {
       {best && worst && player && (
         <div className="mt-6">
           <Insight accent={EMBER}>
-            In the 2026 playoffs, <b>{player.name}</b> is most lethal from the{" "}
-            <b>{best.label}</b>, hitting <b>{Math.round(best.efg * 100)}% eFG</b> there on {best.att}{" "}
-            attempts. His coldest look is the {worst.label}
+            In the 2026 playoffs{period ? <> (<b>{windowLabel}</b> only)</> : null}, <b>{player.name}</b>{" "}
+            is most lethal from the <b>{best.label}</b>, hitting <b>{Math.round(best.efg * 100)}% eFG</b>{" "}
+            there on {best.att} attempts. His coldest look is the {worst.label}
             {` at ${Math.round(worst.efg * 100)}%`}.
           </Insight>
         </div>
@@ -247,14 +280,17 @@ function ShotChartInner() {
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#C9A14A" }}>
+          <div className="kicker" style={{ color: "#CBB280" }}>
             Data &amp; method
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Every dot is a real attempt from the 2026 playoffs, plotted at its true court coordinates
             from the play-by-play. Hot Zones bucket those shots into floor areas and show the real
             eFG% (counting threes as 1.5 makes) and shot share in each — no simulated or estimated
-            attempts.
+            attempts. The quarter control restricts both the player&rsquo;s shots and the league
+            comparison to that period (OT = any overtime). Shot diet counts rim as inside 8 ft and
+            mid as any non-three from 8 ft out; the league-relative note compares against the full
+            playoff shot pool under the same filter.
           </p>
         </div>
       </div>
