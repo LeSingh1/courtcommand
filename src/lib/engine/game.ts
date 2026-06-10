@@ -1,5 +1,4 @@
 import type { Player } from "@/lib/types";
-import type { ShotDot, Zone } from "@/components/ui/CourtChart";
 import { TEAM_MAP } from "@/lib/data";
 import { predictShotMakeProb, predictWinProb } from "@/lib/model";
 import { gameMomentum, type RealShot } from "@/lib/data/shots";
@@ -143,51 +142,10 @@ export function gameWinProbCurve(shots: RealShot[], gameId: string): WPCurve | n
   return { teams: [A, B], t, home, events, finalMargin: mom.timeline.at(-1)?.margin ?? 0 };
 }
 
-// ---------------- Shot Chart ----------------
-const ZONE_DEFS: { id: string; label: string; cx: number; cy: number }[] = [
-  { id: "rim", label: "Restricted", cx: 250, cy: 80 },
-  { id: "paint", label: "Paint", cx: 250, cy: 150 },
-  { id: "ml", label: "L Mid", cx: 130, cy: 150 },
-  { id: "mr", label: "R Mid", cx: 370, cy: 150 },
-  { id: "elL", label: "L Elbow", cx: 175, cy: 215 },
-  { id: "elR", label: "R Elbow", cx: 325, cy: 215 },
-  { id: "c3l", label: "L Corner 3", cx: 50, cy: 90 },
-  { id: "c3r", label: "R Corner 3", cx: 450, cy: 90 },
-  { id: "w3l", label: "L Wing 3", cx: 90, cy: 240 },
-  { id: "w3r", label: "R Wing 3", cx: 410, cy: 240 },
-  { id: "top3", label: "Top 3", cx: 250, cy: 320 },
-];
-
-export function shotChart(p: Player): { shots: ShotDot[]; zones: Zone[] } {
-  let s = p.name.length * 13 + Math.round(p.ppg);
-  const rnd = () => ((s = (s * 9301 + 49297) % 233280), s / 233280);
-  const shots: ShotDot[] = [];
-  const zones: Zone[] = ZONE_DEFS.map((z) => {
-    const isThree = z.id.includes("3");
-    const base = isThree ? p.tpp : z.id === "rim" ? 0.64 : p.tsp - 0.1;
-    const efg = clamp(base + (rnd() - 0.5) * 0.06, 0.22, 0.7);
-    let freq = 0;
-    if (z.id === "rim") freq = p.shotRim;
-    else if (isThree) freq = p.shotThree / 5;
-    else freq = p.shotMid / 4;
-    freq = clamp(freq + (rnd() - 0.5) * 0.04, 0.05, 0.95);
-    const count = Math.round(freq * 26) + 4;
-    for (let k = 0; k < count; k++) {
-      const made = rnd() < efg;
-      shots.push({
-        x: clamp(z.cx + (rnd() - 0.5) * 70, 16, 484),
-        y: clamp(z.cy + (rnd() - 0.5) * 56, 16, 360),
-        made,
-        r: 3.4,
-      });
-    }
-    return { id: z.id, label: z.label, cx: z.cx, cy: z.cy, efg, freq };
-  });
-  return { shots, zones };
-}
-
-// Ref Bias now reports real free-throw rate (lib/data/ftrate); the old synthetic
-// per-team whistle generator was removed when that tool was reworked.
+// Shot Chart now plots real playoff attempts (lib/data/shots#realShotChart); the
+// old per-player synthetic shot generator was removed when that tool — and the
+// homepage teaser — were reworked onto real data. Ref Bias likewise reports real
+// free-throw rate (lib/data/ftrate) rather than a synthetic whistle generator.
 
 // ---------------- Game Recap ----------------
 export interface BoxLine {

@@ -1,11 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { clutchBoard, awardRace } from "@/lib/engine/players";
-import { shotChart } from "@/lib/engine/game";
-import { getPlayer, getPlayerByName, TEAM_MAP } from "@/lib/data";
+import { PLAYERS, TEAM_MAP } from "@/lib/data";
+import { loadRealShots, realShotChart, shotPlayerIds, type ChartDot } from "@/lib/data/shots";
 import { CourtChart } from "@/components/ui/CourtChart";
 import { Meter } from "@/components/ui/Meter";
 import { gradeColor } from "@/lib/cn";
@@ -15,8 +16,23 @@ import { TeamLogo } from "@/components/ui/TeamLogo";
 export function HomePreviews() {
   const clutch = clutchBoard().slice(0, 5);
   const mvp = awardRace("MVP").slice(0, 5);
-  const curry = getPlayerByName("Stephen Curry")!;
-  const chart = shotChart(curry);
+
+  // Real shot-chart teaser: the top playoff scorer's actual attempts.
+  const [shotPreview, setShotPreview] = useState<{ name: string; shots: ChartDot[] } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadRealShots().then((d) => {
+      if (!alive || !d.length) return;
+      const ids = shotPlayerIds(d, 30);
+      const top = PLAYERS.filter((p) => p.espnId != null && ids.has(p.espnId)).sort((a, b) => b.ppg - a.ppg)[0];
+      if (top?.espnId == null) return;
+      const chart = realShotChart(d, top.espnId);
+      if (chart) setShotPreview({ name: top.name, shots: chart.shots });
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <div className="reveal grid gap-px border border-[var(--line)] bg-[var(--line)] lg:grid-cols-3">
@@ -38,9 +54,15 @@ export function HomePreviews() {
         </div>
       </PreviewCard>
 
-      <PreviewCard href="/tools/shot-chart" title="Shot Chart" tag={curry.name}>
+      <PreviewCard href="/tools/shot-chart" title="Shot Chart" tag={shotPreview?.name ?? "2026 Playoffs"}>
         <div className="-mx-1">
-          <CourtChart shots={chart.shots} showShots height={240} />
+          {shotPreview ? (
+            <CourtChart shots={shotPreview.shots} showShots height={240} />
+          ) : (
+            <div className="flex h-[240px] items-center justify-center text-xs text-[var(--text-faint)]">
+              Loading real playoff shots…
+            </div>
+          )}
         </div>
       </PreviewCard>
 

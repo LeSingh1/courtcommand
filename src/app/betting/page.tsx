@@ -95,8 +95,11 @@ export default function BettingPage() {
           <span className="stat-num text-[var(--text)]">Poisson-binomial EV</span>
         </div>
         <p className="mt-4 max-w-2xl text-[11px] text-[var(--text-faint)]">
-          For entertainment and analysis only. Not betting advice. Projections use season-level data;
-          point the model at a live game-log feed to match the production EdgeBoard.
+          For entertainment and analysis only. Not betting advice. Projections are built from each
+          player&rsquo;s real season-level production; the lines shown are modeled around those
+          projections, not real posted sportsbook lines (there&rsquo;s no live book feed in this
+          offline demo). Point the model at a live game-log and odds feed to match the production
+          EdgeBoard.
         </p>
       </div>
 
