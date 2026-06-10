@@ -31,7 +31,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="min-h-screen antialiased">
+      {/* suppressHydrationWarning: browser extensions (Grammarly etc.) inject
+          attributes into <body> before React hydrates — harmless, but they trip
+          the dev overlay. Applies to this element only, not children. */}
+      <body className="min-h-screen antialiased" suppressHydrationWarning>
         <div className="scroll-progress" aria-hidden />
         <CommandBarProvider>
           <SiteHeader />
