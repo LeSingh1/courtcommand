@@ -93,6 +93,90 @@ export function isClutch(s: RealShot): boolean {
   return s.period >= 4 && clockToSec(s.clock) <= 300;
 }
 
+// ---- Real game momentum, reconstructed from the playoff shot sequence ----
+// Running margin is field-goals only (free throws aren't in public play-by-play
+// shot data), but the scoring RUNS below are real and counted directly.
+export interface GameInfo {
+  gameId: string;
+  game: string;
+  date: string;
+  shots: number;
+}
+
+export function playoffGames(shots: RealShot[]): GameInfo[] {
+  const m = new Map<string, GameInfo>();
+  for (const s of shots) {
+    let e = m.get(s.gameId);
+    if (!e) {
+      e = { gameId: s.gameId, game: s.game, date: s.date, shots: 0 };
+      m.set(s.gameId, e);
+    }
+    e.shots++;
+  }
+  return [...m.values()].sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.shots - a.shots);
+}
+
+export interface MomentumPoint {
+  i: number;
+  margin: number; // teamA - teamB cumulative (FG only)
+  team: string;
+  pts: number;
+  period: number;
+  clock: string;
+}
+export interface ScoringRun {
+  team: string;
+  pts: number;
+  startIdx: number;
+  endIdx: number;
+  period: number;
+  clock: string;
+}
+
+export function gameMomentum(
+  shots: RealShot[],
+  gameId: string,
+): { teams: string[]; timeline: MomentumPoint[]; runs: ScoringRun[]; biggest: ScoringRun | null } {
+  const inGame = shots.filter((s) => s.gameId === gameId);
+  const teams = [...new Set(inGame.map((s) => s.team))].filter(Boolean).slice(0, 2);
+  const [A] = teams;
+  const made = inGame
+    .filter((s) => s.made)
+    .sort((a, b) => a.period - b.period || clockToSec(b.clock) - clockToSec(a.clock));
+  let scoreA = 0;
+  let scoreB = 0;
+  const timeline: MomentumPoint[] = [];
+  for (let i = 0; i < made.length; i++) {
+    const s = made[i];
+    if (s.team === A) scoreA += s.value;
+    else scoreB += s.value;
+    timeline.push({ i, margin: scoreA - scoreB, team: s.team, pts: s.value, period: s.period, clock: s.clock });
+  }
+  // runs: a team scoring >=6 straight points before the other team scores
+  const runs: ScoringRun[] = [];
+  let curTeam = made[0]?.team ?? "";
+  let curPts = 0;
+  let start = 0;
+  const flush = (end: number) => {
+    if (curPts >= 6 && curTeam) {
+      const s = made[start];
+      runs.push({ team: curTeam, pts: curPts, startIdx: start, endIdx: end, period: s?.period ?? 1, clock: s?.clock ?? "" });
+    }
+  };
+  for (let i = 0; i < made.length; i++) {
+    if (made[i].team === curTeam) curPts += made[i].value;
+    else {
+      flush(i - 1);
+      curTeam = made[i].team;
+      curPts = made[i].value;
+      start = i;
+    }
+  }
+  flush(made.length - 1);
+  runs.sort((a, b) => b.pts - a.pts);
+  return { teams, timeline, runs, biggest: runs[0] ?? null };
+}
+
 export function clutchLeaders(shots: RealShot[], minAtt = 6): ClutchLeader[] {
   const m = new Map<number, ClutchLeader>();
   for (const s of shots) {

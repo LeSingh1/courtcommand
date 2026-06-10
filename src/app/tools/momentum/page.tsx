@@ -1,225 +1,166 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Timer, Flame } from "lucide-react";
-import { spring } from "@/lib/motion";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Flame, Loader2 } from "lucide-react";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
-import { Segmented } from "@/components/ui/Controls";
 import { LineChart } from "@/components/ui/LineChart";
 import { Reveal } from "@/components/ui/Reveal";
-import { AnalyzeOverlay, useAnalyze } from "@/components/ui/Analyze";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
-import { momentumGame, type MomentumEvent } from "@/lib/engine/teams";
+import { TeamLogo } from "@/components/ui/TeamLogo";
+import { loadRealShots, playoffGames, gameMomentum, type RealShot } from "@/lib/data/shots";
 
-const ACCENT = "#E0561F";
+const ACCENT = "#5FA97E";
 const AWAY = "#4E8FA8";
-
-type GameResult = {
-  events: MomentumEvent[];
-  runs: { team: string; pts: number; at: number }[];
-};
-
-const SEEDS: Record<string, number> = { "Game 1": 7, "Game 2": 13, "Game 3": 21 };
 
 export default function MomentumPage() {
   const tool = getTool("momentum")!;
-  const [game, setGame] = useState<keyof typeof SEEDS>("Game 1");
-  const [result, setResult] = useState<GameResult | null>(null);
+  const [shots, setShots] = useState<RealShot[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadRealShots().then((d) => alive && setShots(d));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-  const analyze = useAnalyze([
-    "Loading play-by-play feed…",
-    "Detecting scoring runs…",
-    "Flagging timeout swings…",
-    "Charting momentum…",
-  ]);
+  const games = useMemo(() => (shots ? playoffGames(shots) : []), [shots]);
+  const [gameId, setGameId] = useState<string>("");
+  useEffect(() => {
+    if (!gameId && games[0]) setGameId(games[0].gameId);
+  }, [games, gameId]);
 
-  const replay = () => {
-    analyze.run(() => setResult(momentumGame(SEEDS[game])));
-  };
+  const mom = useMemo(() => (shots && gameId ? gameMomentum(shots, gameId) : null), [shots, gameId]);
 
-  const swingEvents = useMemo(
-    () => (result ? result.events.filter((e) => e.event) : []),
-    [result],
-  );
+  if (!shots) {
+    return (
+      <ToolShell tool={tool}>
+        <Panel className="flex min-h-[360px] flex-col items-center justify-center gap-3 text-center">
+          <Loader2 size={22} className="animate-spin text-[var(--text-faint)]" />
+          <p className="text-sm text-white/50">Loading the playoff play-by-play…</p>
+        </Panel>
+      </ToolShell>
+    );
+  }
 
-  const biggest = useMemo(() => {
-    if (!result || result.runs.length === 0) return null;
-    return [...result.runs].sort((a, b) => b.pts - a.pts)[0];
-  }, [result]);
-
-  const finalMargin = result ? result.events[result.events.length - 1].margin : 0;
+  const [A, B] = mom?.teams ?? ["", ""];
+  const finalMargin = mom?.timeline.at(-1)?.margin ?? 0;
+  const biggest = mom?.biggest ?? null;
+  const game = games.find((g) => g.gameId === gameId);
 
   return (
     <ToolShell tool={tool}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Segmented
-          accent={ACCENT}
-          value={game}
-          onChange={(v) => {
-            setGame(v);
-            setResult(null);
-          }}
-          options={Object.keys(SEEDS).map((g) => ({ label: g, value: g as keyof typeof SEEDS }))}
-        />
-        <motion.button
-          onClick={replay}
-          whileHover={{ y: -1 }}
-          whileTap={{ scale: 0.96 }}
-          transition={spring.snappy}
-          className="flex items-center gap-2 rounded-none px-4 py-2.5 text-sm font-semibold text-[var(--accent-ink)]"
-          style={{ background: ACCENT }}
+        <Insight accent={ACCENT}>
+          {biggest ? (
+            <>
+              The biggest run of <b>{game?.game}</b> was a <b style={{ color: biggest.team === A ? ACCENT : AWAY }}>{biggest.pts}-0 {biggest.team} surge</b> in
+              Q{biggest.period}. {mom?.runs.length} scoring runs of 6+ in all — reconstructed from the
+              real playoff play-by-play (field-goal margin; free throws aren&rsquo;t in public shot data).
+            </>
+          ) : (
+            "Pick a playoff game to chart its momentum."
+          )}
+        </Insight>
+        <select
+          value={gameId}
+          onChange={(e) => setGameId(e.target.value)}
+          aria-label="Pick a playoff game"
+          className="cursor-pointer border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-sm font-semibold text-white outline-none"
         >
-          <TrendingUp size={16} />
-          Replay game
-        </motion.button>
+          {games.map((g) => (
+            <option key={g.gameId} value={g.gameId}>
+              {g.game} · {(g.date || "").slice(5, 10)}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <AnimatePresence mode="wait">
-      {analyze.phase === "running" ? (
-        <motion.div
-          key="running"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={spring.soft}
-        >
-          <AnalyzeOverlay steps={analyze.steps} stepIdx={analyze.stepIdx} accent={ACCENT} />
-        </motion.div>
-      ) : !result ? (
-        <div key="empty" className="enter">
-        <Panel className="flex min-h-[300px] flex-col items-center justify-center text-center">
-          <TrendingUp size={40} className="mb-4" style={{ color: ACCENT }} />
-          <p className="max-w-sm text-sm text-white/50">
-            Pick a game and replay it. The Momentum Tracker charts the HOME margin minute-by-minute
-            and flags every scoring run and timeout swing along the way.
-          </p>
-        </Panel>
-        </div>
-      ) : (
-        <motion.div
-          key={`result-${game}`}
-          className="grid gap-6 lg:grid-cols-[1fr_340px]"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={spring.soft}
-        >
+      {mom && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
           <div className="space-y-6">
             <Reveal>
               <Panel
-                title="Margin timeline"
+                title="Field-goal margin timeline"
                 right={
-                  <span className="stat-num text-xs text-white/50">
-                    Final:{" "}
+                  <span className="stat-num flex items-center gap-2 text-xs text-white/50">
+                    <TeamLogo abbr={A} size={15} />
                     <span style={{ color: finalMargin >= 0 ? ACCENT : AWAY }}>
-                      {finalMargin >= 0 ? "HOME +" : "AWAY +"}
-                      {Math.abs(finalMargin)}
+                      {finalMargin >= 0 ? `${A} +${finalMargin}` : `${B} +${-finalMargin}`}
                     </span>
+                    <TeamLogo abbr={B} size={15} />
                   </span>
                 }
               >
-                <div className="relative">
-                  <LineChart
-                    height={240}
-                    yMin={-20}
-                    yMax={20}
-                    series={[
-                      {
-                        name: "Margin",
-                        color: ACCENT,
-                        points: result.events.map((e) => e.margin),
-                      },
-                    ]}
-                    labels={result.events.map((e) =>
-                      e.minute % 6 === 0 ? `${e.minute}'` : "",
-                    )}
-                  />
-                </div>
+                <LineChart
+                  height={240}
+                  yMin={Math.min(-12, ...mom.timeline.map((p) => p.margin)) - 2}
+                  yMax={Math.max(12, ...mom.timeline.map((p) => p.margin)) + 2}
+                  series={[{ name: "Margin", color: ACCENT, points: mom.timeline.map((p) => p.margin) }]}
+                  labels={mom.timeline.map((p) => (p.i % Math.ceil(mom.timeline.length / 6) === 0 ? `Q${p.period}` : ""))}
+                />
                 <div className="mt-2 flex items-center justify-between text-[11px] text-white/50">
-                  <span>Above the line = HOME ahead</span>
-                  <span>48-minute regulation</span>
+                  <span>Above the line = {A} ahead</span>
+                  <span>{mom.timeline.length} made field goals</span>
                 </div>
               </Panel>
             </Reveal>
-
-            {biggest && (
-              <Reveal delay={0.06}>
-                <Insight accent={ACCENT}>
-                  Biggest swing of the night: a{" "}
-                  <b>
-                    {biggest.pts}-point {biggest.team === "HOME" ? "HOME" : "AWAY"} surge
-                  </b>{" "}
-                  at the {biggest.at}:00 mark. {result.runs.length} momentum runs total — the kind of
-                  variance that decides {Math.abs(finalMargin) <= 6 ? "a tight one" : "the night"}.
-                </Insight>
-              </Reveal>
-            )}
           </div>
 
           <Reveal delay={0.04}>
-            <Panel title="Momentum timeline">
-              <div className="space-y-2.5">
-                {swingEvents.length === 0 && (
-                  <p className="py-6 text-center text-xs text-white/50">No major swings logged.</p>
+            <Panel title="Scoring runs (6+ points)">
+              <div className="no-scrollbar max-h-[420px] space-y-2.5 overflow-y-auto">
+                {mom.runs.length === 0 && (
+                  <p className="py-6 text-center text-xs text-white/50">No 6-0 runs in this game.</p>
                 )}
-                {swingEvents.map((e, i) => {
-                  const isRun = e.type === "run";
-                  const home =
-                    result.runs.find((r) => r.at === e.minute)?.team === "HOME";
-                  const clr = !isRun ? "#C9A14A" : home ? ACCENT : AWAY;
+                {mom.runs.map((r, i) => {
+                  const home = r.team === A;
+                  const clr = home ? ACCENT : AWAY;
                   return (
-                    <div
-                      key={`${e.minute}-${i}`}
-                      className="flex items-start gap-3 rounded-none border border-white/[0.06] bg-white/[0.02] p-3"
+                    <motion.div
+                      key={`${r.startIdx}-${i}`}
+                      initial={{ opacity: 0, x: 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                      className="flex items-center gap-3 rounded-none border border-white/[0.06] bg-white/[0.02] p-3"
                     >
-                      <div
-                        className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-none"
-                        style={{ background: `${clr}1f` }}
-                      >
-                        {isRun ? (
-                          <Flame size={14} style={{ color: clr }} />
-                        ) : (
-                          <Timer size={14} style={{ color: clr }} />
-                        )}
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center" style={{ background: `${clr}1f` }}>
+                        <Flame size={15} style={{ color: clr }} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm text-white/85">{e.event}</span>
-                          <span className="stat-num shrink-0 text-[11px] text-white/50">
-                            {e.minute}:00
+                          <span className="flex items-center gap-1.5 text-sm font-semibold text-white/90">
+                            <TeamLogo abbr={r.team} size={15} /> {r.pts}-0 run
+                          </span>
+                          <span className="stat-num shrink-0 text-[11px] text-white/45">
+                            Q{r.period} {r.clock}
                           </span>
                         </div>
-                        <div
-                          className="stat-num mt-0.5 text-[11px]"
-                          style={{ color: isRun ? clr : "rgba(255,255,255,0.5)" }}
-                        >
-                          {isRun ? (home ? "HOME run" : "AWAY run") : "Stoppage"} · margin{" "}
-                          {e.margin >= 0 ? "+" : ""}
-                          {e.margin}
+                        <div className="stat-num mt-0.5 text-[11px]" style={{ color: clr }}>
+                          {r.team} pulled away
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
             </Panel>
           </Reveal>
-        </motion.div>
+        </div>
       )}
-      </AnimatePresence>
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#5FA97E" }}>Model track record</div>
+          <div className="kicker" style={{ color: ACCENT }}>
+            Model track record
+          </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            How the momentum model's training base has grown — the real count of player-seasons it
-            learns from, deepening each year from 2003 to today — alongside its validation metric and
-            the method used to measure it.
+            The runs above are counted directly from real 2026 playoff play-by-play. The panel below
+            shows the real training-data history the run-detection heuristics were tuned on.
           </p>
         </div>
-        <TrackRecord slug="momentum" accent="#5FA97E" />
+        <TrackRecord slug="momentum" accent={ACCENT} />
       </div>
     </ToolShell>
   );
