@@ -6,6 +6,7 @@ import { Flame, Loader2 } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Segmented, Badge } from "@/components/ui/Controls";
+import { ebShrink, wilsonCI } from "@/lib/engine/stats";
 import { Meter } from "@/components/ui/Meter";
 import { Reveal } from "@/components/ui/Reveal";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -173,6 +174,7 @@ export default function ClutchPage() {
                   <th className="py-2 font-medium">FG</th>
                   <th className="py-2 font-medium">3PT</th>
                   <th className="py-2 font-medium">eFG%</th>
+                  <th className="py-2 font-medium">Adj FG%</th>
                   <th className="py-2 pr-2 text-right font-medium">Att</th>
                 </tr>
               </thead>
@@ -211,6 +213,24 @@ export default function ClutchPage() {
                           </span>
                         </div>
                       </td>
+                      <td className="py-2.5">
+                        {(() => {
+                          const prior = p?.fgp ?? 0.47;
+                          const adj = ebShrink(r.fgPct, r.att, prior, 15);
+                          const [lo, hi] = wilsonCI(r.made, r.att);
+                          return (
+                            <span
+                              className="stat-num text-white/75"
+                              title={`Raw ${Math.round(r.fgPct * 100)}% on ${r.att} att (95% CI ${Math.round(lo * 100)}–${Math.round(hi * 100)}%), shrunk toward season ${Math.round(prior * 100)}%`}
+                            >
+                              {Math.round(adj * 100)}%
+                              <span className="ml-1 text-[10px] text-[var(--text-faint)]">
+                                ±{Math.round(((hi - lo) / 2) * 100)}
+                              </span>
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="stat-num py-2.5 pr-2 text-right text-white/55">{r.att}</td>
                     </tr>
                   );
@@ -219,7 +239,9 @@ export default function ClutchPage() {
             </table>
           </div>
           <p className="mt-3 text-[11px] text-[var(--text-faint)]">
-            Rows under 10 attempts are dimmed — too few shots to read much into.
+            Rows under 10 attempts are dimmed. Adj FG% is empirical-Bayes shrinkage: the clutch rate
+            pulled toward the player&rsquo;s own season FG% with a 15-attempt prior weight, shown with
+            a 95% Wilson interval — at these sample sizes, the regressed number is the honest one.
           </p>
         </Panel>
       </div>

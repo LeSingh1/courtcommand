@@ -17,6 +17,7 @@ import {
   type ShotPlayer,
 } from "@/lib/data/shots";
 import { gradeRealShot } from "@/lib/engine/game";
+import { shotMakingBoard, shotMakingFor } from "@/lib/engine/shotmaking";
 import { gradeColor } from "@/lib/cn";
 import { spring } from "@/lib/motion";
 import type { Player } from "@/lib/types";
@@ -34,6 +35,7 @@ export function RealShots() {
   }, []);
 
   const players = useMemo<ShotPlayer[]>(() => (all ? shotPlayers(all) : []), [all]);
+  const smBoard = useMemo(() => (all ? shotMakingBoard(all) : []), [all]);
 
   // default to the biggest star who has playoff shots
   const defaultEspn = useMemo(() => {
@@ -223,7 +225,23 @@ export function RealShots() {
                 </Panel>
               </div>
 
-              <Insight accent="#4D8DFF">{grade.verdict}</Insight>
+              <Insight accent="#4D8DFF">
+                {grade.verdict}
+                {(() => {
+                  const sm = shotMakingFor(smBoard, espnId);
+                  return sm ? (
+                    <>
+                      {" "}
+                      Across the playoffs, {sm.player} is{" "}
+                      <b style={{ color: sm.adjDelta >= 0 ? "#4D8DFF" : "#F4647D" }}>
+                        {sm.adjDelta >= 0 ? "+" : ""}
+                        {sm.adjDelta}% over expected
+                      </b>{" "}
+                      on {sm.n} graded attempts ({sm.actPct}% actual vs {sm.expPct}% modeled).
+                    </>
+                  ) : null;
+                })()}
+              </Insight>
 
               {/* animated replay */}
               <Panel title="Shot replay">
@@ -240,6 +258,49 @@ export function RealShots() {
             </Panel>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Shot-making over expected — the shooter prior, full width */}
+      <div className="lg:col-span-2">
+        <Panel
+          title="Shot-making over expected · 2026 playoffs"
+          right={<span className="stat-num text-xs text-white/45">min 40 graded attempts</span>}
+        >
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            {smBoard.slice(0, 12).map((r, i) => {
+              const p = playerByEspn(r.espnId);
+              const pos = r.adjDelta >= 0;
+              return (
+                <button
+                  key={r.espnId}
+                  onClick={() => setEspnId(r.espnId)}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-[var(--line)] bg-white/[0.02] px-2.5 py-2 text-left transition hover:border-[var(--line-strong)]"
+                >
+                  <span className="stat-num w-5 text-[11px] text-white/35">{i + 1}</span>
+                  {p ? <PlayerAvatar player={p} size={26} /> : null}
+                  <span className="min-w-0 flex-1 truncate text-xs text-white/85">{r.player}</span>
+                  <span className="stat-num text-[10px] text-[var(--text-faint)]">
+                    {r.actPct}% vs {r.expPct}% exp · {r.n} att
+                  </span>
+                  <span
+                    className="stat-num w-12 text-right text-xs font-semibold"
+                    style={{ color: pos ? "#4D8DFF" : "#F4647D" }}
+                  >
+                    {pos ? "+" : ""}
+                    {r.adjDelta}%
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-faint)]">
+            The model grades each player&rsquo;s real attempts for context (the look); this is how far
+            each shooter beat or missed those expectations, shrunk toward zero with a 50-attempt prior
+            so thin samples can&rsquo;t fake it. Positive = makes tougher shots than the looks predict.
+            Context features the play-by-play lacks (defender distance, clock) are estimated, so this
+            is shot-making vs the <i>modeled</i> expectation.
+          </p>
+        </Panel>
       </div>
     </div>
   );

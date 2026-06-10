@@ -285,7 +285,9 @@ function ShotChartInner() {
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
             Every dot is a real attempt from the 2026 playoffs, plotted at its true court coordinates
-            from the play-by-play. Hot Zones bucket those shots into floor areas and show the real
+            from the play-by-play. Zone eFG% is empirical-Bayes shrunk toward the league&rsquo;s rate
+            for that same zone (10-attempt prior weight), so a 2-for-3 corner can&rsquo;t blaze red on
+            three attempts — the heat you see is the regressed, honest rate. Hot Zones bucket those shots into floor areas and show the real
             eFG% (counting threes as 1.5 makes) and shot share in each — no simulated or estimated
             attempts. The quarter control restricts both the player&rsquo;s shots and the league
             comparison to that period (OT = any overtime). Shot diet counts rim as inside 8 ft and

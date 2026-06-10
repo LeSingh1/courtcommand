@@ -2,6 +2,8 @@
 // postseason games (ESPN play-by-play). The full set is ~15k shots / ~5 MB, so
 // it's served statically from /public and fetched at runtime rather than
 // bundled into the page.
+import { ebShrink } from "@/lib/engine/stats";
+
 export interface RealShot {
   id: string;
   espnId: number;
@@ -478,7 +480,9 @@ export interface ChartZone {
   label: string;
   cx: number;
   cy: number;
-  efg: number;
+  efg: number; // EB-shrunk toward the pool's zone baseline (the honest display value)
+  efgRaw?: number; // unshrunk observed rate
+  poolEfg?: number; // league baseline for this zone from the same pool
   freq: number;
   att: number;
 }
@@ -549,8 +553,8 @@ export function realShotChart(
   if (!mine.length) return null;
   const pool = opts.period == null ? shots : shots.filter(inPeriod);
   const dots: ChartDot[] = mine.map((s) => ({ x: s.x, y: s.y, made: s.made, r: 3.4 }));
-  const agg = new Map<string, { att: number; made: number; made3: number }>();
-  for (const s of mine) {
+
+  const zoneFor = (s: RealShot): string => {
     let bestId = SHOT_ZONES[0].id;
     let bestD = Infinity;
     for (const z of SHOT_ZONES) {
@@ -560,24 +564,41 @@ export function realShotChart(
         bestId = z.id;
       }
     }
-    let a = agg.get(bestId);
-    if (!a) {
-      a = { att: 0, made: 0, made3: 0 };
-      agg.set(bestId, a);
+    return bestId;
+  };
+  const aggregate = (list: RealShot[]) => {
+    const m = new Map<string, { att: number; made: number; made3: number }>();
+    for (const s of list) {
+      const id = zoneFor(s);
+      let a = m.get(id);
+      if (!a) {
+        a = { att: 0, made: 0, made3: 0 };
+        m.set(id, a);
+      }
+      a.att++;
+      if (s.made) {
+        a.made++;
+        if (s.value === 3) a.made3++;
+      }
     }
-    a.att++;
-    if (s.made) {
-      a.made++;
-      if (s.value === 3) a.made3++;
-    }
-  }
+    return m;
+  };
+  const agg = aggregate(mine);
+  const poolAgg = aggregate(pool);
+
   const total = mine.length;
   const made = mine.filter((s) => s.made).length;
   const zones: ChartZone[] = SHOT_ZONES.map((z) => {
     const a = agg.get(z.id);
     const att = a?.att ?? 0;
-    const efg = att ? (a!.made + 0.5 * a!.made3) / att : 0;
-    return { id: z.id, label: z.label, cx: z.cx, cy: z.cy, efg, freq: total ? att / total : 0, att };
+    const efgRaw = att ? (a!.made + 0.5 * a!.made3) / att : 0;
+    // League baseline for THIS zone, from the same shot pool — then shrink the
+    // player's raw rate toward it (10-attempt prior weight) so a 2-for-3 corner
+    // can't blaze red on three attempts.
+    const pz = poolAgg.get(z.id);
+    const poolEfg = pz && pz.att ? (pz.made + 0.5 * pz.made3) / pz.att : 0.5;
+    const efg = att ? ebShrink(efgRaw, att, poolEfg, 10) : 0;
+    return { id: z.id, label: z.label, cx: z.cx, cy: z.cy, efg, efgRaw, poolEfg, freq: total ? att / total : 0, att };
   });
   return { shots: dots, zones, total, made, diet: shotDietSummary(mine, pool) };
 }

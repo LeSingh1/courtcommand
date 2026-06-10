@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { spring } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider, Segmented, Field } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
@@ -10,8 +8,9 @@ import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { LineChart } from "@/components/ui/LineChart";
 import { TeamLogo } from "@/components/ui/TeamLogo";
 import { getTool, categoryColor } from "@/lib/tools";
-import { winProbability, gameWinProbCurve, biggestSwings } from "@/lib/engine/game";
+import { winProbability } from "@/lib/engine/game";
 import { loadRealShots, playoffGames, type RealShot } from "@/lib/data/shots";
+import { loadPbp, gameWpSeries, wpCalibration, type PbpGame } from "@/lib/data/pbp";
 
 const STRENGTHS: { label: string; value: string }[] = [
   { label: "Underdog", value: "-4" },
@@ -74,10 +73,24 @@ export default function WinProbabilityPage() {
   useEffect(() => {
     if (!gameId && games[0]) setGameId(games[0].gameId);
   }, [games, gameId]);
-  const curve = useMemo(() => (shots && gameId ? gameWinProbCurve(shots, gameId) : null), [shots, gameId]);
-  const swingReport = useMemo(() => (curve ? biggestSwings(curve) : null), [curve]);
+
+  // Full play-by-play (FTs, turnovers, clock) — the event-driven curve.
+  const [pbp, setPbp] = useState<PbpGame[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadPbp().then((d) => alive && setPbp(d));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const series = useMemo(() => {
+    const g = pbp?.find((x) => x.gameId === gameId);
+    return g ? gameWpSeries(g) : null;
+  }, [pbp, gameId]);
+  // Brier by game phase across all 89 games — the model's real calibration receipt.
+  const calibration = useMemo(() => (pbp && pbp.length ? wpCalibration(pbp) : null), [pbp]);
   const game = games.find((g) => g.gameId === gameId);
-  const [A, B] = curve?.teams ?? ["", ""];
+  const [A, B] = series?.teams ?? ["", ""];
 
   return (
     <ToolShell tool={tool}>
@@ -169,11 +182,11 @@ export default function WinProbabilityPage() {
                 ) : null
               }
             >
-              {curve ? (
+              {series ? (
                 <>
                   <LineChart
-                    series={[{ name: A, color: accent, points: curve.home }]}
-                    labels={curve.t.map(() => "")}
+                    series={[{ name: A, color: accent, points: series.points.map((p) => p.wp) }]}
+                    labels={series.points.map(() => "")}
                     yMin={0}
                     yMax={100}
                     yLabel={`${A} WP %`}
@@ -183,83 +196,79 @@ export default function WinProbabilityPage() {
                     <span className="flex items-center gap-1.5">
                       <TeamLogo abbr={A} size={14} /> {A}
                     </span>
-                    <span>{curve.t.length} made field goals</span>
+                    <span>
+                      {series.points.length} events · FGs, FTs, turnovers · excitement{" "}
+                      <span className="stat-num text-white/75">{series.excitement}</span>
+                    </span>
                     <span className="flex items-center gap-1.5">
                       {B} <TeamLogo abbr={B} size={14} />
                     </span>
                   </div>
-                  {swingReport && (
-                    <div className="mt-4 border-t border-white/[0.07] pt-3">
-                      <div className="kicker mb-2" style={{ color: accent }}>
-                        Biggest swings
-                      </div>
-                      {swingReport.swings.length ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {swingReport.swings.map((s) => (
-                            <span
-                              key={s.index}
-                              className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-white/75"
-                            >
-                              <span
-                                className="stat-num mr-1.5 font-semibold"
-                                style={{ color: s.delta > 0 ? accent : "#F4647D" }}
-                              >
-                                {s.delta > 0 ? "+" : ""}
-                                {s.delta}%
-                              </span>
-                              {s.label}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-[11px] text-white/40">No single make moved the needle in this game.</p>
-                      )}
-                      <div className="stat-num mt-2 text-[11px] text-white/55">
-                        {swingReport.turningPoint
-                          ? `Turning point: ${swingReport.turningPoint.label} — make ${
-                              swingReport.turningPoint.index + 1
-                            } of ${curve.home.length}, ${swingReport.turningPoint.wp}% ${A} WP.`
-                          : `Wire-to-wire: the WP lead never changed hands.`}
-                      </div>
+                  <div className="mt-4 border-t border-white/[0.07] pt-3">
+                    <div className="kicker mb-2" style={{ color: accent }}>
+                      Biggest swings
                     </div>
-                  )}
+                    {series.swings.length ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {series.swings.map((s) => (
+                          <span
+                            key={s.index}
+                            className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-white/75"
+                          >
+                            <span
+                              className="stat-num mr-1.5 font-semibold"
+                              style={{ color: s.delta > 0 ? accent : "#F4647D" }}
+                            >
+                              {s.delta > 0 ? "+" : ""}
+                              {s.delta}%
+                            </span>
+                            {s.label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-white/40">No single event moved the needle in this game.</p>
+                    )}
+                    <div className="stat-num mt-2 text-[11px] text-white/55">
+                      {series.turningPoint
+                        ? `Turning point: ${series.turningPoint.label} — the last time the WP lead changed hands.`
+                        : `Wire-to-wire: the WP lead never changed hands.`}
+                    </div>
+                  </div>
                 </>
               ) : (
                 <div className="flex min-h-[220px] items-center justify-center text-sm text-white/40">
-                  Loading the playoff play-by-play…
+                  Loading the full play-by-play…
                 </div>
               )}
             </Panel>
-            <Panel title="Scoring runs">
-              <div className="space-y-2.5">
-                {curve?.events.length ? (
-                  curve.events.map((e, i) => (
-                    <motion.div
-                      key={`${e.t}-${i}`}
-                      whileHover={{ y: -3 }}
-                      transition={spring.snappy}
-                      className="enter flex items-center gap-2.5 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2"
-                      style={{ animationDelay: `${i * 40}ms` }}
-                    >
-                      <span
-                        className="stat-num flex h-6 w-6 shrink-0 items-center justify-center text-[10px] font-bold"
-                        style={{ background: `${accent}1f`, color: accent }}
-                      >
-                        {i + 1}
-                      </span>
-                      <span className="text-xs text-white/70">{e.label}</span>
-                    </motion.div>
-                  ))
-                ) : (
-                  <p className="text-xs text-white/40">No 6-0+ runs in this game.</p>
-                )}
-                {curve ? (
-                  <div className="stat-num pt-1 text-[11px] text-white/55">
-                    Final {A} WP: {curve.home[curve.home.length - 1]}% ·{" "}
-                    {curve.finalMargin >= 0 ? `${A} +${curve.finalMargin}` : `${B} +${-curve.finalMargin}`} on FGs
-                  </div>
-                ) : null}
-              </div>
+            <Panel title="Calibration by phase">
+              {calibration ? (
+                <div className="space-y-1.5">
+                  {calibration.map((b) => (
+                    <div key={b.label} className="flex items-center gap-2 text-xs">
+                      <span className="w-16 shrink-0 text-[var(--text-muted)]">{b.label}</span>
+                      <div className="flex-1">
+                        <Meter value={Math.max(2, (0.25 - b.brier) * 400)} color={accent} height={5} />
+                      </div>
+                      <span className="stat-num w-12 text-right text-[var(--text)]">{b.brier.toFixed(3)}</span>
+                    </div>
+                  ))}
+                  <p className="pt-2 text-[11px] leading-relaxed text-[var(--text-faint)]">
+                    Brier score of the model&rsquo;s WP at every event vs the real final result,
+                    across all 89 playoff games ({calibration.reduce((a, b) => a + b.n, 0).toLocaleString()}{" "}
+                    predictions). Lower is better; 0.250 = always saying 50/50. Longer bar = sharper.
+                  </p>
+                  {series ? (
+                    <div className="stat-num border-t border-white/[0.07] pt-2 text-[11px] text-white/55">
+                      This game: final {A} WP {series.points.at(-1)?.wp ?? 0}% ·{" "}
+                      {series.finalMargin >= 0 ? `${A} +${series.finalMargin}` : `${B} +${-series.finalMargin}`}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-xs text-white/40">Scoring 43,000 predictions…</p>
+              )}
             </Panel>
           </div>
 
@@ -283,14 +292,16 @@ export default function WinProbabilityPage() {
             Data &amp; method
           </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            The dial is the trained win-probability model (AUC 0.93, Brier 0.107) evaluated on the game
-            state you set. The curve replays that same model across a real 2026 playoff game: every
-            point is the live margin after each made field goal, with team strength set from each
-            side&rsquo;s real season net rating. Margin is field-goal only (free throws aren&rsquo;t in
-            public play-by-play), so the curve is a faithful approximation of the real game.
-            &ldquo;Biggest swings&rdquo; are simply the three largest single-step moves in that computed
-            curve, and the turning point is the last time the modeled probability lead crossed 50% —
-            both are derived from the curve, not estimated separately.
+            The dial is the trained win-probability model (AUC 0.93) evaluated on the game state you
+            set. The curve replays that same model across the <b>full</b> play-by-play of a real 2026
+            playoff game — every field goal, free throw, and turnover, with the real running score and
+            clock, and team strength from each side&rsquo;s real season net rating. Possession is
+            approximated as flipping after a score or turnover; fouling situation and timeouts
+            aren&rsquo;t modeled yet, which is exactly what the calibration table is for — Brier scored
+            against the real final result of all 89 games, split by game phase, shows where the model
+            is sharp and where late-game state it can&rsquo;t see costs it. Swings and the turning
+            point are derived from the same computed curve, and the excitement index is the total
+            probability movement across the game.
           </p>
         </div>
       </div>
