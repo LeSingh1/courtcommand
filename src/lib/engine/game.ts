@@ -2,6 +2,7 @@ import type { Player } from "@/lib/types";
 import type { ShotDot, Zone } from "@/components/ui/CourtChart";
 import { TEAM_MAP } from "@/lib/data";
 import { predictShotMakeProb, predictWinProb } from "@/lib/model";
+import { gameMomentum, type RealShot } from "@/lib/data/shots";
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -92,28 +93,54 @@ export function winProbability(i: WinProbInput): number {
   return clamp(p, 0.005, 0.995) * 100;
 }
 
-export function winProbCurve(homeStrength = 3): { t: number[]; home: number[]; events: { t: number; label: string }[] } {
-  // simulate a 48-min game margin walk, compute WP each minute
-  let margin = 0;
-  let s = 42;
-  const rnd = () => ((s = (s * 9301 + 49297) % 233280), s / 233280);
+export interface WPCurve {
+  teams: string[];
+  t: number[];
+  home: number[]; // WP % for teams[0]
+  events: { t: number; label: string }[];
+  finalMargin: number;
+}
+
+function curveClockSecs(clock: string): number {
+  const m = (clock || "").match(/(\d+):(\d+)/);
+  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : 0;
+}
+function pointSecondsLeft(period: number, clock: string): number {
+  const cs = curveClockSecs(clock);
+  if (period <= 4) return Math.max(0, (4 - period) * 720 + cs); // 12-min quarters
+  return Math.max(0, cs); // overtime — already at the end of regulation
+}
+
+// Real win-probability curve for an actual playoff game: each real field-goal
+// margin + game clock is run through the trained WP model, with team strength
+// set from each side's real season net rating. Margin is field-goal only (free
+// throws aren't in public play-by-play), so it's a faithful approximation.
+export function gameWinProbCurve(shots: RealShot[], gameId: string): WPCurve | null {
+  const mom = gameMomentum(shots, gameId);
+  if (mom.teams.length < 2 || mom.timeline.length < 4) return null;
+  const [A, B] = mom.teams;
+  const ta = TEAM_MAP[A];
+  const tb = TEAM_MAP[B];
+  const netA = ta ? ta.ortg - ta.drtg : 0;
+  const netB = tb ? tb.ortg - tb.drtg : 0;
+  const homeStrength = clamp(netA - netB, -10, 10);
   const home: number[] = [];
   const t: number[] = [];
-  const events: { t: number; label: string }[] = [];
-  for (let m = 0; m <= 48; m++) {
-    margin += Math.round((rnd() - 0.46) * 7) + (homeStrength > 0 ? 0.3 : -0.2);
+  mom.timeline.forEach((p, i) => {
     const wp = winProbability({
-      margin,
-      secondsLeft: (48 - m) * 60,
-      homeHasBall: m % 2 === 0,
+      margin: p.margin,
+      secondsLeft: pointSecondsLeft(p.period, p.clock),
+      homeHasBall: i % 2 === 0,
       homeStrength,
     });
     home.push(Math.round(wp));
-    t.push(m);
-    if (m === 24) events.push({ t: m, label: `Halftime · ${margin >= 0 ? "+" : ""}${margin}` });
-    if (m === 36) events.push({ t: m, label: "4th quarter" });
-  }
-  return { t, home, events };
+    t.push(i);
+  });
+  const events = mom.runs
+    .slice(0, 4)
+    .map((r) => ({ t: Math.min(r.endIdx, t.length - 1), label: `${r.pts}-0 ${r.team} run` }))
+    .sort((a, b) => a.t - b.t);
+  return { teams: [A, B], t, home, events, finalMargin: mom.timeline.at(-1)?.margin ?? 0 };
 }
 
 // ---------------- Shot Chart ----------------
@@ -159,25 +186,8 @@ export function shotChart(p: Player): { shots: ShotDot[]; zones: Zone[] } {
   return { shots, zones };
 }
 
-// ---------------- Ref Bias ----------------
-export interface RefRow {
-  team: string;
-  homeFtRate: number;
-  awayFtRate: number;
-  starWhistle: number; // +calls for stars
-  foulDiff: number; // per game home-away
-}
-export function refBiasBoard(): RefRow[] {
-  return Object.values(TEAM_MAP).map((tm) => {
-    let s = tm.abbr.charCodeAt(0) + tm.abbr.charCodeAt(1) + tm.abbr.charCodeAt(2);
-    const rnd = () => ((s = (s * 9301 + 49297) % 233280), s / 233280);
-    const homeFtRate = Math.round((24 + rnd() * 8) * 10) / 10;
-    const awayFtRate = Math.round((homeFtRate - 1.5 - rnd() * 4) * 10) / 10;
-    const starWhistle = Math.round((rnd() * 5 + (tm.wins > 48 ? 2 : 0)) * 10) / 10;
-    const foulDiff = Math.round((awayFtRate - homeFtRate + (rnd() - 0.5)) * 10) / 10;
-    return { team: tm.abbr, homeFtRate, awayFtRate, starWhistle, foulDiff };
-  });
-}
+// Ref Bias now reports real free-throw rate (lib/data/ftrate); the old synthetic
+// per-team whistle generator was removed when that tool was reworked.
 
 // ---------------- Game Recap ----------------
 export interface BoxLine {
@@ -218,51 +228,10 @@ export function gameRecap(i: RecapInput): { headline: string; body: string[]; to
   return { headline, body, topPerformer: top };
 }
 
-// ---------------- Highlight Auto-Clipper (synthetic detection) ----------------
-export interface HighlightClip {
-  t: string;
-  type: string;
-  confidence: number;
-  motion: number;
-  audio: number;
-  label: string;
-}
-export function detectHighlights(durationMin = 12): HighlightClip[] {
-  let s = durationMin * 31 + 11;
-  const rnd = () => ((s = (s * 9301 + 49297) % 233280), s / 233280);
-  const kinds = [
-    { type: "Dunk", label: "Transition slam" },
-    { type: "Three", label: "Deep pull-up triple" },
-    { type: "Block", label: "Chase-down block" },
-    { type: "And-1", label: "And-one finish" },
-    { type: "Assist", label: "No-look dime" },
-    { type: "Steal", label: "Steal into the break" },
-  ];
-  const clips: HighlightClip[] = [];
-  let cur = 0;
-  while (cur < durationMin * 60 && clips.length < 9) {
-    cur += 25 + rnd() * 70;
-    const motion = Math.round(50 + rnd() * 50);
-    const audio = Math.round(40 + rnd() * 60);
-    const confidence = Math.round(clamp(motion * 0.5 + audio * 0.5 + (rnd() - 0.5) * 10, 30, 99));
-    const k = kinds[Math.floor(rnd() * kinds.length)];
-    const mm = Math.floor(cur / 60);
-    const ss = Math.floor(cur % 60);
-    clips.push({
-      t: `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`,
-      type: k.type,
-      label: k.label,
-      confidence,
-      motion,
-      audio,
-    });
-  }
-  return clips.sort((a, b) => b.confidence - a.confidence);
-}
+// Highlight detection now scores real playoff makes (lib/data/shots#highlightReel);
+// the old synthetic clip generator was removed when that tool was reworked.
 
 // ---------------- Grade a REAL shot ----------------
-import type { RealShot } from "@/lib/data/shots";
-
 export interface RealShotGrade {
   result: ShotQualityResult;
   context: ShotInput;

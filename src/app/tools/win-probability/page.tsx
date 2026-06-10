@@ -8,9 +8,10 @@ import { Slider, Segmented, Field } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { LineChart } from "@/components/ui/LineChart";
-import { TrackRecord } from "@/components/ui/TrackRecord";
+import { TeamLogo } from "@/components/ui/TeamLogo";
 import { getTool, categoryColor } from "@/lib/tools";
-import { winProbability, winProbCurve } from "@/lib/engine/game";
+import { winProbability, gameWinProbCurve } from "@/lib/engine/game";
+import { loadRealShots, playoffGames, type RealShot } from "@/lib/data/shots";
 
 const STRENGTHS: { label: string; value: string }[] = [
   { label: "Underdog", value: "-4" },
@@ -36,8 +37,6 @@ export default function WinProbabilityPage() {
 
   const homeStrength = Number(homeStrengthStr);
 
-  // Brief analyzing affordance whenever inputs change, so the synchronous
-  // result still surfaces a loading state like sibling tools.
   const [isComputing, setIsComputing] = useState(false);
   const firstRun = useRef(true);
   useEffect(() => {
@@ -61,8 +60,23 @@ export default function WinProbabilityPage() {
     [margin, secondsLeft, homeHasBall, homeStrength],
   );
 
-  const curve = useMemo(() => winProbCurve(homeStrength), [homeStrength]);
-  const labels = curve.t.map((m) => (m % 12 === 0 ? `${m}'` : ""));
+  // Real playoff game curve: the trained model run across an actual game's margins.
+  const [shots, setShots] = useState<RealShot[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadRealShots().then((d) => alive && setShots(d));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const games = useMemo(() => (shots ? playoffGames(shots) : []), [shots]);
+  const [gameId, setGameId] = useState("");
+  useEffect(() => {
+    if (!gameId && games[0]) setGameId(games[0].gameId);
+  }, [games, gameId]);
+  const curve = useMemo(() => (shots && gameId ? gameWinProbCurve(shots, gameId) : null), [shots, gameId]);
+  const game = games.find((g) => g.gameId === gameId);
+  const [A, B] = curve?.teams ?? ["", ""];
 
   return (
     <ToolShell tool={tool}>
@@ -86,12 +100,7 @@ export default function WinProbabilityPage() {
               </div>
             </div>
             <Field label="Home team strength">
-              <Segmented
-                accent={accent}
-                value={homeStrengthStr}
-                onChange={setHomeStrengthStr}
-                options={STRENGTHS}
-              />
+              <Segmented accent={accent} value={homeStrengthStr} onChange={setHomeStrengthStr} options={STRENGTHS} />
             </Field>
             <Field label="Possession">
               <Segmented
@@ -140,38 +149,80 @@ export default function WinProbabilityPage() {
           </Panel>
 
           <div className="grid gap-6 lg:grid-cols-[1fr_220px]">
-            <Panel title="Full-game WP curve">
-              <LineChart
-                series={[{ name: "Home", color: accent, points: curve.home }]}
-                labels={labels}
-                yMin={0}
-                yMax={100}
-                yLabel="Home WP %"
-                height={220}
-              />
-            </Panel>
-            <Panel title="Game events">
-              <div className="space-y-2.5">
-                {curve.events.map((e, i) => (
-                  <motion.div
-                    key={e.t}
-                    whileHover={{ y: -3 }}
-                    transition={spring.snappy}
-                    className="enter flex items-center gap-2.5 rounded-none border border-white/[0.07] bg-white/[0.03] px-3 py-2"
-                    style={{ animationDelay: `${i * 40}ms` }}
+            <Panel
+              title="Win probability · real playoff game"
+              right={
+                games.length ? (
+                  <select
+                    value={gameId}
+                    onChange={(e) => setGameId(e.target.value)}
+                    aria-label="Pick a playoff game"
+                    className="cursor-pointer border border-[var(--line)] bg-[var(--bg)] px-2 py-1 text-[11px] font-semibold text-white outline-none"
                   >
-                    <span
-                      className="stat-num flex h-6 w-9 shrink-0 items-center justify-center text-[10px] font-bold"
-                      style={{ background: `${accent}1f`, color: accent }}
-                    >
-                      {e.t}'
+                    {games.map((g) => (
+                      <option key={g.gameId} value={g.gameId}>
+                        {g.game} · {(g.date || "").slice(5, 10)}
+                      </option>
+                    ))}
+                  </select>
+                ) : null
+              }
+            >
+              {curve ? (
+                <>
+                  <LineChart
+                    series={[{ name: A, color: accent, points: curve.home }]}
+                    labels={curve.t.map(() => "")}
+                    yMin={0}
+                    yMax={100}
+                    yLabel={`${A} WP %`}
+                    height={220}
+                  />
+                  <div className="mt-2 flex items-center justify-between text-[11px] text-white/50">
+                    <span className="flex items-center gap-1.5">
+                      <TeamLogo abbr={A} size={14} /> {A}
                     </span>
-                    <span className="text-xs text-white/70">{e.label}</span>
-                  </motion.div>
-                ))}
-                <div className="stat-num pt-1 text-[11px] text-white/55">
-                  Final-minute home WP: {curve.home[curve.home.length - 1]}%
+                    <span>{curve.t.length} made field goals</span>
+                    <span className="flex items-center gap-1.5">
+                      {B} <TeamLogo abbr={B} size={14} />
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex min-h-[220px] items-center justify-center text-sm text-white/40">
+                  Loading the playoff play-by-play…
                 </div>
+              )}
+            </Panel>
+            <Panel title="Scoring runs">
+              <div className="space-y-2.5">
+                {curve?.events.length ? (
+                  curve.events.map((e, i) => (
+                    <motion.div
+                      key={`${e.t}-${i}`}
+                      whileHover={{ y: -3 }}
+                      transition={spring.snappy}
+                      className="enter flex items-center gap-2.5 rounded-none border border-white/[0.07] bg-white/[0.03] px-3 py-2"
+                      style={{ animationDelay: `${i * 40}ms` }}
+                    >
+                      <span
+                        className="stat-num flex h-6 w-6 shrink-0 items-center justify-center text-[10px] font-bold"
+                        style={{ background: `${accent}1f`, color: accent }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="text-xs text-white/70">{e.label}</span>
+                    </motion.div>
+                  ))
+                ) : (
+                  <p className="text-xs text-white/40">No 6-0+ runs in this game.</p>
+                )}
+                {curve ? (
+                  <div className="stat-num pt-1 text-[11px] text-white/55">
+                    Final {A} WP: {curve.home[curve.home.length - 1]}% ·{" "}
+                    {curve.finalMargin >= 0 ? `${A} +${curve.finalMargin}` : `${B} +${-curve.finalMargin}`} on FGs
+                  </div>
+                ) : null}
               </div>
             </Panel>
           </div>
@@ -180,23 +231,29 @@ export default function WinProbabilityPage() {
             With a <b>{margin >= 0 ? "+" : ""}{margin}</b> margin and <b>{fmtClock(secondsLeft)}</b> left, the
             home side projects to <b>{wp.toFixed(1)}%</b>.{" "}
             {homeHasBall ? "Holding possession adds late-game leverage." : "The away team controls the next possession."}{" "}
-            {Math.abs(margin) <= 3 && secondsLeft <= 300
-              ? "This is firmly clutch territory — every possession swings the odds."
-              : "Time and margin still leave room for swings."}
+            {game ? (
+              <>
+                The curve to the right runs that same model across every made field goal of{" "}
+                <b>{game.game}</b>.
+              </>
+            ) : null}
           </Insight>
         </div>
       </div>
 
       <div className="mt-8 space-y-3">
         <div>
-          <div className="kicker" style={{ color: "#E0561F" }}>Model track record</div>
+          <div className="kicker" style={{ color: "#E0561F" }}>
+            Data &amp; method
+          </div>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-            This traces the win-probability model's training history — the count of real
-            player-seasons it has learned from growing each year since 2003 — alongside the
-            validation metric and method used to check the curve.
+            The dial is the trained win-probability model (AUC 0.93, Brier 0.107) evaluated on the game
+            state you set. The curve replays that same model across a real 2026 playoff game: every
+            point is the live margin after each made field goal, with team strength set from each
+            side&rsquo;s real season net rating. Margin is field-goal only (free throws aren&rsquo;t in
+            public play-by-play), so the curve is a faithful approximation of the real game.
           </p>
         </div>
-        <TrackRecord slug="win-probability" accent="#E0561F" />
       </div>
     </ToolShell>
   );
