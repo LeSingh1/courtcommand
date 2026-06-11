@@ -14,55 +14,64 @@ export interface FantasyRow {
   cats: { pts: number; reb: number; ast: number; stl: number; blk: number; threes: number };
 }
 
-export function fantasyBoard(punt: PuntCategory = "none"): FantasyRow[] {
-  // 9-cat-ish z-scores from the player pool
-  const mean = (f: (p: Player) => number) => PLAYERS.reduce((a, p) => a + f(p), 0) / PLAYERS.length;
-  const std = (f: (p: Player) => number, m: number) =>
-    Math.sqrt(PLAYERS.reduce((a, p) => a + (f(p) - m) ** 2, 0) / PLAYERS.length) || 1;
-  const z = (f: (p: Player) => number) => {
-    const m = mean(f);
-    const sd = std(f, m);
-    return (p: Player) => (f(p) - m) / sd;
-  };
-  const zp = z((p) => p.ppg);
-  const zr = z((p) => p.rpg);
-  const za = z((p) => p.apg);
-  const zs = z((p) => p.spg);
-  const zb = z((p) => p.bpg);
-  const z3 = z((p) => p.tpa * p.tpp);
-  const zfg = z((p) => p.fgp);
-  const zft = z((p) => p.ftp);
-  const zto = z((p) => -p.topg);
+// 12 teams × 13 roster slots — the pool that actually gets drafted. Z-scores
+// against all 536 players inflate everyone (replacement-level scrubs drag the
+// mean down); the relevant distribution is the draftable pool, so we
+// standardize twice: a first pass over everyone to find the ~156 draftables,
+// then a second pass standardized within that pool (post-punt).
+export const DRAFTABLE_POOL = 156;
 
-  const rows = PLAYERS.map((p) => {
-    const parts: Record<string, number> = {
-      pts: zp(p),
-      reb: zr(p),
-      ast: za(p),
-      stl: zs(p),
-      blk: zb(p),
-      threes: z3(p),
-      fg: zfg(p),
-      ft: zft(p),
-      to: zto(p),
-    };
-    if (punt !== "none" && parts[punt] !== undefined) parts[punt] = 0;
-    const zScore = Object.values(parts).reduce((a, v) => a + v, 0);
-    return {
-      player: p,
-      zScore: Math.round(zScore * 100) / 100,
-      rank: 0,
-      scarcity: 0,
-      cats: {
-        pts: Math.round(parts.pts * 100) / 100,
-        reb: Math.round(parts.reb * 100) / 100,
-        ast: Math.round(parts.ast * 100) / 100,
-        stl: Math.round(parts.stl * 100) / 100,
-        blk: Math.round(parts.blk * 100) / 100,
-        threes: Math.round(parts.threes * 100) / 100,
-      },
-    };
-  }).sort((a, b) => b.zScore - a.zScore);
+export function fantasyBoard(punt: PuntCategory = "none"): FantasyRow[] {
+  const CATS: { key: string; f: (p: Player) => number }[] = [
+    { key: "pts", f: (p) => p.ppg },
+    { key: "reb", f: (p) => p.rpg },
+    { key: "ast", f: (p) => p.apg },
+    { key: "stl", f: (p) => p.spg },
+    { key: "blk", f: (p) => p.bpg },
+    { key: "threes", f: (p) => p.tpa * p.tpp },
+    { key: "fg", f: (p) => p.fgp },
+    { key: "ft", f: (p) => p.ftp },
+    { key: "to", f: (p) => -p.topg },
+  ];
+  const zFns = (pool: Player[]) =>
+    CATS.map(({ key, f }) => {
+      const m = pool.reduce((a, p) => a + f(p), 0) / pool.length;
+      const sd = Math.sqrt(pool.reduce((a, p) => a + (f(p) - m) ** 2, 0) / pool.length) || 1;
+      return { key, z: (p: Player) => (f(p) - m) / sd };
+    });
+  const total = (p: Player, fns: ReturnType<typeof zFns>) =>
+    fns.reduce((a, { key, z }) => a + (punt !== "none" && key === punt ? 0 : z(p)), 0);
+
+  // pass 1: rank everyone against the full league to find the draftable pool
+  const all = zFns(PLAYERS);
+  const draftable = [...PLAYERS]
+    .sort((a, b) => total(b, all) - total(a, all))
+    .slice(0, DRAFTABLE_POOL);
+
+  // pass 2: standardize within the draftable pool (punted category excluded
+  // from the sum, so the remaining categories re-rank the board)
+  const fns = zFns(draftable);
+  const rows = draftable
+    .map((p) => {
+      const parts: Record<string, number> = {};
+      for (const { key, z } of fns) parts[key] = punt !== "none" && key === punt ? 0 : z(p);
+      const zScore = Object.values(parts).reduce((a, v) => a + v, 0);
+      return {
+        player: p,
+        zScore: Math.round(zScore * 100) / 100,
+        rank: 0,
+        scarcity: 0,
+        cats: {
+          pts: Math.round(parts.pts * 100) / 100,
+          reb: Math.round(parts.reb * 100) / 100,
+          ast: Math.round(parts.ast * 100) / 100,
+          stl: Math.round(parts.stl * 100) / 100,
+          blk: Math.round(parts.blk * 100) / 100,
+          threes: Math.round(parts.threes * 100) / 100,
+        },
+      };
+    })
+    .sort((a, b) => b.zScore - a.zScore);
   rows.forEach((r, i) => {
     r.rank = i + 1;
     r.scarcity = Math.round(clamp((r.player.pos === "C" ? 70 : r.player.pos === "PG" ? 55 : 45) + r.player.bpg * 6, 0, 100));
@@ -155,8 +164,12 @@ export function draftRecommend(
   return available
     .map((r) => {
       const p = r.player;
-      const fitRaw = active.reduce((a, c) => a + (weights.get(c) ?? 0) * r.cats[c], 0);
-      const fit_score = Math.round(clamp(50 + fitRaw * 22, 0, 100));
+      // Fit measures FILLING the roster's weak categories — a specialist's
+      // spike in a needed cat counts in full, and his weak unrelated cats
+      // don't subtract (overall value is the composite's zScore term, not
+      // fit's job). Hence the max(0, ·).
+      const fitRaw = active.reduce((a, c) => a + (weights.get(c) ?? 0) * Math.max(0, r.cats[c]), 0);
+      const fit_score = Math.round(clamp(50 + fitRaw * 22, 0, 100) * 10) / 10;
       const left = qualityLeft[p.pos] ?? 0;
       const scarcity_score = Math.round(clamp(96 - left * 14, 4, 96));
       const missed = Math.max(0, 78 - p.gp);
@@ -308,6 +321,56 @@ export interface BracketGame {
   winner: NcaaTeam;
   upset: boolean;
 }
+// Exact tournament probabilities — no simulation needed. For a fixed
+// single-elimination bracket, each team's chance of reaching every round is
+// computable in closed form: P(win round r) = P(reached r) × Σ over possible
+// opponents P(opponent reached r) × P(beat that opponent). Deterministic and
+// exact where a Monte Carlo would be noisy.
+export interface TitleOdds {
+  team: NcaaTeam;
+  semis: number; // P(reach final four), 0-100
+  final: number;
+  title: number;
+}
+
+export function titleOdds(emphasis: BracketEmphasis = "balanced"): TitleOdds[] {
+  const n = NCAA_FIELD.length; // 16, bracket order = pairing order
+  const rounds = Math.log2(n);
+  // reach[t] = P(team t alive entering current round)
+  let reach = NCAA_FIELD.map(() => 1);
+  const perRound: number[][] = [];
+  for (let r = 0; r < rounds; r++) {
+    const size = n >> r; // teams notionally alive this round
+    const next = NCAA_FIELD.map(() => 0);
+    for (let t = 0; t < n; t++) {
+      if (reach[t] === 0) continue;
+      // block of potential opponents this round: the adjacent group of
+      // 2^r teams on the other side of the pairing
+      const block = 1 << r;
+      const groupStart = Math.floor(t / (block * 2)) * (block * 2);
+      const oppStart = t - groupStart < block ? groupStart + block : groupStart;
+      let winP = 0;
+      for (let o = oppStart; o < oppStart + block; o++) {
+        if (o === t) continue;
+        winP += reach[o] * winProb(NCAA_FIELD[t], NCAA_FIELD[o], emphasis);
+      }
+      next[t] = reach[t] * winP;
+    }
+    perRound.push(next);
+    reach = next;
+    if (size <= 2) break;
+  }
+  const semisIdx = rounds - 3; // survived to final four (16 → after round 2)
+  const finalIdx = rounds - 2;
+  const titleIdx = rounds - 1;
+  return NCAA_FIELD.map((team, t) => ({
+    team,
+    semis: Math.round((perRound[semisIdx]?.[t] ?? 0) * 1000) / 10,
+    final: Math.round((perRound[finalIdx]?.[t] ?? 0) * 1000) / 10,
+    title: Math.round((perRound[titleIdx]?.[t] ?? 0) * 1000) / 10,
+  })).sort((a, b) => b.title - a.title);
+}
+
 export function simulateBracket(
   emphasis: BracketEmphasis = "balanced",
 ): { rounds: BracketGame[][]; champion: NcaaTeam } {

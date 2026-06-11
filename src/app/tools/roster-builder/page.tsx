@@ -13,6 +13,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { PLAYERS, SALARY_CAP } from "@/lib/data";
+import { capSituation } from "@/lib/engine/cba";
 import { scoreLineup, type LineupScore } from "@/lib/engine/teams";
 import { contractBreakdown } from "@/lib/engine/value";
 import { gradeColor, letterGrade, STEEL } from "@/lib/cn";
@@ -156,6 +157,24 @@ export default function RosterBuilderPage() {
                 color={overCap ? gradeColor(0) : ACCENT}
                 height={12}
               />
+              {(() => {
+                const sit = capSituation(payroll);
+                return (
+                  <div className="mt-2.5 rounded-lg border border-[var(--line)] bg-white/[0.02] px-3 py-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-[var(--text-muted)]">CBA position</span>
+                      <span className="stat-num text-[11px] font-semibold" style={{ color: ACCENT }}>
+                        {sit.band}
+                      </span>
+                    </div>
+                    {sit.notes.map((n) => (
+                      <p key={n} className="mt-1 text-[11px] leading-relaxed text-[var(--text-faint)]">
+                        {n}
+                      </p>
+                    ))}
+                  </div>
+                );
+              })()}
 
               <div className="mt-4 space-y-1.5">
                 {roster.length === 0 && (

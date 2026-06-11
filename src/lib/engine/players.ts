@@ -1,5 +1,5 @@
 import type { Player, Position } from "@/lib/types";
-import { PLAYERS, getPlayer, TEAM_MAP } from "@/lib/data";
+import { PLAYERS, getPlayer, TEAM_MAP, TEAMS } from "@/lib/data";
 import { letterGrade } from "@/lib/cn";
 import { predictMvpShare, predictInjuryProb } from "@/lib/model";
 
@@ -626,19 +626,43 @@ export interface AwardRow {
   odds: number;
 }
 
+// Voters punish missed games hard — the 65-game rule formalizes it. Below 65
+// games a candidacy decays quadratically: ~72% of itself at 55 games, ~48% at 45.
+function availabilityGate(gp: number): number {
+  if (gp >= 65) return 1;
+  const f = Math.max(0.3, gp / 65);
+  return f * f;
+}
+
+// MVPs almost always come from top-4 seeds, and the effect is nonlinear — a
+// step at the top of the conference, not a linear wins term.
+function topSeedBoost(abbr: string): number {
+  const team = TEAM_MAP[abbr];
+  if (!team) return 1;
+  const confRank = TEAMS.filter((t) => t.conf === team.conf && t.wins > team.wins).length + 1;
+  return confRank <= 4 ? 1.12 : confRank <= 6 ? 1.03 : 1;
+}
+
 export function awardRace(kind: AwardKind): AwardRow[] {
   const teamWins = (abbr: string) => TEAM_MAP[abbr]?.wins ?? 41;
   let scored = PLAYERS.map((p) => {
     const wins = teamWins(p.team);
     let raw = 0;
     if (kind === "MVP")
-      raw = predictMvpShare({ per: p.per, bpm: p.bpm, teamWins: wins, ppg: p.ppg, ts: p.tsp });
+      raw =
+        predictMvpShare({ per: p.per, bpm: p.bpm, teamWins: wins, ppg: p.ppg, ts: p.tsp }) *
+        availabilityGate(p.gp) *
+        topSeedBoost(p.team);
     else if (kind === "DPOY")
       // DPOY rewards individual defense (rim protection + events), not team
       // record — a dominant anchor on a losing team can still run away with it.
-      raw = p.defImpact * 1.4 + p.bpg * 9 + p.spg * 4 + p.rpg * 0.4 + Math.max(0, wins - 45) * 0.12;
-    else if (kind === "ROTY") raw = (p.exp <= 1 ? p.per + p.ppg * 0.6 + p.bpm * 1.5 : -999);
-    else raw = (p.salary < 18 && p.usg < 26 ? p.ppg * 1.2 + p.per * 0.5 : -999);
+      raw =
+        (p.defImpact * 1.4 + p.bpg * 9 + p.spg * 4 + p.rpg * 0.4 + Math.max(0, wins - 45) * 0.12) *
+        availabilityGate(p.gp);
+    else if (kind === "ROTY")
+      raw = p.exp <= 1 ? (p.per + p.ppg * 0.6 + p.bpm * 1.5) * availabilityGate(p.gp) : -999;
+    else
+      raw = p.salary < 18 && p.usg < 26 ? (p.ppg * 1.2 + p.per * 0.5) * availabilityGate(p.gp) : -999;
     return { player: p, raw };
   }).filter((x) => x.raw > -100);
   scored.sort((a, b) => b.raw - a.raw);

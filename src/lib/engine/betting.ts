@@ -104,10 +104,23 @@ const FLOOR: Record<Market, number> = {
   "3PM": 0.7, STOCKS: 0.6, STL: 0.5, BLK: 0.5, TOV: 0.6, FAN: 4,
 };
 
+// Scoring stats are over-dispersed relative to a Poisson-like assumption
+// (variance > mean): a Normal/NB with inflated variance fits points far
+// better. Understating that variance overstates tail confidence and
+// misprices lines, so points-family markets carry an over-dispersion factor.
+const OVERDISPERSION: Partial<Record<Market, number>> = {
+  PTS: 1.2,
+  PRA: 1.18,
+  PR: 1.15,
+  PA: 1.15,
+  FAN: 1.15,
+};
+
 function sigma(p: Player, m: Market, proj: number): number {
   // higher-usage players are a touch more volatile
   const usageVol = 1 + (p.usg - 24) * 0.004;
-  return Math.max(proj * CV[m] * usageVol, FLOOR[m]);
+  const od = OVERDISPERSION[m] ?? 1;
+  return Math.max(proj * CV[m] * usageVol * od, FLOOR[m]);
 }
 
 export type OddsType = "standard" | "demon" | "goblin";
@@ -249,7 +262,10 @@ export function evaluateProp(p: Player, m: Market, oddsType: OddsType = "standar
     implied,
     edge: Math.round(edge * 1000) / 1000,
     evPct: Math.round(evPct * 10) / 10,
-    kellyFraction: kellyFraction(pSide, implied),
+    // Half Kelly by default: the edge is vs our own modeled line, and model
+    // error makes the true edge uncertain — fractional Kelly is the honest
+    // sizing. (kellyFraction() itself stays full-Kelly for the math.)
+    kellyFraction: Math.min(KELLY_CAP, kellyFraction(pSide, implied) * 0.5),
     confidenceTier: confidenceTier(edge, sd, adjMean),
     grade,
     adjustments: adj,

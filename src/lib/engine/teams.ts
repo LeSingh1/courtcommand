@@ -10,6 +10,7 @@ import {
   LUXURY_TAX,
 } from "@/lib/data";
 import { letterGrade } from "@/lib/cn";
+import { checkTradeSide, capBand } from "@/lib/engine/cba";
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const r1 = (v: number) => Math.round(v * 10) / 10;
@@ -111,13 +112,8 @@ function positionBalanceScore(roster: Player[]): number {
   return clamp(Math.round(100 - (dev / roster.length) * 125), 0, 100);
 }
 
-function matchAllowance(out: number, payroll: number): number {
-  // simplified 2024 CBA matching: 100%+250k under tax; tighter over apron
-  if (payroll > FIRST_APRON) return out + 0.25; // 100% over first apron
-  if (out <= 7.5) return out * 2 + 0.25;
-  if (out <= 29) return out + 7.5;
-  return out * 1.25 + 0.25;
-}
+// Salary matching, apron rules, and band classification live in the shared
+// CBA engine (engine/cba.ts) — Roster Builder consumes the same module.
 
 export function evaluateTrade(sides: TradeSide[]): TradeResult {
   const violations: string[] = [];
@@ -127,19 +123,21 @@ export function evaluateTrade(sides: TradeSide[]): TradeResult {
     const inc = s.incoming.reduce((a, p) => a + p.salary, 0);
     const netSalary = inc - out;
     const newPayroll = team.payroll - out + inc;
-    const allowed = matchAllowance(out, team.payroll);
-    const matchOk = inc <= allowed || team.payroll - out + inc <= SALARY_CAP;
-    const failure_reasons: string[] = [];
+    // Real 2023-CBA matching + apron rules, with rule-citing reasons.
+    const cba = checkTradeSide({
+      abbr: team.abbr,
+      payroll: team.payroll,
+      outgoing: out,
+      incoming: inc,
+      outgoingCount: s.outgoing.length,
+    });
+    const allowed = cba.allowed;
+    const matchOk = cba.legal;
+    const failure_reasons: string[] = [...cba.reasons];
     if (s.outgoing.length > MAX_OUTGOING)
       failure_reasons.push(
         `${team.abbr} sends out ${s.outgoing.length} players — this model caps each team at ${MAX_OUTGOING} outgoing.`,
       );
-    if (!matchOk)
-      failure_reasons.push(
-        `${team.abbr} takes in $${r1(inc)}M but can only absorb $${r1(allowed)}M for $${r1(out)}M out.`,
-      );
-    if (newPayroll > SECOND_APRON && netSalary > 0)
-      failure_reasons.push(`${team.abbr} is hard-capped at the 2nd apron and cannot add salary.`);
     violations.push(...failure_reasons);
 
     // positional balance before/after (synthetic players simply join the roster)
@@ -150,16 +148,7 @@ export function evaluateTrade(sides: TradeSide[]): TradeResult {
     const roster_fit_score = positionBalanceScore(after);
     const roster_fit_delta = roster_fit_score - beforeFit;
 
-    const apronBand =
-      newPayroll > SECOND_APRON
-        ? "2nd Apron"
-        : newPayroll > FIRST_APRON
-          ? "1st Apron"
-          : newPayroll > LUXURY_TAX
-            ? "Luxury Tax"
-            : newPayroll > SALARY_CAP
-              ? "Over Cap"
-              : "Under Cap";
+    const apronBand = capBand(newPayroll);
     const picksOut = s.picks ?? [];
     const picksIn = s.picksIn ?? [];
     const pickDelta =
@@ -309,24 +298,41 @@ const ANCHOR_METRIC: Record<LineupGoal, (p: Player) => number> = {
 
 export function bestLineup(pool: Player[], goal: LineupGoal = "best_overall"): LineupScore | null {
   if (pool.length < 5) return null;
-  // greedy: anchor with the goal's strongest player, then add complements
-  // maximizing the goal-weighted marginal score (name tie-break = deterministic)
+  // Exhaustive search: a 15-man roster is only C(15,5) = 3,003 lineups, so we
+  // evaluate every combination and take the true optimum — greedy can and will
+  // miss the best five. Pools beyond 22 (26k+ combos) fall back to greedy.
   const metric = ANCHOR_METRIC[goal];
   const sorted = [...pool].sort((a, b) => metric(b) - metric(a) || a.name.localeCompare(b.name));
+
+  if (sorted.length <= 22) {
+    let best: LineupScore | null = null;
+    const n = sorted.length;
+    for (let a = 0; a < n - 4; a++)
+      for (let b = a + 1; b < n - 3; b++)
+        for (let c = b + 1; c < n - 2; c++)
+          for (let d = c + 1; d < n - 1; d++)
+            for (let e = d + 1; e < n; e++) {
+              const s = scoreLineup([sorted[a], sorted[b], sorted[c], sorted[d], sorted[e]], goal);
+              if (!best || s.overall > best.overall) best = s;
+            }
+    return best;
+  }
+
+  // greedy fallback for oversized pools
   const five = [sorted[0]];
   while (five.length < 5) {
-    let best: Player | null = null;
+    let pick: Player | null = null;
     let bestScore = -1;
     for (const cand of sorted) {
       if (five.includes(cand)) continue;
       const s = scoreLineup([...five, cand], goal).overall;
       if (s > bestScore) {
         bestScore = s;
-        best = cand;
+        pick = cand;
       }
     }
-    if (!best) break;
-    five.push(best);
+    if (!pick) break;
+    five.push(pick);
   }
   return scoreLineup(five, goal);
 }

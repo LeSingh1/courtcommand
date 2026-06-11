@@ -17,6 +17,7 @@ import {
   NCAA_FIELD,
   type NcaaTeam,
   type BracketGame,
+  titleOdds,
 } from "@/lib/engine/content";
 
 const ROUND_NAMES = ["Round of 16", "Quarterfinals", "Semifinals", "Final"];
@@ -106,12 +107,8 @@ const EMPHASIS_OPTIONS: { label: string; value: Emphasis }[] = [
   { label: "Recent form", value: "form" },
 ];
 
-// Title-odds weighting per model emphasis — drives the ranked list ordering.
-function titleScore(team: NcaaTeam, emphasis: Emphasis): number {
-  if (emphasis === "efficiency") return team.eff + team.sos * 0.4;
-  if (emphasis === "form") return team.form * 30 + team.eff * 0.5;
-  return team.eff + team.sos * 0.4 + team.form * 12;
-}
+// Title odds come from the engine's exact bracket DP (titleOdds) — true
+// championship probabilities through this bracket, not a strength share.
 
 export default function MarchMadnessPage() {
   const tool = getTool("march-madness")!;
@@ -146,11 +143,9 @@ export default function MarchMadnessPage() {
   }, [h2hA, h2hB, emphasis]);
   const bPct = matchup ? Math.round((100 - matchup.win_probability) * 10) / 10 : 0;
 
-  // Field ranked by title odds under the chosen model emphasis.
-  const titleOdds = [...NCAA_FIELD]
-    .map((t) => ({ team: t, score: titleScore(t, emphasis) }))
-    .sort((a, b) => b.score - a.score);
-  const oddsTotal = titleOdds.reduce((s, o) => s + o.score, 0);
+  // Exact championship probabilities through this bracket under the chosen
+  // emphasis — computed in closed form, every path enumerated.
+  const odds = useMemo(() => titleOdds(emphasis), [emphasis]);
 
   return (
     <ToolShell tool={tool}>
@@ -371,11 +366,13 @@ export default function MarchMadnessPage() {
             </div>
           </div>
 
-          {/* ranked title odds */}
-          <Panel title="Title odds">
+          {/* exact championship probabilities */}
+          <Panel
+            title="Title odds · exact"
+            right={<span className="stat-num text-[11px] text-white/45">F4 / Final / Title</span>}
+          >
             <div className="space-y-1.5">
-              {titleOdds.map((o, i) => {
-                const pct = Math.round((o.score / oddsTotal) * 100);
+              {odds.map((o, i) => {
                 const isChamp = o.team.name === result.champion.name;
                 return (
                   <div
@@ -395,16 +392,27 @@ export default function MarchMadnessPage() {
                     <span className="flex-1 truncate text-xs font-medium text-white/90">
                       {o.team.name}
                     </span>
+                    <span className="stat-num w-10 text-right text-[11px] text-white/45">
+                      {o.semis.toFixed(0)}%
+                    </span>
+                    <span className="stat-num w-10 text-right text-[11px] text-white/55">
+                      {o.final.toFixed(0)}%
+                    </span>
                     <span
-                      className="stat-num text-[11px] font-semibold"
-                      style={{ color: isChamp ? ACCENT : "rgba(255,255,255,0.55)" }}
+                      className="stat-num w-12 text-right text-[11px] font-semibold"
+                      style={{ color: isChamp ? ACCENT : "rgba(255,255,255,0.75)" }}
                     >
-                      {pct}%
+                      {o.title.toFixed(1)}%
                     </span>
                   </div>
                 );
               })}
             </div>
+            <p className="mt-3 text-[11px] leading-relaxed text-[var(--text-faint)]">
+              Exact probabilities through this bracket — every opponent path enumerated in closed
+              form, not a strength share and not a noisy simulation. Columns: reach the final four,
+              reach the final, win it all.
+            </p>
           </Panel>
         </motion.div>
       ) : (

@@ -168,8 +168,16 @@ export function underratedWhy(p: Player): UnderratedProfile {
   }
 
   const why: string[] = [];
-  if (p.usg < 22 && p.tsp >= 0.58)
-    why.push(`low usage, high efficiency — ${(p.tsp * 100).toFixed(0)}% TS on ${p.usg}% usage`);
+  // Usage-adjusted efficiency: efficiency falls as usage rises (~0.4 TS points
+  // per usage point is the standard tradeoff), so low-usage players are
+  // efficient almost by construction. Project each player's TS% to a common
+  // 24% usage before crediting "efficient" — the question is who would STAY
+  // efficient with more on his plate, not who is efficient doing little.
+  const usageAdjTs = p.tsp - Math.max(0, 24 - p.usg) * 0.004;
+  if (p.usg < 22 && usageAdjTs >= 0.56)
+    why.push(
+      `efficiency that survives a usage bump — ${(p.tsp * 100).toFixed(0)}% TS at ${p.usg}% usage is ${(usageAdjTs * 100).toFixed(0)}% projected at a 24% load`,
+    );
   if (p.salary <= 15) why.push(`cheap salary at $${p.salary}M`);
   if (p.defImpact >= 55) why.push(`real defensive impact (${Math.round(p.defImpact)}/100)`);
   if (attentionGap >= 8)

@@ -103,8 +103,9 @@ export default function BettingPage() {
           For entertainment and analysis only. Not betting advice. Projections are built from each
           player&rsquo;s real season-level production; the lines shown are modeled around those
           projections, not real posted sportsbook lines (there&rsquo;s no live book feed in this
-          offline demo). Kelly fractions are full Kelly at each pick&rsquo;s implied odds, hard-capped
-          at {KELLY_CAP * 100}% of bankroll; confidence tiers (A/B/C) grade edge size against
+          offline demo). Suggested stakes are <b>half Kelly</b> at each pick&rsquo;s implied odds (the edge is
+          vs our own modeled line, and model error makes the true edge uncertain — fractional Kelly
+          is the honest sizing), hard-capped at {KELLY_CAP * 100}% of bankroll; confidence tiers (A/B/C) grade edge size against
           projection volatility. Point the model at a live game-log and odds feed to match the
           production EdgeBoard.
         </p>
