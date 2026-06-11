@@ -272,6 +272,14 @@ body {
     stroke-dashoffset: 0;
   }
 }
+/* Win-probability line: draws left-to-right on mount (pathLength=1). */
+@media (prefers-reduced-motion: no-preference) {
+  .wp-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: cc-draw 1.1s var(--ease-out) 0.15s both;
+  }
+}
 
 /* ---------- Atmosphere ---------- */
 /* No grain, no overlays: a pure-neutral field keeps every surface step honest

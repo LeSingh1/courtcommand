@@ -5,8 +5,7 @@ import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
 import { Slider, Segmented, Field } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
-import { LineChart } from "@/components/ui/LineChart";
-import { TeamLogo } from "@/components/ui/TeamLogo";
+import { WinProbChart } from "@/components/ui/WinProbChart";
 import { getTool, categoryColor } from "@/lib/tools";
 import { winProbability } from "@/lib/engine/game";
 import { loadRealShots, playoffGames, type RealShot } from "@/lib/data/shots";
@@ -184,24 +183,12 @@ export default function WinProbabilityPage() {
             >
               {series ? (
                 <>
-                  <LineChart
-                    series={[{ name: A, color: accent, points: series.points.map((p) => p.wp) }]}
-                    labels={series.points.map(() => "")}
-                    yMin={0}
-                    yMax={100}
-                    yLabel={`${A} WP %`}
-                    height={220}
-                  />
+                  <WinProbChart series={series} height={280} />
                   <div className="mt-2 flex items-center justify-between text-[11px] text-white/50">
-                    <span className="flex items-center gap-1.5">
-                      <TeamLogo abbr={A} size={14} /> {A}
-                    </span>
+                    <span>Hover the chart to scrub any moment</span>
                     <span>
                       {series.points.length} events · FGs, FTs, turnovers · excitement{" "}
                       <span className="stat-num text-white/75">{series.excitement}</span>
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      {B} <TeamLogo abbr={B} size={14} />
                     </span>
                   </div>
                   <div className="mt-4 border-t border-white/[0.07] pt-3">

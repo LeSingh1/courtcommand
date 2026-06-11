@@ -58,9 +58,18 @@ export interface WpPoint {
   i: number;
   wp: number; // home win prob, 0-100
   margin: number;
+  h: number; // home score after the play
+  a: number; // away score
   period: number;
   clockSec: number;
+  elapsed: number; // seconds of game time elapsed (x-axis position)
   kind: PbpEvent["k"];
+}
+
+// Game time elapsed at an event — regulation quarters are 720s, OTs 300s.
+export function elapsedAt(period: number, clockSec: number): number {
+  if (period <= 4) return (period - 1) * 720 + (720 - clockSec);
+  return 2880 + (period - 5) * 300 + (300 - clockSec);
 }
 export interface WpSwing {
   index: number;
@@ -114,8 +123,11 @@ export function gameWpSeries(game: PbpGame): GameWpSeries {
       i: points.length,
       wp: Math.round(clamp(wp, 0.005, 0.995) * 1000) / 10,
       margin: e.h - e.a,
+      h: e.h,
+      a: e.a,
       period: e.p,
       clockSec: e.c,
+      elapsed: elapsedAt(e.p, e.c),
       kind: e.k,
     });
   }
