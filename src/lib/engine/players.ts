@@ -7,7 +7,8 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 // ---------------- Player Similarity (HoopRadar) ----------------
 // Ten stat dimensions, z-scored over the full league pool, then compared with
-// cosine similarity over weighted z-vectors. Category weights: scoring .22,
+// Mahalanobis distance over weighted z-vectors (covariance-whitened, so
+// correlated stats are not double-counted). Category weights: scoring .22,
 // efficiency .18, playmaking .16, defense .16, shot-diet .16, rebounding .12.
 const SIM_DIMS: { key: keyof Player; label: string; weight: number }[] = [
   { key: "ppg", label: "Scoring volume", weight: 0.12 }, // scoring (.22 total)
@@ -64,11 +65,63 @@ export interface TraitDelta {
 
 export interface SimResult {
   player: Player;
-  score: number; // 0-100 similarity
+  score: number; // 0-100 closeness percentile vs the whole pool
+  distance: number; // Mahalanobis distance (lower = closer)
   reasons: string[];
   topSharedTraits: TraitDelta[]; // 3 dims with smallest normalized distance
   biggestDifferences: TraitDelta[]; // 2 dims with largest
   matchedArchetype: string;
+}
+
+// ---- Mahalanobis machinery -------------------------------------------------
+// Stats are correlated (scoring and usage move together): a plain weighted
+// distance counts that correlation twice. Mahalanobis whitens the feature
+// space with the inverse covariance so each independent direction counts
+// once — the statistically correct "statistical twin." Magnitude matters too
+// (a 28-ppg creator is not a twin of an 8-ppg one with the same shape), which
+// distance preserves and cosine would throw away.
+let _covInv: number[][] | null = null;
+
+function matInverse(m: number[][]): number[][] {
+  const n = m.length;
+  const a = m.map((row, i) => [...row, ...row.map((_, j) => (i === j ? 1 : 0))]);
+  for (let col = 0; col < n; col++) {
+    let pivot = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(a[r][col]) > Math.abs(a[pivot][col])) pivot = r;
+    [a[col], a[pivot]] = [a[pivot], a[col]];
+    const pv = a[col][col] || 1e-9;
+    for (let j = 0; j < 2 * n; j++) a[col][j] /= pv;
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue;
+      const f = a[r][col];
+      for (let j = 0; j < 2 * n; j++) a[r][j] -= f * a[col][j];
+    }
+  }
+  return a.map((row) => row.slice(n));
+}
+
+function covInverse(): number[][] {
+  if (_covInv) return _covInv;
+  const k = SIM_DIMS.length;
+  const vecs = PLAYERS.map((p) => zVector(p).map((z, i) => z * SIM_DIMS[i].weight));
+  const mean = Array(k).fill(0);
+  for (const v of vecs) for (let i = 0; i < k; i++) mean[i] += v[i] / vecs.length;
+  const cov: number[][] = Array.from({ length: k }, () => Array(k).fill(0));
+  for (const v of vecs)
+    for (let i = 0; i < k; i++)
+      for (let j = 0; j < k; j++) cov[i][j] += ((v[i] - mean[i]) * (v[j] - mean[j])) / vecs.length;
+  // ridge regularization keeps the inverse stable
+  for (let i = 0; i < k; i++) cov[i][i] += 0.05;
+  _covInv = matInverse(cov);
+  return _covInv;
+}
+
+function mahalanobis(a: number[], b: number[]): number {
+  const inv = covInverse();
+  const d = a.map((x, i) => x - b[i]);
+  let q = 0;
+  for (let i = 0; i < d.length; i++) for (let j = 0; j < d.length; j++) q += d[i] * inv[i][j] * d[j];
+  return Math.sqrt(Math.max(0, q));
 }
 
 export function similarPlayers(
@@ -82,7 +135,13 @@ export function similarPlayers(
   const ageFilter = opts?.ageBand ?? "any";
   const tz = zVector(target);
   const tw = tz.map((z, i) => z * SIM_DIMS[i].weight);
-  const tMag = Math.sqrt(tw.reduce((a, b) => a + b * b, 0)) || 1;
+
+  // Closeness percentile baseline: this anchor's distance to EVERY other
+  // player, so a "97" means closer than 97% of the league — and a best comp
+  // at the 60th percentile honestly reads as "no real twin exists."
+  const allDists = PLAYERS.filter((p) => p.id !== id)
+    .map((p) => mahalanobis(tw, zVector(p).map((z, i) => z * SIM_DIMS[i].weight)))
+    .sort((x, y) => x - y);
 
   return PLAYERS.filter(
     (p) =>
@@ -93,11 +152,16 @@ export function similarPlayers(
     .map((p) => {
       const pz = zVector(p);
       const pw = pz.map((z, i) => z * SIM_DIMS[i].weight);
-      const pMag = Math.sqrt(pw.reduce((a, b) => a + b * b, 0)) || 1;
-      let dot = 0;
-      for (let i = 0; i < tw.length; i++) dot += tw[i] * pw[i];
-      const cos = dot / (tMag * pMag);
-      const score = clamp(Math.round(((cos + 1) / 2) * 100), 0, 99);
+      const dist = mahalanobis(tw, pw);
+      // percentile of closeness among all players (deterministic binary search)
+      let lo = 0;
+      let hi = allDists.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (allDists[mid] < dist) lo = mid + 1;
+        else hi = mid;
+      }
+      const score = clamp(Math.round((1 - lo / allDists.length) * 100), 0, 99);
 
       const deltas: TraitDelta[] = SIM_DIMS.map((d, i) => ({
         label: d.label,
@@ -115,13 +179,14 @@ export function similarPlayers(
       return {
         player: p,
         score,
+        distance: Math.round(dist * 100) / 100,
         reasons: reasons.slice(0, 3),
         topSharedTraits: byCloseness.slice(0, 3),
         biggestDifferences: byCloseness.slice(-2).reverse(),
         matchedArchetype: p.archetype,
       };
     })
-    .sort((a, b) => b.score - a.score || a.player.id.localeCompare(b.player.id))
+    .sort((a, b) => a.distance - b.distance || a.player.id.localeCompare(b.player.id))
     .slice(0, limit);
 }
 

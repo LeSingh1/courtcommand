@@ -109,7 +109,7 @@ describe("underratedWhy", () => {
     const profile = underratedWhy(sleeper);
     expect(profile.eligible).toBe(true);
     expect(profile.whyUnderrated.length).toBeGreaterThan(0);
-    expect(profile.whyUnderrated.join(" ")).toContain("low usage");
+    expect(profile.whyUnderrated.join(" ")).toContain("projected at a 24% load");
     expect(profile.idealTeamFits).toHaveLength(3);
     for (const fit of profile.idealTeamFits) {
       expect(fit.team.abbr).not.toBe(sleeper.team);

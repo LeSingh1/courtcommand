@@ -221,8 +221,12 @@ export default function RefBiasPage() {
                 <p className="mb-3 max-w-2xl text-xs text-white/45">
                   Each row compares a team&rsquo;s average free-throw attempts in the{" "}
                   {inspected.games} playoff games {inspected.official} officiated against that
-                  team&rsquo;s other playoff games. Splits under {REF_SMALL_SAMPLE_GAMES} games on
-                  either side are flagged — at that size a delta is noise, not a pattern.
+                  team&rsquo;s other playoff games, with a ±95% bound on the difference (Welch).{" "}
+                  <span className="text-white/70">
+                    {inspected.teams.filter((t) => t.withinNoise).length} of {inspected.teams.length}{" "}
+                    splits here are statistically indistinguishable from chance
+                  </span>{" "}
+                  — at these sample sizes, that is the expected honest finding.
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[680px] text-sm">
@@ -250,8 +254,20 @@ export default function RefBiasPage() {
                           </td>
                           <td className="stat-num py-2.5 text-white/65">{t.ftaWith.toFixed(1)}</td>
                           <td className="stat-num py-2.5 text-white/65">{t.ftaWithout.toFixed(1)}</td>
-                          <td className="stat-num py-2.5 pr-2 font-semibold" style={{ color: t.smallSample ? "#8E96A4" : accent }}>
-                            {signed(t.delta)}
+                          <td className="py-2.5 pr-2">
+                            <span
+                              className="stat-num font-semibold"
+                              style={{ color: t.withinNoise ? "#8E96A4" : accent }}
+                              title={`±${(1.96 * t.se).toFixed(1)} FTA/g at 95% — ${t.withinNoise ? "within" : "outside"} the noise band`}
+                            >
+                              {signed(t.delta)}
+                            </span>
+                            <span className="stat-num ml-1.5 text-[10px] text-white/35">
+                              ±{(1.96 * t.se).toFixed(1)}
+                            </span>
+                            {t.withinNoise && (
+                              <span className="ml-1.5 text-[10px] text-white/40">noise</span>
+                            )}
                           </td>
                         </tr>
                       ))}

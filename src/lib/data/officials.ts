@@ -30,6 +30,8 @@ export interface RefTeamSplit {
   ftaWith: number; // team avg FTA per game with this official
   ftaWithout: number; // team avg FTA per game in its games without them
   delta: number; // ftaWith - ftaWithout
+  se: number; // standard error of the delta (Welch two-sample)
+  withinNoise: boolean; // |delta| < 1.96·se — indistinguishable from chance
   smallSample: boolean; // either side of the split is under the floor
 }
 
@@ -94,19 +96,32 @@ export function refSplits(games: OfficialGame[] = OFFICIAL_GAMES): RefSplit[] {
       }
     }
     const teams: RefTeamSplit[] = [];
+    const variance = (xs: number[], m: number) =>
+      xs.length > 1 ? xs.reduce((a, x) => a + (x - m) ** 2, 0) / (xs.length - 1) : 0;
     for (const [abbr, e] of withRef) {
       const all = teamGames.get(abbr) ?? [];
       const without = all.filter((x) => !e.ids.has(x.gameId));
+      const withFtas = all.filter((x) => e.ids.has(x.gameId)).map((x) => x.fta);
       const gamesWith = e.ids.size;
       const ftaWith = e.fta / gamesWith;
-      const ftaWithout = without.length ? without.reduce((a, x) => a + x.fta, 0) / without.length : 0;
+      const woFtas = without.map((x) => x.fta);
+      const ftaWithout = woFtas.length ? woFtas.reduce((a, x) => a + x, 0) / woFtas.length : 0;
+      const delta = ftaWith - ftaWithout;
+      // Welch standard error of the difference in means — the honest yardstick
+      // for whether a split is anything but chance at these sample sizes.
+      const se = Math.sqrt(
+        (gamesWith > 1 ? variance(withFtas, ftaWith) / gamesWith : 25) +
+          (woFtas.length > 1 ? variance(woFtas, ftaWithout) / woFtas.length : 25),
+      );
       teams.push({
         team: abbr,
         gamesWith,
         gamesWithout: without.length,
         ftaWith,
         ftaWithout,
-        delta: ftaWith - ftaWithout,
+        delta,
+        se,
+        withinNoise: Math.abs(delta) < 1.96 * se,
         smallSample: gamesWith < REF_SMALL_SAMPLE_GAMES || without.length < REF_SMALL_SAMPLE_GAMES,
       });
     }

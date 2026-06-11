@@ -261,6 +261,60 @@ export function gameMomentum(
   return { teams, timeline, runs, biggest: runs[0] ?? null, keyShiftEvents };
 }
 
+// ---- The momentum hypothesis, tested across every playoff game -------------
+// After conceding an 8-0+ run, does a team actually shoot worse (rattled) or
+// better (bounce-back) than its own baseline? Pool every run response in the
+// corpus and test the pooled rate against the pooled baseline expectation.
+// Spoiler the data insists on: it's mostly regression to the mean.
+export interface MomentumNullTest {
+  runs: number; // 8-0+ runs with a measurable response
+  att: number; // pooled response attempts
+  made: number;
+  responsePct: number;
+  baselinePct: number; // attempt-weighted baseline expectation
+  z: number; // one-proportion z vs the baseline expectation
+  withinNoise: boolean; // |z| < 1.96
+  verdict: string;
+}
+
+export function momentumNullTest(shots: RealShot[]): MomentumNullTest {
+  const games = playoffGames(shots);
+  let att = 0;
+  let made = 0;
+  let baseWeighted = 0;
+  let runs = 0;
+  for (const g of games) {
+    const mom = gameMomentum(shots, g.gameId);
+    for (const ev of mom.keyShiftEvents) {
+      if (!ev.response || ev.response.att === 0) continue;
+      runs++;
+      att += ev.response.att;
+      made += ev.response.made;
+      baseWeighted += ev.response.baselinePct * ev.response.att;
+    }
+  }
+  const responsePct = att ? made / att : 0;
+  const baselinePct = att ? baseWeighted / att : 0;
+  const se = att ? Math.sqrt((baselinePct * (1 - baselinePct)) / att) : 1;
+  const z = se > 0 ? (responsePct - baselinePct) / se : 0;
+  const withinNoise = Math.abs(z) < 1.96;
+  const verdict = withinNoise
+    ? "indistinguishable from their normal shooting — the run says nothing about what happens next"
+    : responsePct > baselinePct
+      ? "markedly better than their pre-run rate — but read it right: the baseline includes the cold stretch that created the run, so this is regression to the mean. Conceding a run does not predict continued collapse; teams snap back to normal"
+      : "worse than baseline — a measurable rattled effect";
+  return {
+    runs,
+    att,
+    made,
+    responsePct: Math.round(responsePct * 1000) / 10,
+    baselinePct: Math.round(baselinePct * 1000) / 10,
+    z: Math.round(z * 100) / 100,
+    withinNoise,
+    verdict,
+  };
+}
+
 // ---- Real highlight detection from the playoff shots ----
 // Scores each made shot for "highlight-worthiness" from the real play text +
 // context (dunks, deep threes, clutch makes, putbacks). Real events, real

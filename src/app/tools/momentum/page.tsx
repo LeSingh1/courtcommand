@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/Controls";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-import { loadRealShots, playoffGames, gameMomentum, type RealShot } from "@/lib/data/shots";
+import { loadRealShots, playoffGames, gameMomentum, momentumNullTest, type RealShot } from "@/lib/data/shots";
 
 const ACCENT = "#4D8DFF";
 const AWAY = "#41C7E0";
@@ -34,6 +34,8 @@ export default function MomentumPage() {
   }, [games, gameId]);
 
   const mom = useMemo(() => (shots && gameId ? gameMomentum(shots, gameId) : null), [shots, gameId]);
+  // The momentum hypothesis, tested across every playoff game in the corpus.
+  const nullTest = useMemo(() => (shots ? momentumNullTest(shots) : null), [shots]);
 
   if (!shots) {
     return (
@@ -190,6 +192,26 @@ export default function MomentumPage() {
               </div>
             </Panel>
           </Reveal>
+        </div>
+      )}
+
+      {nullTest && (
+        <div className="mt-6">
+          <Panel title="Does momentum exist? · all 89 games">
+            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+              <span className="scoreboard text-3xl text-[var(--text)]">{nullTest.responsePct}%</span>
+              <span className="text-sm text-[var(--text-muted)]">
+                FG% on the next five attempts after conceding an 8-0+ run, vs a{" "}
+                <span className="stat-num text-[var(--text)]">{nullTest.baselinePct}%</span> baseline
+                expectation ({nullTest.runs} runs, {nullTest.att} pooled attempts, z ={" "}
+                {nullTest.z})
+              </span>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
+              Pooled across every playoff game, teams that just conceded a big run shoot{" "}
+              <b>{nullTest.verdict}</b>.{nullTest.withinNoise ? " Momentum, statistically, is mostly a story told after the fact — and this corpus has the receipts." : ""}
+            </p>
+          </Panel>
         </div>
       )}
 
