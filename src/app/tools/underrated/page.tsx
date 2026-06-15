@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Gem } from "lucide-react";
 import { spring, staggerParent, staggerItem } from "@/lib/motion";
 import { ToolShell, Panel, Insight } from "@/components/tool/ToolShell";
-import { Slider, Badge } from "@/components/ui/Controls";
+import { Slider, Badge, Segmented } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TeamLogo } from "@/components/ui/TeamLogo";
@@ -13,18 +13,25 @@ import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { underratedBoard } from "@/lib/engine/players";
 import { underratedWhy, UNDERRATED_USAGE_CAP, type UnderratedProfile } from "@/lib/engine/value";
+import type { Position } from "@/lib/types";
+
+type PosFilter = "All" | Position;
 
 export default function UnderratedPage() {
   const tool = getTool("underrated")!;
   const ACCENT = categoryColor(tool.category);
   const [maxSalary, setMaxSalary] = useState(25);
+  const [posFilter, setPosFilter] = useState<PosFilter>("All");
   const [analyzing, setAnalyzing] = useState(false);
 
   // High-usage featured options are excluded structurally — they cannot be
   // "underrated" no matter how cheap the deal looks.
   const board = useMemo(
-    () => underratedBoard(maxSalary).filter((r) => r.player.usg < UNDERRATED_USAGE_CAP),
-    [maxSalary],
+    () =>
+      underratedBoard(maxSalary)
+        .filter((r) => r.player.usg < UNDERRATED_USAGE_CAP)
+        .filter((r) => posFilter === "All" || r.player.pos === posFilter),
+    [maxSalary, posFilter],
   );
   const profiles = useMemo(
     () => new Map<string, UnderratedProfile>(board.map((r) => [r.player.id, underratedWhy(r.player)])),
@@ -38,7 +45,7 @@ export default function UnderratedPage() {
     setAnalyzing(true);
     const t = setTimeout(() => setAnalyzing(false), 250);
     return () => clearTimeout(t);
-  }, [maxSalary]);
+  }, [maxSalary, posFilter]);
 
   return (
     <ToolShell tool={tool}>
@@ -54,9 +61,29 @@ export default function UnderratedPage() {
               accent={ACCENT}
               onChange={setMaxSalary}
             />
+            <div>
+              <div className="mb-2 text-xs text-white/55">Position</div>
+              <Segmented<PosFilter>
+                accent={ACCENT}
+                value={posFilter}
+                onChange={setPosFilter}
+                options={[
+                  { label: "All", value: "All" },
+                  { label: "PG", value: "PG" },
+                  { label: "SG", value: "SG" },
+                  { label: "SF", value: "SF" },
+                  { label: "PF", value: "PF" },
+                  { label: "C", value: "C" },
+                ]}
+              />
+            </div>
             <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
               Showing <b className="text-white">{board.length}</b> players under{" "}
-              <b style={{ color: ACCENT }}>${maxSalary}M</b>. Score blends true shooting, BPM, on-court
+              <b style={{ color: ACCENT }}>${maxSalary}M</b>
+              {posFilter !== "All" && (
+                <> at <b style={{ color: ACCENT }}>{posFilter}</b></>
+              )}
+              . Score blends true shooting, BPM, on-court
               net, cheapness, and low-usage &ldquo;under-the-radar&rdquo; value. Featured options at{" "}
               {UNDERRATED_USAGE_CAP}%+ usage are excluded structurally; thin samples are flagged.
             </div>
@@ -250,6 +277,7 @@ export default function UnderratedPage() {
               >
                 <span className="stat-num w-6 text-center text-sm text-white/35">{i + 1}</span>
                 <PlayerAvatar player={r.player} size={32} />
+                <TeamLogo abbr={r.player.team} size={20} />
                 <div className="min-w-[120px]">
                   <div className="flex items-center gap-2 text-sm font-semibold text-white">
                     {r.player.name}

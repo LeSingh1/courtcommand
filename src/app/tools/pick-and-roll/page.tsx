@@ -11,11 +11,25 @@ import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Reveal } from "@/components/ui/Reveal";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
-import { getPlayer, getPlayerByName } from "@/lib/data";
+import { getPlayer, getPlayerByName, PLAYERS } from "@/lib/data";
 import { pickAndRoll, type PnRResult } from "@/lib/engine/teams";
 import { gradeColor } from "@/lib/cn";
 import { spring } from "@/lib/motion";
-import type { Player } from "@/lib/types";
+import type { Player, Position } from "@/lib/types";
+
+const HANDLER_POSITIONS: { label: string; value: Position | "ALL" }[] = [
+  { label: "All", value: "ALL" },
+  { label: "PG", value: "PG" },
+  { label: "SG", value: "SG" },
+  { label: "SF", value: "SF" },
+];
+
+const ROLLER_POSITIONS: { label: string; value: Position | "ALL" }[] = [
+  { label: "All", value: "ALL" },
+  { label: "SF", value: "SF" },
+  { label: "PF", value: "PF" },
+  { label: "C", value: "C" },
+];
 
 const ACCENT = "#4D8DFF";
 const LEAGUE_AVG = 1.0;
@@ -26,6 +40,17 @@ export default function PickAndRollPage() {
   const tool = getTool("pick-and-roll")!;
   const [handler, setHandler] = useState<Player | null>(() => getPlayerByName("Luka Doncic") ?? null);
   const [roller, setRoller] = useState<Player | null>(null);
+  const [handlerPos, setHandlerPos] = useState<Position | "ALL">("ALL");
+  const [rollerPos, setRollerPos] = useState<Position | "ALL">("ALL");
+
+  const handlerPool = useMemo(
+    () => (handlerPos === "ALL" ? PLAYERS : PLAYERS.filter((p) => p.pos === handlerPos)),
+    [handlerPos],
+  );
+  const rollerPool = useMemo(
+    () => (rollerPos === "ALL" ? PLAYERS : PLAYERS.filter((p) => p.pos === rollerPos)),
+    [rollerPos],
+  );
 
   const result: PnRResult | null = useMemo(
     () => (handler && roller ? pickAndRoll(handler, roller) : null),
@@ -47,21 +72,39 @@ export default function PickAndRollPage() {
     <ToolShell tool={tool}>
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
         <div>
-          <div className="mb-1.5 text-xs font-medium text-white/60">Ball-handler</div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-xs font-medium text-white/60">Ball-handler</span>
+            <PosFilter
+              options={HANDLER_POSITIONS}
+              value={handlerPos}
+              onChange={(v) => { setHandlerPos(v); setHandler(null); }}
+              accent={ACCENT}
+            />
+          </div>
           <PlayerPicker
             value={handler}
             onChange={setHandler}
             accent={ACCENT}
+            pool={handlerPool}
             exclude={roller ? [roller.id] : []}
             placeholder="Pick the ball-handler…"
           />
         </div>
         <div>
-          <div className="mb-1.5 text-xs font-medium text-white/60">Roll-man</div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-xs font-medium text-white/60">Roll-man</span>
+            <PosFilter
+              options={ROLLER_POSITIONS}
+              value={rollerPos}
+              onChange={(v) => { setRollerPos(v); setRoller(null); }}
+              accent="#6B6E78"
+            />
+          </div>
           <PlayerPicker
             value={roller}
             onChange={setRoller}
             accent="#6B6E78"
+            pool={rollerPool}
             exclude={handler ? [handler.id] : []}
             placeholder="Pick the roll-man…"
           />
@@ -297,6 +340,37 @@ function StatCard({
           height={6}
         />
       </div>
+    </div>
+  );
+}
+
+function PosFilter<T extends string>({
+  options,
+  value,
+  onChange,
+  accent,
+}: {
+  options: { label: string; value: T }[];
+  value: T;
+  onChange: (v: T) => void;
+  accent: string;
+}) {
+  return (
+    <div className="flex gap-0.5">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          className="px-2 py-0.5 text-[10px] font-medium transition-colors"
+          style={
+            o.value === value
+              ? { background: accent, color: "#0a0c11" }
+              : { color: "rgba(255,255,255,0.35)" }
+          }
+        >
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 }

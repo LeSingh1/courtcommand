@@ -16,11 +16,27 @@ import { gradeColor } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
 type SortKey = "defScore" | "rimProtect" | "perimeter";
+type PosGroup = "all" | "guards" | "wings" | "bigs";
+
+const POS_GROUP_LABEL: Record<PosGroup, string> = {
+  all: "All",
+  guards: "Guards",
+  wings: "Wings",
+  bigs: "Bigs",
+};
+
+function matchesPosGroup(pos: string, group: PosGroup): boolean {
+  if (group === "all") return true;
+  if (group === "guards") return pos === "PG" || pos === "SG";
+  if (group === "wings") return pos === "SF";
+  return pos === "PF" || pos === "C";
+}
 
 export default function DefensiveImpactPage() {
   const tool = getTool("defensive-impact")!;
   const ACCENT = categoryColor(tool.category);
   const [sort, setSort] = useState<SortKey>("defScore");
+  const [posGroup, setPosGroup] = useState<PosGroup>("all");
 
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   useEffect(() => {
@@ -30,8 +46,11 @@ export default function DefensiveImpactPage() {
 
   const base = useMemo(() => defenseBoard(), []);
   const board = useMemo(
-    () => [...base].sort((a, b) => b[sort] - a[sort]),
-    [base, sort],
+    () =>
+      [...base]
+        .filter((r) => matchesPosGroup(r.player.pos, posGroup))
+        .sort((a, b) => b[sort] - a[sort]),
+    [base, sort, posGroup],
   );
 
   const bestRim = useMemo(
@@ -58,19 +77,30 @@ export default function DefensiveImpactPage() {
               position, and on-court net.
             </>
           ) : (
-            <>No defenders match this view — adjust the sort to see the board.</>
+            <>No defenders match this view — adjust the sort or position group to see the board.</>
           )}
         </Insight>
-        <Segmented
-          accent={ACCENT}
-          value={sort}
-          onChange={setSort}
-          options={[
-            { label: "Overall", value: "defScore" },
-            { label: "Rim", value: "rimProtect" },
-            { label: "Perimeter", value: "perimeter" },
-          ]}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Segmented
+            accent={ACCENT}
+            value={posGroup}
+            onChange={setPosGroup}
+            options={(["all", "guards", "wings", "bigs"] as PosGroup[]).map((g) => ({
+              label: POS_GROUP_LABEL[g],
+              value: g,
+            }))}
+          />
+          <Segmented
+            accent={ACCENT}
+            value={sort}
+            onChange={setSort}
+            options={[
+              { label: "Overall", value: "defScore" },
+              { label: "Rim", value: "rimProtect" },
+              { label: "Perimeter", value: "perimeter" },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Podium */}

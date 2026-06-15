@@ -355,6 +355,55 @@ export default function LineupOptimizerPage() {
                 </Panel>
               </Reveal>
 
+              <Reveal delay={0.12}>
+                <Panel title="Foul trouble risk">
+                  <p className="mb-4 text-sm text-white/50">
+                    Players most likely to pick up early fouls based on defensive aggression, usage
+                    load, and rim activity.
+                  </p>
+                  <div className="space-y-3">
+                    {[...shown.five]
+                      .map((p) => {
+                        const raw =
+                          p.usg * 1.2 +
+                          p.shotRim * 40 +
+                          p.bpg * 18 +
+                          (p.htIn - 74) * 1.5 +
+                          p.mpg * 0.3;
+                        const foulRisk = Math.min(100, Math.max(0, raw));
+                        const tier =
+                          foulRisk >= 70
+                            ? { label: "High risk", color: "#F4647D" }
+                            : foulRisk >= 45
+                              ? { label: "Moderate", color: "#D7BC6A" }
+                              : { label: "Low risk", color: "#4D8DFF" };
+                        return { p, foulRisk, tier };
+                      })
+                      .sort((a, b) => b.foulRisk - a.foulRisk)
+                      .map(({ p, foulRisk, tier }) => (
+                        <div key={p.id} className="flex items-center gap-3">
+                          <PlayerAvatar player={p} size={28} />
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                              <span className="truncate text-sm text-white/85">{p.name}</span>
+                              <span className="stat-num shrink-0 text-[10px]" style={{ color: tier.color }}>
+                                {tier.label}
+                              </span>
+                            </div>
+                            <Meter
+                              label={p.pos}
+                              valueLabel={`${Math.round(foulRisk)}`}
+                              value={foulRisk}
+                              color={tier.color}
+                              height={5}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </Panel>
+              </Reveal>
+
               <Insight accent={ACCENT}>
                 This unit grades{" "}
                 <b>

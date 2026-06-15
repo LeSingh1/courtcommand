@@ -11,7 +11,6 @@ import { Reveal } from "@/components/ui/Reveal";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { getTool } from "@/lib/tools";
 import { spring } from "@/lib/motion";
-// Pure session math lives in the engine layer so it stays unit-tested.
 import {
   consistencyScore,
   skillBalance,
@@ -39,6 +38,47 @@ const TYPE_COLOR: Record<SessionType, string> = {
   Strength: "#4D8DFF",
   Skills: "#4D8DFF",
 };
+
+interface RepBenchmark {
+  label: string;
+  reps: number;
+  desc: string;
+}
+
+interface MinuteBenchmark {
+  label: string;
+  minutes: number;
+  desc: string;
+}
+
+type BenchmarkEntry = RepBenchmark | MinuteBenchmark;
+
+const BENCHMARKS: Record<SessionType, BenchmarkEntry[]> = {
+  Shooting: [
+    { label: "Elite shooter", reps: 500, desc: "500+ makes/session" },
+    { label: "Program starter", reps: 300, desc: "300 makes — consistent volume" },
+    { label: "Development level", reps: 150, desc: "150 makes — building habit" },
+  ],
+  Conditioning: [
+    { label: "Pro fitness", minutes: 60, desc: "60+ min cardio sessions" },
+    { label: "College ready", minutes: 40, desc: "40 min — baseline aerobic base" },
+    { label: "Active recovery", minutes: 20, desc: "20 min — maintenance pace" },
+  ],
+  Strength: [
+    { label: "High-volume lifter", reps: 100, desc: "100+ reps (compound sets)" },
+    { label: "Balanced work", reps: 60, desc: "60 reps — strength + mobility" },
+    { label: "Entry level", reps: 30, desc: "30 reps — foundation phase" },
+  ],
+  Skills: [
+    { label: "Elite ball-handler", reps: 300, desc: "300+ reps — game-speed work" },
+    { label: "Developing guard", reps: 160, desc: "160 reps — consistent skill reps" },
+    { label: "Foundation", reps: 80, desc: "80 reps — learning movements" },
+  ],
+};
+
+function getBenchmarkValue(b: BenchmarkEntry): number {
+  return "reps" in b ? b.reps : b.minutes;
+}
 
 const SEED: Session[] = [
   { id: 1, day: "Mon", type: "Shooting", reps: 240, minutes: 55 },
@@ -70,6 +110,21 @@ export default function TrainingTrackerPage() {
 
   const recent = useMemo(() => [...sessions].slice(0, 6).reverse(), [sessions]);
 
+  const currentBenchmarks = BENCHMARKS[type];
+  const benchmarkMax = Math.max(...currentBenchmarks.map(getBenchmarkValue));
+  const userValue = type === "Conditioning" ? minutes : reps;
+
+  const highlightedTier = useMemo(() => {
+    let best: BenchmarkEntry | null = null;
+    for (const b of currentBenchmarks) {
+      const val = getBenchmarkValue(b);
+      if (userValue >= val) {
+        if (!best || val > getBenchmarkValue(best)) best = b;
+      }
+    }
+    return best;
+  }, [currentBenchmarks, userValue]);
+
   const addSession = () => {
     if (saving) return;
     setSaving(true);
@@ -84,7 +139,7 @@ export default function TrainingTrackerPage() {
   return (
     <ToolShell tool={tool}>
       {/* Top stat strip */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-4">
         <Reveal>
           <div className="glass rounded-lg p-5">
             <div className="flex items-center gap-2 text-white/55">
@@ -119,6 +174,18 @@ export default function TrainingTrackerPage() {
               <AnimatedNumber value={totalMinutes} suffix=" min" className="scoreboard mt-2 block text-5xl" />
             </span>
             <p className="mt-1 text-xs text-white/45">Time in the gym this week.</p>
+          </div>
+        </Reveal>
+        <Reveal delay={0.18}>
+          <div className="glass rounded-lg p-5">
+            <div className="flex items-center gap-2 text-white/55">
+              <Flame size={16} style={{ color: ACCENT }} />
+              <span className="text-xs">Current streak</span>
+            </div>
+            <span style={{ color: ACCENT }}>
+              <AnimatedNumber value={activeDays} className="scoreboard mt-2 block text-5xl" />
+            </span>
+            <p className="mt-1 text-xs text-white/45">Consecutive active days this week.</p>
           </div>
         </Reveal>
       </div>
@@ -194,6 +261,49 @@ export default function TrainingTrackerPage() {
                     : `${MIN_GOAL - totalMinutes} minutes left this week.`}
                 </p>
               </div>
+            </div>
+          </Panel>
+
+          <Panel title="Type benchmarks">
+            <div className="space-y-3">
+              {currentBenchmarks.map((b) => {
+                const val = getBenchmarkValue(b);
+                const barPct = (val / benchmarkMax) * 100;
+                const isHighlighted =
+                  highlightedTier !== null && getBenchmarkValue(highlightedTier) === val;
+                const color = TYPE_COLOR[type];
+                return (
+                  <div
+                    key={b.label}
+                    className="rounded-md border px-3 py-2.5 transition-colors"
+                    style={{
+                      borderColor: isHighlighted ? `${color}99` : "rgba(255,255,255,0.06)",
+                      background: isHighlighted ? `${color}0d` : "transparent",
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 flex-shrink-0 rounded-full"
+                        style={{ background: color }}
+                      />
+                      <span className="text-xs font-semibold text-white/80">{b.label}</span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-white/45">{b.desc}</p>
+                    <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${barPct}%`, background: `${color}66` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="pt-1 text-[11px] text-white/35">
+                {type === "Conditioning" ? "Minutes" : "Reps"} from current session inputs.
+                {highlightedTier
+                  ? ` You meet "${highlightedTier.label}".`
+                  : " Log more to reach a tier."}
+              </p>
             </div>
           </Panel>
         </div>

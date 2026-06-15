@@ -163,6 +163,73 @@ export default function ClutchPage() {
           })}
         </div>
 
+        {leader && (() => {
+          const topPlayer = playerByEspn(leader.espnId);
+          const seasonFg = topPlayer ? Math.round(topPlayer.fgp * 100) : null;
+          const clutchFg = Math.round(leader.fgPct * 100);
+          const diff = seasonFg !== null ? clutchFg - seasonFg : null;
+          return (
+            <Panel title={`Clutch vs. regular season · ${leader.player}`} className="mb-4">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <div>
+                    <div className="mb-1 text-[10px] text-white/40">Clutch FG%</div>
+                    <div className="flex items-end gap-2">
+                      <span className="scoreboard text-4xl" style={{ color: accent }}>
+                        {clutchFg}%
+                      </span>
+                      {diff !== null && (
+                        <span
+                          className="stat-num mb-1 text-sm font-semibold"
+                          style={{ color: diff >= 0 ? "#6BE0A0" : "#F4647D" }}
+                        >
+                          {diff >= 0 ? "+" : ""}{diff}pp vs. season
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2">
+                      <Meter value={clutchFg} color={accent} height={6} />
+                    </div>
+                  </div>
+                  {seasonFg !== null && (
+                    <div>
+                      <div className="mb-1 text-[10px] text-white/40">Season FG%</div>
+                      <div className="scoreboard text-3xl text-white/70">{seasonFg}%</div>
+                      <div className="mt-2">
+                        <Meter value={seasonFg} color="rgba(255,255,255,0.25)" height={6} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-center">
+                      <div className="stat-num text-2xl font-bold" style={{ color: accent }}>{leader.pts}</div>
+                      <div className="mt-0.5 text-[10px] text-white/40">Clutch pts</div>
+                    </div>
+                    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-center">
+                      <div className="stat-num text-2xl font-bold text-white/80">{Math.round(leader.efg * 100)}%</div>
+                      <div className="mt-0.5 text-[10px] text-white/40">eFG%</div>
+                    </div>
+                    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-center">
+                      <div className="stat-num text-2xl font-bold text-white/80">{leader.made}/{leader.att}</div>
+                      <div className="mt-0.5 text-[10px] text-white/40">FGM/FGA</div>
+                    </div>
+                    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-center">
+                      <div className="stat-num text-2xl font-bold text-white/80">{leader.threeMade}/{leader.threeAtt}</div>
+                      <div className="mt-0.5 text-[10px] text-white/40">3PM/3PA</div>
+                    </div>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-white/35">
+                    Clutch FG% is raw from play-by-play under the selected time window. The delta
+                    vs. season measures how shooting efficiency holds up under pressure.
+                  </p>
+                </div>
+              </div>
+            </Panel>
+          );
+        })()}
+
         <Panel title={`Clutch-time leaderboard · ${DEFS[def].title}`}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">

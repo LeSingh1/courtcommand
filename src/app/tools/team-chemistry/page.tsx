@@ -17,6 +17,32 @@ import { teamChemistry, best_team_matches, type ChemistryResult } from "@/lib/en
 import { gradeColor } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
+interface BestDuo {
+  a: Player;
+  b: Player;
+  fit: number;
+  grade: string;
+}
+
+function bestDuoOnTeam(teamAbbr: string): BestDuo | null {
+  const roster = playersByTeam(teamAbbr);
+  if (roster.length < 2) return null;
+  let best: BestDuo | null = null;
+  for (let i = 0; i < roster.length; i++) {
+    for (let j = i + 1; j < roster.length; j++) {
+      const a = roster[i];
+      const b = roster[j];
+      const aFit = teamChemistry(a, teamAbbr);
+      const bFit = teamChemistry(b, teamAbbr);
+      const combined = Math.round((aFit.fit + bFit.fit) / 2);
+      if (!best || combined > best.fit) {
+        best = { a, b, fit: combined, grade: aFit.grade };
+      }
+    }
+  }
+  return best;
+}
+
 const ACCENT = "#4D8DFF";
 
 export default function TeamChemistryPage() {
@@ -29,6 +55,7 @@ export default function TeamChemistryPage() {
     [player, team],
   );
   const bestFits = useMemo(() => (player ? best_team_matches(player) : []), [player]);
+  const bestDuo = useMemo(() => bestDuoOnTeam(team), [team]);
 
   // Brief analyzing beat whenever the fit inputs change, so the synchronous
   // result still surfaces a loading state like sibling tools.
@@ -56,6 +83,26 @@ export default function TeamChemistryPage() {
 
   return (
     <ToolShell tool={tool}>
+      {bestDuo && (
+        <div className="mb-5 flex items-center justify-between border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
+          <div className="flex items-center gap-3">
+            <span className="kicker" style={{ color: ACCENT }}>Best duo</span>
+            <span className="text-sm font-semibold text-white">
+              {bestDuo.a.name}
+              <span className="mx-2 text-white/30">+</span>
+              {bestDuo.b.name}
+            </span>
+            <span className="stat-num text-xs text-white/45">
+              {bestDuo.a.pos} · {bestDuo.b.pos}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Meter value={bestDuo.fit} color={gradeColor(bestDuo.fit)} height={5} className="w-24" />
+            <Badge color={gradeColor(bestDuo.fit)}>{bestDuo.grade}</Badge>
+            <span className="stat-num text-sm font-bold text-white">{bestDuo.fit}</span>
+          </div>
+        </div>
+      )}
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
         <div>
           <div className="mb-1.5 text-xs font-medium text-white/60">Player</div>

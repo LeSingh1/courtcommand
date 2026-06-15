@@ -12,7 +12,7 @@ import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { PLAYERS } from "@/lib/data";
 import { FT_RATES, teamFtRates, ftrZScores } from "@/lib/data/ftrate";
-import { OFFICIAL_GAMES, refSplits, REF_SMALL_SAMPLE_GAMES } from "@/lib/data/officials";
+import { OFFICIAL_GAMES, refSplits, REF_SMALL_SAMPLE_GAMES, type RefSplit } from "@/lib/data/officials";
 import { gradeColor } from "@/lib/cn";
 import type { Player } from "@/lib/types";
 
@@ -141,6 +141,7 @@ export default function RefBiasPage() {
           </Panel>
         ) : (
           <div className="space-y-4">
+            <WhistleSummary refs={refs} accent={accent} />
             <Panel
               title="Officials · 2026 playoff crews"
               right={
@@ -311,5 +312,63 @@ export default function RefBiasPage() {
         <TrackRecord slug="ref-bias" accent={accent} />
       </div>
     </ToolShell>
+  );
+}
+
+function WhistleSummary({ refs, accent }: { refs: RefSplit[]; accent: string }) {
+  const qualified = refs.filter((r) => !r.smallSample);
+  const sorted = [...qualified].sort((a, b) => b.avgFtaDiff - a.avgFtaDiff);
+  const top3 = sorted.slice(0, 3);
+  const bottom3 = sorted.slice(-3).reverse();
+
+  return (
+    <Panel title="Whistle-friendly officials · home FTA advantage">
+      <p className="mb-4 text-xs text-white/45">
+        Sorted by average home-team FTA advantage per game across {refs.length} officials in the
+        2026 playoffs. Officials with fewer than {REF_SMALL_SAMPLE_GAMES} games are excluded.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <div className="kicker mb-3" style={{ color: accent }}>Most home-friendly</div>
+          <div className="space-y-2">
+            {top3.map((r, i) => (
+              <div
+                key={r.official}
+                className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
+              >
+                <span className="stat-num w-5 text-center text-sm text-white/35">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-white truncate">{r.official}</div>
+                  <div className="stat-num text-[10px] text-white/40">{r.games} games</div>
+                </div>
+                <span className="stat-num text-sm font-bold" style={{ color: accent }}>
+                  +{r.avgFtaDiff.toFixed(1)} FTA/g
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="kicker mb-3" style={{ color: "#F4647D" }}>Least home-friendly</div>
+          <div className="space-y-2">
+            {bottom3.map((r, i) => (
+              <div
+                key={r.official}
+                className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"
+              >
+                <span className="stat-num w-5 text-center text-sm text-white/35">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-white truncate">{r.official}</div>
+                  <div className="stat-num text-[10px] text-white/40">{r.games} games</div>
+                </div>
+                <span className="stat-num text-sm font-bold" style={{ color: "#F4647D" }}>
+                  {r.avgFtaDiff.toFixed(1)} FTA/g
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Panel>
   );
 }

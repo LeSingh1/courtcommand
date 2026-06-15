@@ -97,6 +97,52 @@ export default function ContractValuePage() {
         />
       </div>
 
+      {/* Best bargains callout */}
+      <div className="mb-6">
+        <Panel title="Best bargains · top 3 value contracts">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {board.slice(0, 3).map((r, i) => {
+              const reason =
+                r.surplus >= 15
+                  ? `$${r.surplus}M surplus — elite value per dollar`
+                  : r.player.salary <= 10
+                    ? `Only $${r.player.salary}M for $${r.produced}M of production`
+                    : `Produces $${r.produced}M on $${r.player.salary}M — ${r.grade} grade`;
+              return (
+                <div
+                  key={r.player.id}
+                  className="rounded-lg border p-4"
+                  style={{ borderColor: `${POS}33`, background: `${POS}0a` }}
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="stat-num text-xs text-white/35">#{i + 1}</span>
+                    <PlayerAvatar player={r.player} size={28} />
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-white">
+                        {r.player.name}
+                      </div>
+                      <div className="stat-num text-[10px] text-white/45">
+                        {r.player.pos} · ${r.player.salary}M
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <div className="stat-num text-2xl font-bold" style={{ color: POS }}>
+                        +${r.surplus}M
+                      </div>
+                      <div className="text-[10px] text-white/40">surplus value</div>
+                    </div>
+                    <Badge color={POS}>{r.grade}</Badge>
+                  </div>
+                  <p className="mt-2 text-[11px] leading-snug text-white/50">{reason}</p>
+                </div>
+              );
+            })}
+          </div>
+        </Panel>
+      </div>
+
       {/* Highlight cards */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
         {[

@@ -14,6 +14,7 @@ import { getTool } from "@/lib/tools";
 import { injuryRisk } from "@/lib/engine/players";
 import { workloadRisk } from "@/lib/engine/value";
 import { gradeColor, ACCENT_HEX } from "@/lib/cn";
+import { PLAYERS } from "@/lib/data";
 import type { Player } from "@/lib/types";
 
 const OVERALL_COLOR: Record<string, string> = {
@@ -123,6 +124,8 @@ export default function InjuryRiskPage() {
                 <b>{result.risk}/100</b> under this schedule. {result.recommendation}
               </Insight>
 
+              <LeagueContext player={player} risk={result.risk} />
+
               {workload && (
                 <Panel
                   title="Season workload profile"
@@ -203,5 +206,81 @@ export default function InjuryRiskPage() {
         <TrackRecord slug="injury-risk" accent="#4D8DFF" />
       </div>
     </ToolShell>
+  );
+}
+
+function LeagueContext({ player, risk }: { player: Player; risk: number }) {
+  const allRisks = PLAYERS.map((p) => injuryRisk(p).risk).sort((a, b) => a - b);
+  const rank = allRisks.filter((r) => r <= risk).length;
+  const pct = Math.round((rank / allRisks.length) * 100);
+  const posRisks = PLAYERS.filter((p) => p.pos === player.pos)
+    .map((p) => injuryRisk(p).risk)
+    .sort((a, b) => a - b);
+  const posRank = posRisks.filter((r) => r <= risk).length;
+  const posPct = Math.round((posRank / posRisks.length) * 100);
+
+  const leagueAvg = Math.round(allRisks.reduce((a, b) => a + b, 0) / allRisks.length);
+  const posLabel =
+    player.pos === "PG" || player.pos === "SG"
+      ? "guards"
+      : player.pos === "C"
+        ? "centers"
+        : player.pos === "PF"
+          ? "power forwards"
+          : "small forwards";
+
+  const highRiskCount = allRisks.filter((r) => r >= 70).length;
+
+  return (
+    <Panel title="League context">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Stat
+          label="League percentile"
+          value={`${pct}th`}
+          note={pct >= 75 ? "Top quartile risk" : pct >= 50 ? "Above median" : "Below median"}
+          color={pct >= 75 ? "#F4647D" : pct >= 50 ? "#D7BC6A" : ACCENT_HEX}
+        />
+        <Stat
+          label={`Among ${posLabel}`}
+          value={`${posPct}th`}
+          note={`${posRisks.length} ${player.pos}s total`}
+          color={posPct >= 75 ? "#F4647D" : posPct >= 50 ? "#D7BC6A" : ACCENT_HEX}
+        />
+        <Stat
+          label="League avg risk"
+          value={`${leagueAvg}`}
+          note={risk > leagueAvg ? `+${risk - leagueAvg} above avg` : `${leagueAvg - risk} below avg`}
+          color={risk > leagueAvg ? "#F4647D" : ACCENT_HEX}
+        />
+        <Stat
+          label="High-risk players"
+          value={`${highRiskCount}`}
+          note={`of ${allRisks.length} league-wide`}
+          color="#D7BC6A"
+        />
+      </div>
+    </Panel>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  note,
+  color,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  color: string;
+}) {
+  return (
+    <div className="space-y-0.5">
+      <div className="text-[10px] text-white/45">{label}</div>
+      <div className="stat-num text-2xl font-bold" style={{ color }}>
+        {value}
+      </div>
+      <div className="text-[10px] text-white/40">{note}</div>
+    </div>
   );
 }

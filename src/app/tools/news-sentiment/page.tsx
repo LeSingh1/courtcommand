@@ -24,9 +24,9 @@ import type { Player } from "@/lib/types";
 
 // Category accent for "Content & Media" (gold), matching the ToolShell header.
 const ACCENT = "#D7BC6A";
-const POS = "#4D8DFF"; // Team & Strategy green
-const NEG = "#4D8DFF"; // app accent ember (negative/cooling)
-const STEADY = "#6c6c72"; // neutral
+const POS = "#4D8DFF";
+const NEG = "#F4647D";
+const STEADY = "#6c6c72";
 
 const TREND = {
   rising: { color: POS, Icon: TrendingUp, label: "Heating up" },

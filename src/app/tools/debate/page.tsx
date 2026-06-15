@@ -153,6 +153,101 @@ function DebateInner() {
               </div>
             </Panel>
           </div>
+
+          <div className="mt-4">
+            <Panel title="Statistical edge">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 text-left text-[11px] text-white/40">
+                      <th className="py-2 font-medium">Stat</th>
+                      <th className="py-2 font-semibold" style={{ color: GOLD }}>
+                        {result.a.player.name.split(" ").slice(-1)[0]}
+                      </th>
+                      <th className="py-2 font-semibold" style={{ color: TEAL }}>
+                        {result.b.player.name.split(" ").slice(-1)[0]}
+                      </th>
+                      <th className="py-2 text-right font-medium">Edge</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      {
+                        label: "PPG",
+                        va: result.a.player.ppg,
+                        vb: result.b.player.ppg,
+                        higherBetter: true,
+                        fmt: (v: number) => v.toFixed(1),
+                      },
+                      {
+                        label: "TS%",
+                        va: Math.round(result.a.player.tsp * 100),
+                        vb: Math.round(result.b.player.tsp * 100),
+                        higherBetter: true,
+                        fmt: (v: number) => `${v}%`,
+                      },
+                      {
+                        label: "BPM",
+                        va: result.a.player.bpm,
+                        vb: result.b.player.bpm,
+                        higherBetter: true,
+                        fmt: (v: number) => (v >= 0 ? `+${v}` : String(v)),
+                      },
+                      {
+                        label: "Def Impact",
+                        va: result.a.player.defImpact,
+                        vb: result.b.player.defImpact,
+                        higherBetter: true,
+                        fmt: (v: number) => String(v),
+                      },
+                      {
+                        label: "APG",
+                        va: result.a.player.apg,
+                        vb: result.b.player.apg,
+                        higherBetter: true,
+                        fmt: (v: number) => v.toFixed(1),
+                      },
+                      {
+                        label: "USG%",
+                        va: result.a.player.usg,
+                        vb: result.b.player.usg,
+                        higherBetter: true,
+                        fmt: (v: number) => `${v}%`,
+                      },
+                    ].map(({ label, va, vb, higherBetter, fmt }) => {
+                      const aWins = higherBetter ? va > vb : va < vb;
+                      const bWins = higherBetter ? vb > va : vb < va;
+                      return (
+                        <tr
+                          key={label}
+                          className="border-b border-white/[0.04] transition hover:bg-white/[0.03]"
+                        >
+                          <td className="py-2.5 text-xs text-white/45">{label}</td>
+                          <td
+                            className="stat-num py-2.5 font-semibold"
+                            style={{ color: aWins ? GOLD : "rgba(255,255,255,0.7)" }}
+                          >
+                            {fmt(va)}
+                          </td>
+                          <td
+                            className="stat-num py-2.5 font-semibold"
+                            style={{ color: bWins ? TEAL : "rgba(255,255,255,0.7)" }}
+                          >
+                            {fmt(vb)}
+                          </td>
+                          <td className="py-2.5 text-right">
+                            {aWins && <span className="stat-num text-xs" style={{ color: GOLD }}>▲ A</span>}
+                            {bWins && <span className="stat-num text-xs" style={{ color: TEAL }}>▲ B</span>}
+                            {!aWins && !bWins && <span className="text-[10px] text-white/25">—</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+          </div>
         </motion.div>
       )}
       </AnimatePresence>

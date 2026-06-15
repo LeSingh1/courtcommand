@@ -16,6 +16,20 @@ import { letterGrade } from "@/lib/cn";
 
 const POSITIONS = ["PG", "SG", "SF", "PF", "C"] as const;
 
+const POSITION_BENCHMARKS = {
+  PG:  { top5: { ppg: 24.2, rpg: 4.8, apg: 8.1 }, top50: { ppg: 19.6, rpg: 4.1, apg: 6.3 }, top100: { ppg: 16.8, rpg: 3.5, apg: 5.0 } },
+  SG:  { top5: { ppg: 26.1, rpg: 5.2, apg: 4.0 }, top50: { ppg: 21.4, rpg: 4.6, apg: 3.2 }, top100: { ppg: 18.2, rpg: 4.0, apg: 2.5 } },
+  SF:  { top5: { ppg: 22.8, rpg: 8.4, apg: 3.5 }, top50: { ppg: 19.2, rpg: 7.1, apg: 2.8 }, top100: { ppg: 16.5, rpg: 6.0, apg: 2.2 } },
+  PF:  { top5: { ppg: 20.5, rpg: 10.2, apg: 2.1 }, top50: { ppg: 17.8, rpg: 8.6, apg: 1.8 }, top100: { ppg: 15.0, rpg: 7.2, apg: 1.4 } },
+  C:   { top5: { ppg: 18.0, rpg: 12.5, apg: 1.4 }, top50: { ppg: 15.4, rpg: 10.1, apg: 1.1 }, top100: { ppg: 13.2, rpg: 8.5, apg: 0.8 } },
+};
+
+const BENCHMARK_TIERS: { key: "top5" | "top50" | "top100"; label: string }[] = [
+  { key: "top5", label: "Top-5" },
+  { key: "top50", label: "Top-50" },
+  { key: "top100", label: "Top-100" },
+];
+
 function heightLabel(inches: number) {
   const ft = Math.floor(inches / 12);
   const inch = inches % 12;
@@ -57,58 +71,111 @@ export default function RecruitRankPage() {
     });
   };
 
+  const benchmarks = POSITION_BENCHMARKS[position as keyof typeof POSITION_BENCHMARKS];
+  const highlightedTier =
+    ppg >= benchmarks.top5.ppg
+      ? "top5"
+      : ppg >= benchmarks.top50.ppg
+      ? "top50"
+      : ppg >= benchmarks.top100.ppg
+      ? "top100"
+      : null;
+
   return (
     <ToolShell tool={tool}>
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-        {/* Profile form */}
-        <Panel title="Prospect profile">
-          <div className="space-y-5">
-            <Field label="Player name">
-              <TextInput value={name} onChange={setName} placeholder="First Last" />
-            </Field>
-            <Slider label="Points per game" value={ppg} min={0} max={40} unit=" ppg" onChange={setPpg} accent={ACCENT} />
-            <Slider label="Rebounds per game" value={rpg} min={0} max={20} unit=" rpg" onChange={setRpg} accent={ACCENT} />
-            <Slider label="Assists per game" value={apg} min={0} max={15} unit=" apg" onChange={setApg} accent={ACCENT} />
-            <Slider
-              label={`Height — ${heightLabel(heightIn)}`}
-              value={heightIn}
-              min={66}
-              max={86}
-              unit='"'
-              onChange={setHeightIn}
-              accent={ACCENT}
-            />
-            <Field label="Position">
-              <Segmented
+        {/* Left column: form + benchmarks */}
+        <div className="space-y-6">
+          <Panel title="Prospect profile">
+            <div className="space-y-5">
+              <Field label="Player name">
+                <TextInput value={name} onChange={setName} placeholder="First Last" />
+              </Field>
+              <Slider label="Points per game" value={ppg} min={0} max={40} unit=" ppg" onChange={setPpg} accent={ACCENT} />
+              <Slider label="Rebounds per game" value={rpg} min={0} max={20} unit=" rpg" onChange={setRpg} accent={ACCENT} />
+              <Slider label="Assists per game" value={apg} min={0} max={15} unit=" apg" onChange={setApg} accent={ACCENT} />
+              <Slider
+                label={`Height — ${heightLabel(heightIn)}`}
+                value={heightIn}
+                min={66}
+                max={86}
+                unit='"'
+                onChange={setHeightIn}
                 accent={ACCENT}
-                value={position}
-                onChange={setPosition}
-                options={POSITIONS.map((p) => ({ label: p, value: p }))}
               />
-            </Field>
-            <Field label="Competition level">
-              <Segmented
-                accent={ACCENT}
-                value={level}
-                onChange={setLevel}
-                options={[
-                  { label: "Varsity", value: "Varsity" },
-                  { label: "AAU", value: "AAU" },
-                  { label: "Prep", value: "Prep" },
-                ]}
-              />
-            </Field>
-            <motion.button
-              onClick={run}
-              whileTap={{ scale: 0.96 }}
-              transition={spring.snappy}
-              className="w-full rounded-lg py-3 text-sm font-semibold transition"
-              style={{ background: ACCENT, color: "#0a0c11" }}
-            >
-              Generate profile
-            </motion.button>
-          </div>
-        </Panel>
+              <Field label="Position">
+                <Segmented
+                  accent={ACCENT}
+                  value={position}
+                  onChange={setPosition}
+                  options={POSITIONS.map((p) => ({ label: p, value: p }))}
+                />
+              </Field>
+              <Field label="Competition level">
+                <Segmented
+                  accent={ACCENT}
+                  value={level}
+                  onChange={setLevel}
+                  options={[
+                    { label: "Varsity", value: "Varsity" },
+                    { label: "AAU", value: "AAU" },
+                    { label: "Prep", value: "Prep" },
+                  ]}
+                />
+              </Field>
+              <motion.button
+                onClick={run}
+                whileTap={{ scale: 0.96 }}
+                transition={spring.snappy}
+                className="w-full rounded-lg py-3 text-sm font-semibold transition"
+                style={{ background: ACCENT, color: "#0a0c11" }}
+              >
+                Generate profile
+              </motion.button>
+            </div>
+          </Panel>
+
+          <Panel title="Position benchmarks">
+            <div className="space-y-2">
+              {BENCHMARK_TIERS.map(({ key, label }) => {
+                const tier = benchmarks[key];
+                const isHighlighted = highlightedTier === key;
+                return (
+                  <div
+                    key={key}
+                    className="rounded-lg px-3 py-2.5 transition-colors"
+                    style={{
+                      background: isHighlighted ? `${ACCENT}0f` : "rgba(255,255,255,0.03)",
+                      border: isHighlighted
+                        ? `1px solid ${ACCENT}`
+                        : "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="w-14 shrink-0 text-[11px] font-semibold"
+                        style={{ color: isHighlighted ? ACCENT : "rgba(255,255,255,0.45)" }}
+                      >
+                        {label}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="rounded px-2 py-0.5 text-[11px] bg-white/[0.06] text-white/60">
+                          <span className="stat-num font-semibold text-white/80">{tier.ppg}</span> ppg
+                        </span>
+                        <span className="rounded px-2 py-0.5 text-[11px] bg-white/[0.06] text-white/60">
+                          <span className="stat-num font-semibold text-white/80">{tier.rpg}</span> rpg
+                        </span>
+                        <span className="rounded px-2 py-0.5 text-[11px] bg-white/[0.06] text-white/60">
+                          <span className="stat-num font-semibold text-white/80">{tier.apg}</span> apg
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Panel>
+        </div>
 
         {/* Result */}
         <div className="space-y-6">

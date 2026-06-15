@@ -32,8 +32,25 @@ export default function HighlightClipperPage() {
 
   const reel = useMemo<HighlightClip[]>(() => (shots ? highlightReel(shots, 30) : []), [shots]);
   const [tag, setTag] = useState<string | null>(null);
-  const filtered = useMemo<HighlightClip[]>(() => filterReelByTag(reel, tag), [reel, tag]);
+  const [playerEspnId, setPlayerEspnId] = useState<number | null>(null);
+  const filtered = useMemo<HighlightClip[]>(() => {
+    const byTag = filterReelByTag(reel, tag);
+    return playerEspnId != null ? byTag.filter((h) => h.shot.espnId === playerEspnId) : byTag;
+  }, [reel, tag, playerEspnId]);
   const [sel, setSel] = useState(0);
+
+  const reelPlayers = useMemo(() => {
+    const counts = new Map<number, { player: ReturnType<typeof playerByEspn>; count: number }>();
+    for (const h of reel) {
+      const e = counts.get(h.shot.espnId);
+      if (e) e.count++;
+      else counts.set(h.shot.espnId, { player: playerByEspn(h.shot.espnId), count: 1 });
+    }
+    return [...counts.entries()]
+      .filter(([, v]) => v.count >= 2 && v.player)
+      .map(([espnId, v]) => ({ espnId, name: v.player!.name, count: v.count }))
+      .sort((a, b) => b.count - a.count);
+  }, [reel]);
 
   if (!shots) {
     return (
@@ -57,7 +74,33 @@ export default function HighlightClipperPage() {
         is the detector&rsquo;s real highlight score.
       </Insight>
 
-      <div className="mt-5 flex flex-wrap items-center gap-1.5">
+      {reelPlayers.length > 0 && (
+        <div className="mt-5 flex flex-wrap items-center gap-1.5">
+          {[null, ...reelPlayers].map((p) => {
+            const on = (p === null ? null : p.espnId) === playerEspnId;
+            return (
+              <button
+                key={p === null ? "all-players" : p.espnId}
+                onClick={() => {
+                  setPlayerEspnId(p === null ? null : p.espnId);
+                  setSel(0);
+                }}
+                aria-pressed={on}
+                className="cursor-pointer rounded-lg border px-2.5 py-1 text-[11px] font-medium transition"
+                style={{
+                  borderColor: on ? `${accent}66` : "var(--line)",
+                  background: on ? `${accent}1f` : "transparent",
+                  color: on ? accent : "var(--text-muted)",
+                }}
+              >
+                {p === null ? "All players" : `${p.name} (${p.count})`}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {[null, ...TAG_FILTERS].map((t) => {
           const on = tag === t;
           return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Check, X, RotateCcw, ArrowRight, Flame } from "lucide-react";
 import { spring } from "@/lib/motion";
@@ -11,9 +11,18 @@ import { getTool } from "@/lib/tools";
 import { QUIZ, quizResults } from "@/lib/engine/content";
 import { gradeColor } from "@/lib/cn";
 
-const ACCENT = "#F4647D"; // category color for "Player Tools"
-const GREEN = "#4D8DFF"; // correct answer
-const WRONG = "#D7BC6A"; // muted negative tint for incorrect reads
+const ACCENT = "#F4647D";
+const GREEN = "#4D8DFF";
+const WRONG = "#D7BC6A";
+
+const DIFFICULTY_MAP: Record<string, { label: string; color: string }> = {
+  "Pick-and-roll coverage": { label: "Advanced", color: "#F4647D" },
+  "Spacing & off-ball play": { label: "Intermediate", color: "#D7BC6A" },
+  "Shot selection": { label: "Intermediate", color: "#D7BC6A" },
+  "Transition defense": { label: "Beginner", color: "#4D8DFF" },
+  "Rebounding": { label: "Beginner", color: "#4D8DFF" },
+  "Help rotations": { label: "Advanced", color: "#F4647D" },
+};
 
 export default function IqQuizPage() {
   const tool = getTool("iq-quiz")!;
@@ -24,11 +33,16 @@ export default function IqQuizPage() {
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
+  const [timedMode, setTimedMode] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const total = QUIZ.length;
   const question = QUIZ[step];
   const answered = chosen !== null;
   const isLast = step === total - 1;
+
+  const difficulty = DIFFICULTY_MAP[question.category];
 
   const pick = (i: number) => {
     if (answered) return;
@@ -57,6 +71,21 @@ export default function IqQuizPage() {
     setChosen(null);
   };
 
+  const autoWrong = () => {
+    setAnswers((arr) => {
+      const n = [...arr];
+      n[step] = null;
+      return n;
+    });
+    setStreak(0);
+    if (isLast) {
+      setFinished(true);
+    } else {
+      setStep((s) => s + 1);
+      setChosen(null);
+    }
+  };
+
   const reset = () => {
     setStep(0);
     setChosen(null);
@@ -65,7 +94,40 @@ export default function IqQuizPage() {
     setAnswers([]);
     setStreak(0);
     setBestStreak(0);
+    setTimeLeft(30);
   };
+
+  useEffect(() => {
+    setTimeLeft(30);
+  }, [step, timedMode]);
+
+  useEffect(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (!timedMode || answered || finished) return;
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          autoWrong();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timedMode, answered, finished, step]);
+
+  const timerColor = timeLeft > 15 ? GREEN : timeLeft > 7 ? WRONG : ACCENT;
 
   const summary = useMemo(() => quizResults(answers), [answers]);
   const pct = Math.round((score / total) * 100);
@@ -75,23 +137,51 @@ export default function IqQuizPage() {
   return (
     <ToolShell tool={tool}>
       <div className="mx-auto max-w-2xl">
-        {/* progress dots */}
         {!finished && (
-          <div className="mb-6 flex items-center justify-center gap-2">
-            {QUIZ.map((_, i) => (
-              <div
-                key={i}
-                className="h-2 w-7 rounded-lg transition-colors duration-300"
-                style={{
-                  backgroundColor:
-                    i === step ? ACCENT : i < step ? `${ACCENT}66` : "rgba(255,255,255,0.12)",
-                }}
-              />
-            ))}
-            <span className="ml-3 stat-num text-xs text-white/60">
-              {step + 1} / {total}
-            </span>
-          </div>
+          <>
+            <div className="mb-3 flex items-center justify-end">
+              <motion.button
+                onClick={() => setTimedMode((m) => !m)}
+                whileTap={{ scale: 0.96 }}
+                transition={spring.snappy}
+                className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition"
+                style={
+                  timedMode
+                    ? { background: ACCENT, borderColor: ACCENT, color: "var(--accent-ink)" }
+                    : { background: "transparent", borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.55)" }
+                }
+              >
+                Timed mode
+              </motion.button>
+            </div>
+
+            <div className="mb-4 flex items-center justify-center gap-2">
+              {QUIZ.map((_, i) => (
+                <div
+                  key={i}
+                  className="h-2 w-7 rounded-lg transition-colors duration-300"
+                  style={{
+                    backgroundColor:
+                      i === step ? ACCENT : i < step ? `${ACCENT}66` : "rgba(255,255,255,0.12)",
+                  }}
+                />
+              ))}
+              <span className="ml-3 stat-num text-xs text-white/60">
+                {step + 1} / {total}
+              </span>
+            </div>
+
+            {timedMode && (
+              <div className="mb-5 flex items-center justify-center">
+                <span
+                  className="stat-num text-2xl font-bold tabular-nums"
+                  style={{ color: timerColor }}
+                >
+                  0:{String(timeLeft).padStart(2, "0")}
+                </span>
+              </div>
+            )}
+          </>
         )}
 
         <AnimatePresence mode="wait">
@@ -176,8 +266,13 @@ export default function IqQuizPage() {
               transition={spring.soft}
             >
               <Panel>
-                <div className="eyebrow mb-2" style={{ color: ACCENT }}>
-                  Scenario {step + 1}
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="eyebrow" style={{ color: ACCENT }}>
+                    Scenario {step + 1}
+                  </div>
+                  {difficulty && (
+                    <Badge color={difficulty.color}>{difficulty.label}</Badge>
+                  )}
                 </div>
                 <h2 className="display text-2xl text-white">{question.q}</h2>
                 <p className="mt-3 text-sm leading-relaxed text-white/65">{question.scenario}</p>

@@ -11,7 +11,7 @@ import { AnalyzeOverlay } from "@/components/ui/Analyze";
 import { Reveal } from "@/components/ui/Reveal";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
-import { getPlayerByName, TEAMS, TEAM_MAP } from "@/lib/data";
+import { getPlayerByName, PLAYERS, TEAMS, TEAM_MAP } from "@/lib/data";
 import { playTypeMix, teamPlayTypeMix, type PlayTypeMix } from "@/lib/engine/teams";
 import type { Player } from "@/lib/types";
 
@@ -42,6 +42,20 @@ export default function PlayTypePage() {
     () => (mix.length ? [...mix].sort((a, b) => b.ppp - a.ppp)[0] : null),
     [mix],
   );
+
+  const percentiles = useMemo<Record<string, number>>(() => {
+    if (mode !== "player" || !player) return {};
+    const result: Record<string, number> = {};
+    for (const m of mix) {
+      const allFreqs = PLAYERS.map((p) => {
+        const pmix = playTypeMix(p);
+        return pmix.find((x) => x.type === m.type)?.freq ?? 0;
+      });
+      const countBelow = allFreqs.filter((f) => f < m.freq).length;
+      result[m.type] = Math.round((countBelow / allFreqs.length) * 100);
+    }
+    return result;
+  }, [mix, mode, player]);
 
   // Brief analyzing affordance on each subject change (skips the preloaded
   // default so above-the-fold content paints immediately on first load).
@@ -194,6 +208,11 @@ export default function PlayTypePage() {
                         <span className="stat-num w-14 text-right text-xs text-[var(--text-faint)]">
                           {m.ppp.toFixed(2)}
                         </span>
+                        {mode === "player" && percentiles[m.type] !== undefined && (
+                          <span className="stat-num w-14 text-right text-[10px] text-[var(--text-faint)]">
+                            top {100 - percentiles[m.type]}%
+                          </span>
+                        )}
                       </div>
                     </Reveal>
                   ))}
@@ -201,6 +220,7 @@ export default function PlayTypePage() {
                 <div className="mt-3 flex justify-end gap-[58px] pr-1 text-[10px] text-[var(--text-faint)]">
                   <span>freq</span>
                   <span>ppp</span>
+                  {mode === "player" && <span>pct</span>}
                 </div>
               </Panel>
             </Reveal>

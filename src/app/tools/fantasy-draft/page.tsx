@@ -260,6 +260,62 @@ export default function FantasyDraftPage() {
         </div>
       </Panel>
 
+      {(() => {
+        const takenIds = new Set([...myIds, ...goneIds]);
+        const streamers = board
+          .filter(
+            (row) =>
+              row.zScore >= 0.5 &&
+              row.zScore <= 3.5 &&
+              row.player.gp >= 60 &&
+              !takenIds.has(row.player.id) &&
+              (row.player.ftp > 0.8 || row.player.spg >= 1.0),
+          )
+          .sort(
+            (a, b) =>
+              (b.player.ftp * 40 + b.player.spg * 30 + b.player.gp * 0.4) -
+              (a.player.ftp * 40 + a.player.spg * 30 + a.player.gp * 0.4),
+          )
+          .slice(0, 6);
+
+        return (
+          <Panel title="Streamers · weekly floor plays" className="mb-6">
+            <div className="space-y-2.5">
+              {streamers.map((row, i) => (
+                <div
+                  key={row.player.id}
+                  className="rounded-lg border border-white/10 bg-white/[0.03] p-3 transition hover:border-white/20"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="stat-num w-4 shrink-0 text-xs text-white/35">{i + 1}</span>
+                    <PlayerAvatar player={row.player} size={30} />
+                    <div className="min-w-0 flex-1 basis-40">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium text-white/90">
+                          {row.player.name}
+                        </span>
+                        <span className="stat-num text-[10px] text-white/35">{row.player.pos}</span>
+                      </div>
+                      <span className="text-[11px] text-white/35">Available · high floor</span>
+                    </div>
+                    <div className="hidden items-center gap-4 sm:flex">
+                      <ScorePill
+                        label="GP"
+                        value={Math.min(100, Math.round((row.player.gp / 82) * 100))}
+                      />
+                      <ScorePill
+                        label="Floor"
+                        value={Math.round(row.player.ftp * 90 + row.player.spg * 10)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        );
+      })()}
+
       <Panel title={`Draft board · ${puntLabel}`}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">

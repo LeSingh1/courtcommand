@@ -235,6 +235,53 @@ export default function RosterBuilderPage() {
             </Reveal>
           )}
 
+          {roster.length > 0 && (
+            <Reveal delay={0.08}>
+              <Panel title="Trade value">
+                <div className="space-y-3">
+                  {roster.map((p) => {
+                    const raw =
+                      Math.round(p.starPower * 0.5 + p.bpm * 3 + p.per * 0.8) -
+                      Math.max(0, (p.age - 29) * 3) +
+                      Math.min(15, Math.max(-10, (30 - p.salary) * 0.5));
+                    const tradeScore = Math.min(100, Math.max(0, raw));
+                    const tier =
+                      tradeScore >= 75
+                        ? "Cornerstone"
+                        : tradeScore >= 55
+                          ? "Rotation piece"
+                          : tradeScore >= 35
+                            ? "Depth filler"
+                            : "Expiring";
+                    const tierColor =
+                      tier === "Cornerstone"
+                        ? "#4D8DFF"
+                        : tier === "Rotation piece"
+                          ? "#D7BC6A"
+                          : tier === "Depth filler"
+                            ? "#6B6E78"
+                            : "#F4647D";
+                    return (
+                      <div key={p.id}>
+                        <div className="mb-1 flex items-center justify-between gap-2 text-xs">
+                          <span className="truncate text-white/70">{p.name}</span>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <Badge color={tierColor}>{tier}</Badge>
+                            <span className="stat-num shrink-0 text-xs text-white/55">{tradeScore}</span>
+                          </div>
+                        </div>
+                        <Meter value={tradeScore} color={tierColor} height={5} />
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-3 text-[11px] leading-relaxed text-white/35">
+                  Estimates contract-adjusted value at the trade deadline.
+                </p>
+              </Panel>
+            </Reveal>
+          )}
+
           <AnimatePresence mode="wait">
           {score ? (
             <motion.div

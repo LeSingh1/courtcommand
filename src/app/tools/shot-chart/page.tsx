@@ -195,6 +195,60 @@ function ShotChartInner() {
             </Panel>
 
             <div className="space-y-6">
+              {/* Zone breakdown table */}
+              {chart.zones.some((z) => z.att > 0) && (
+                <Panel title="Zone breakdown">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-white/[0.06]">
+                          <th className="pb-2 text-left font-medium text-white/40">Zone</th>
+                          <th className="pb-2 text-right font-medium text-white/40">M/A</th>
+                          <th className="pb-2 text-right font-medium text-white/40">eFG%</th>
+                          <th className="pb-2 text-right font-medium text-white/40">vs Avg</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {chart.zones
+                          .filter((z) => z.att >= 1)
+                          .sort((a, b) => b.att - a.att)
+                          .map((z) => {
+                            const efgPct = Math.round(z.efg * 100);
+                            const leagueEfg = z.poolEfg ?? 0;
+                            const diff = Math.round((z.efg - leagueEfg) * 100);
+                            const rawMakes = z.efgRaw != null ? Math.round(z.efgRaw * z.att) : null;
+                            return (
+                              <tr
+                                key={z.id}
+                                className="border-b border-white/[0.04] last:border-0"
+                              >
+                                <td className="py-1.5 text-white/70">{z.label}</td>
+                                <td className="py-1.5 text-right font-mono text-white/55">
+                                  {rawMakes != null ? `${rawMakes}/` : "–/"}{z.att}
+                                </td>
+                                <td className="py-1.5 text-right font-mono text-white/80">
+                                  {efgPct}%
+                                </td>
+                                <td
+                                  className="py-1.5 text-right font-mono font-semibold"
+                                  style={{
+                                    color: diff > 0 ? "#4D8DFF" : diff < 0 ? "#F4647D" : "rgba(255,255,255,0.4)",
+                                  }}
+                                >
+                                  {diff > 0 ? "+" : ""}{diff}%
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="mt-2 text-[10px] text-white/30">
+                    eFG% is EB-shrunk. "vs Avg" compares against the playoff-wide rate for that zone.
+                  </p>
+                </Panel>
+              )}
+
               <Panel title="Heat legend">
                 <div className="space-y-2.5">
                   {LEGEND.map((l) => (

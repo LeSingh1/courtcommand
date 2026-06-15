@@ -165,6 +165,16 @@ export default function ShotQualityPage() {
                     <div className="stat-num mt-1 text-xs text-white/45">
                       Difficulty {result.difficulty_score}/100
                     </div>
+                    <div
+                      className="mt-3 rounded-lg px-3 py-2 text-[11px] font-medium"
+                      style={{
+                        background: `${gradeColor(result.qSQ)}15`,
+                        border: `1px solid ${gradeColor(result.qSQ)}30`,
+                        color: gradeColor(result.qSQ),
+                      }}
+                    >
+                      Better than <b>{result.qSQ}%</b> of all attempts
+                    </div>
                   </div>
                 </Panel>
                 <Panel title="Quality drivers">
@@ -202,6 +212,33 @@ export default function ShotQualityPage() {
                 </Panel>
               </div>
               <Panel title="Difficulty read">
+                <div className="mb-3 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/60">Shot difficulty</span>
+                    <span
+                      className="stat-num text-xs font-semibold"
+                      style={{ color: gradeColor(100 - result.difficulty_score) }}
+                    >
+                      {result.difficulty_score >= 75
+                        ? "Elite difficulty"
+                        : result.difficulty_score >= 55
+                          ? "Hard look"
+                          : result.difficulty_score >= 35
+                            ? "Moderate"
+                            : "Clean look"}{" "}
+                      · {result.difficulty_score}%
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${result.difficulty_score}%`,
+                        background: gradeColor(100 - result.difficulty_score),
+                      }}
+                    />
+                  </div>
+                </div>
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="shrink-0">
                     <div className="scoreboard text-3xl" style={{ color: gradeColor(100 - result.difficulty_score) }}>

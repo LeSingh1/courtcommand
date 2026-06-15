@@ -249,6 +249,45 @@ function SimilarityInner() {
                 </p>
               </Panel>
             )}
+
+            {results[active] && comp && (
+              <Panel title="Similarity drivers">
+                <p className="mb-3 text-[11px] text-white/45">
+                  The three stat dimensions that pull <b className="text-white/70">{player.name}</b> and{" "}
+                  <b className="text-white/70">{comp.name}</b> closest together — ranked by match strength.
+                </p>
+                <div className="space-y-3">
+                  {results[active].topSharedTraits.map((t, idx) => {
+                    // Convert Δσ gap to a match % (0 gap = 100%, 3σ gap = 0%)
+                    const matchPct = Math.round(Math.max(0, Math.min(100, (1 - t.delta / 3) * 100)));
+                    return (
+                      <div key={t.label} className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="flex h-4 w-4 items-center justify-center rounded text-[9px] font-bold"
+                              style={{ background: `${accent}22`, color: accent }}
+                            >
+                              {idx + 1}
+                            </span>
+                            <span className="text-xs text-white/75">{t.label}</span>
+                          </div>
+                          <span className="stat-num text-xs font-semibold" style={{ color: accent }}>
+                            {matchPct}% match
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${matchPct}%`, background: accent }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Panel>
+            )}
           </div>
 
           <div className="space-y-6">

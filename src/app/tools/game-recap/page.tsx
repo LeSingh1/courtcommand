@@ -174,6 +174,58 @@ export default function GameRecapPage() {
                 <ScoreSide abbr={homeTeam} score={homeScore} win={homeScore > awayScore} />
               </div>
 
+              <Reveal>
+                <div className="mb-4 overflow-x-auto rounded-lg border border-white/[0.07] bg-white/[0.02]">
+                  <div className="px-4 pt-3 pb-1 text-[10px] font-medium uppercase tracking-wider text-white/40">
+                    Box score · top performers
+                  </div>
+                  <table className="w-full min-w-[480px] text-xs">
+                    <thead>
+                      <tr className="border-b border-white/[0.06] text-left text-[10px] text-white/35">
+                        <th className="py-1.5 pl-4 font-medium">Player</th>
+                        <th className="py-1.5 pr-4 text-right font-medium">PTS</th>
+                        <th className="py-1.5 pr-4 text-right font-medium">REB</th>
+                        <th className="py-1.5 pr-4 text-right font-medium">AST</th>
+                        <th className="py-1.5 pr-4 text-right font-medium">FG%</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...homeStars, ...awayStars].map((s) => {
+                        const sp = playerByName.get(s.name);
+                        const isTop = recap.topPerformer?.name === s.name;
+                        return (
+                          <tr
+                            key={s.name}
+                            className="border-b border-white/[0.04] last:border-0"
+                            style={isTop ? { background: `${EMBER}0d` } : undefined}
+                          >
+                            <td className="py-2 pl-4">
+                              <span className="flex items-center gap-2 text-white/80">
+                                {sp && <PlayerAvatar player={sp} size={20} />}
+                                {s.name}
+                                {isTop && (
+                                  <span className="stat-num text-[9px]" style={{ color: EMBER }}>
+                                    MVP
+                                  </span>
+                                )}
+                              </span>
+                            </td>
+                            <td className="stat-num py-2 pr-4 text-right font-semibold text-white/85">
+                              {s.pts}
+                            </td>
+                            <td className="stat-num py-2 pr-4 text-right text-white/65">{s.reb}</td>
+                            <td className="stat-num py-2 pr-4 text-right text-white/65">{s.ast}</td>
+                            <td className="stat-num py-2 pr-4 text-right text-white/50">
+                              {sp ? `${Math.round(sp.fgp * 100)}%` : "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Reveal>
+
               <div className="space-y-3.5">
                 {recap.body.map((para, i) => (
                   <Reveal key={i}>

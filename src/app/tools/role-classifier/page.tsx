@@ -8,6 +8,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { PlayerPicker } from "@/components/ui/PlayerPicker";
 import { Badge } from "@/components/ui/Controls";
 import { Meter } from "@/components/ui/Meter";
+import { BarChart } from "@/components/ui/BarChart";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
 import { roleClusters, classifyRole } from "@/lib/engine/players";
@@ -142,6 +143,19 @@ export default function RoleClassifierPage() {
         </motion.div>
       )}
       </AnimatePresence>
+
+      <div className="mb-6">
+        <Panel title="Archetype distribution">
+          <BarChart
+            bars={clusters.map((c) => ({
+              label: c.role,
+              value: c.players.length,
+              color: c.color,
+            }))}
+            max={clusters[0]?.players.length ?? 1}
+          />
+        </Panel>
+      </div>
 
       {/* Legend */}
       <div className="mb-6 flex flex-wrap gap-2">
