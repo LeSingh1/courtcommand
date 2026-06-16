@@ -101,6 +101,30 @@ export function checkTradeSide(args: {
   return { legal: reasons.length === 0, reasons, allowed, band, newBand };
 }
 
+// Where a payroll sits relative to every 2023-CBA landmark, signed so the UI
+// can read "room under the cap" vs "over by" off one shape. Distances are
+// positive when the line is still ahead (room to spend) and negative once the
+// team is past it.
+export interface CapContext {
+  band: CapBand;
+  capSpace: number; // SALARY_CAP - payroll (negative once over the cap)
+  taxDistance: number; // LUXURY_TAX - payroll
+  firstApronDistance: number; // FIRST_APRON - payroll
+  secondApronDistance: number; // SECOND_APRON - payroll
+}
+
+const r1 = (v: number) => Math.round(v * 10) / 10;
+
+export function capContext(payroll: number): CapContext {
+  return {
+    band: capBand(payroll),
+    capSpace: r1(SALARY_CAP - payroll),
+    taxDistance: r1(LUXURY_TAX - payroll),
+    firstApronDistance: r1(FIRST_APRON - payroll),
+    secondApronDistance: r1(SECOND_APRON - payroll),
+  };
+}
+
 // Roster construction context (Roster Builder): where a payroll sits and what
 // that position costs in flexibility, stated as the rules say it.
 export interface CapSituation {

@@ -10,8 +10,12 @@ import {
   pickAndRoll,
   playTypeMix,
   teamPlayTypeMix,
+  acquisitionRisk,
+  ACQUISITION_RISK_THRESHOLD,
   MAX_OUTGOING,
 } from "@/lib/engine/teams";
+import { capContext } from "@/lib/engine/cba";
+import { SALARY_CAP, LUXURY_TAX, FIRST_APRON } from "@/lib/data";
 
 let seq = 0;
 function makePlayer(over: Partial<Player> = {}): Player {
@@ -347,5 +351,106 @@ describe("evaluateTrade with draft picks", () => {
       expect(s.picks_out).toEqual([]);
       expect(s.picks_in).toEqual([]);
     }
+  });
+});
+
+describe("capContext", () => {
+  it("reports cap space when under the cap", () => {
+    const c = capContext(SALARY_CAP - 10);
+    expect(c.band).toBe("Under Cap");
+    expect(c.capSpace).toBe(10);
+    expect(c.taxDistance).toBeGreaterThan(0);
+    expect(c.firstApronDistance).toBeGreaterThan(0);
+    expect(c.secondApronDistance).toBeGreaterThan(0);
+  });
+
+  it("handles a zero payroll as maximal cap space", () => {
+    const c = capContext(0);
+    expect(c.capSpace).toBe(SALARY_CAP);
+    expect(c.taxDistance).toBe(LUXURY_TAX);
+    expect(c.firstApronDistance).toBe(FIRST_APRON);
+    expect(c.band).toBe("Under Cap");
+  });
+
+  it("goes negative on capSpace once over the cap but stays positive on the tax", () => {
+    const c = capContext(SALARY_CAP + 5);
+    expect(c.band).toBe("Over Cap");
+    expect(c.capSpace).toBe(-5);
+    expect(c.taxDistance).toBeGreaterThan(0);
+  });
+
+  it("reports negative distances once past the tax and first apron", () => {
+    const c = capContext(FIRST_APRON + 2);
+    expect(c.band).toBe("1st Apron");
+    expect(c.capSpace).toBeLessThan(0);
+    expect(c.taxDistance).toBeLessThan(0);
+    expect(c.firstApronDistance).toBe(-2);
+    expect(c.secondApronDistance).toBeGreaterThan(0);
+  });
+
+  it("is exactly zero distance at each landmark boundary", () => {
+    expect(capContext(SALARY_CAP).capSpace).toBe(0);
+    expect(capContext(LUXURY_TAX).taxDistance).toBe(0);
+    expect(capContext(FIRST_APRON).firstApronDistance).toBe(0);
+  });
+
+  it("flows through evaluateTrade onto each side", () => {
+    const a = makePlayer({ salary: 20, age: 25 });
+    const b = makePlayer({ salary: 19, age: 24 });
+    const res = evaluateTrade([
+      { team: "BKN", outgoing: [a], incoming: [b] },
+      { team: "MEM", outgoing: [b], incoming: [a] },
+    ]);
+    for (const s of res.sides) {
+      expect(s.cap_context).toEqual(capContext(s.newPayroll));
+    }
+  });
+});
+
+describe("acquisitionRisk", () => {
+  it("returns no flag and zero risk for an empty roster", () => {
+    const r = acquisitionRisk([]);
+    expect(r.flag).toBe(false);
+    expect(r.maxRisk).toBe(0);
+    expect(r.riskyPlayers).toEqual([]);
+  });
+
+  it("does not flag durable players below the threshold", () => {
+    const r = acquisitionRisk([makePlayer({ injuryRisk: 30 }), makePlayer({ injuryRisk: 59 })]);
+    expect(r.flag).toBe(false);
+    expect(r.maxRisk).toBe(59);
+    expect(r.riskyPlayers).toEqual([]);
+  });
+
+  it("flags exactly at the threshold boundary", () => {
+    const r = acquisitionRisk([makePlayer({ injuryRisk: ACQUISITION_RISK_THRESHOLD, name: "Glass Joe" })]);
+    expect(r.flag).toBe(true);
+    expect(r.maxRisk).toBe(ACQUISITION_RISK_THRESHOLD);
+    expect(r.riskyPlayers).toEqual(["Glass Joe"]);
+  });
+
+  it("collects every risky player and the max across a mixed haul", () => {
+    const r = acquisitionRisk([
+      makePlayer({ injuryRisk: 20, name: "Iron Man" }),
+      makePlayer({ injuryRisk: 72, name: "Brittle One" }),
+      makePlayer({ injuryRisk: 88, name: "Brittle Two" }),
+    ]);
+    expect(r.flag).toBe(true);
+    expect(r.maxRisk).toBe(88);
+    expect(r.riskyPlayers).toEqual(["Brittle One", "Brittle Two"]);
+  });
+
+  it("flows through evaluateTrade onto the receiving side", () => {
+    const brittle = makePlayer({ injuryRisk: 80, salary: 15, name: "Fragile Star" });
+    const durable = makePlayer({ injuryRisk: 25, salary: 15 });
+    const res = evaluateTrade([
+      { team: "BKN", outgoing: [durable], incoming: [brittle] },
+      { team: "MEM", outgoing: [brittle], incoming: [durable] },
+    ]);
+    const bkn = res.sides.find((s) => s.team.abbr === "BKN")!;
+    expect(bkn.acquisition_risk.flag).toBe(true);
+    expect(bkn.acquisition_risk.riskyPlayers).toContain("Fragile Star");
+    const mem = res.sides.find((s) => s.team.abbr === "MEM")!;
+    expect(mem.acquisition_risk.flag).toBe(false);
   });
 });

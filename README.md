@@ -15,7 +15,7 @@ Every panel is computed live by a deterministic analytics engine over **real, le
 - **Custom SVG chart kit** — radar, bar, line (with confidence bands), gauge, and an animated basketball **half-court** for shot charts. Zero charting dependencies.
 - **Editorial-terminal aesthetic** — flat near-black surfaces, hairline borders, square corners, a single restrained accent, serif display type, and data-first layouts.
 - **Real CBA logic** — the trade machine enforces 2024 salary-matching, apron hard-caps, and grades roster impact.
-- **Typed, production-grade architecture** — clean engine/data/UI separation; `npx tsc` clean; production build prerenders all 35 routes.
+- **Typed, production-grade architecture** — clean engine/data/UI separation; `npx tsc` clean; **158 engine unit tests** (Vitest) green; production build prerenders all 38 routes.
 
 ---
 
@@ -66,9 +66,20 @@ npm run dev          # → http://localhost:3000
 npm run build        # production build (prerenders all routes)
 npm start            # serve the production build
 npx tsc --noEmit     # typecheck
+npm test             # run the engine test suite (Vitest)
 ```
 
 Press **⌘K / Ctrl-K** anywhere to open the command bar.
+
+### Tests
+
+The analytics engine is covered by a **Vitest** suite (`src/lib/engine/__tests__/`) —
+**158 tests across 9 files**, all pure-function unit tests over the deterministic
+engine (similarity, clutch, trade CBA math, cap/apron distances, acquisition risk,
+bracket odds + upset index, momentum runs + timeout effectiveness, per-game scorers,
+development-curve durability + archetype benchmarking, betting, and more). Every tool's
+non-trivial logic lives in the engine behind a test, not in the React page. Run
+`npm test` (CI-friendly, exits non-zero on failure) or `npx vitest` for watch mode.
 
 ---
 

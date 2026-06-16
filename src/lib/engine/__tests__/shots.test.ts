@@ -3,6 +3,8 @@ import {
   clutchLeaders,
   isClutchShot,
   gameMomentum,
+  timeoutEffectiveness,
+  gameScorers,
   highlightReel,
   filterReelByTag,
   realShotChart,
@@ -114,6 +116,120 @@ describe("momentum post-run response", () => {
     expect(e.response!.improved).toBe(true);
     expect(e.label).toContain("3/5");
     expect(e.label).toContain("8-0");
+  });
+});
+
+describe("timeout effectiveness aggregate", () => {
+  // Build a game with two 8-0+ runs: AAA runs early (BBB answers well), then
+  // BBB runs late (AAA shoots cold after). A short 6-0 run that shouldn't count
+  // (under the 8-pt timeout threshold) is sprinkled in via small makes.
+  const game: RealShot[] = [
+    // AAA 8-0 run
+    shot({ team: "AAA", period: 1, clock: "11:00", made: true }),
+    shot({ team: "BBB", player: "B", espnId: 9, period: 1, clock: "10:50", made: false }), // baseline 0/1
+    shot({ team: "AAA", period: 1, clock: "10:30", made: true }),
+    shot({ team: "AAA", period: 1, clock: "10:00", made: true }),
+    shot({ team: "AAA", period: 1, clock: "9:30", made: true }),
+    // BBB answers the AAA run well (3/4)
+    shot({ team: "BBB", player: "B", espnId: 9, period: 1, clock: "9:00", made: true }),
+    shot({ team: "BBB", player: "B", espnId: 9, period: 1, clock: "8:40", made: true }),
+    shot({ team: "BBB", player: "B", espnId: 9, period: 1, clock: "8:20", made: false }),
+    shot({ team: "BBB", player: "B", espnId: 9, period: 1, clock: "8:00", made: true }),
+    // BBB 8-0 run later (more BBB makes in a row before AAA scores again)
+    shot({ team: "BBB", player: "B", espnId: 9, period: 2, clock: "11:00", made: true }),
+    shot({ team: "BBB", player: "B", espnId: 9, period: 2, clock: "10:40", made: true }),
+    shot({ team: "BBB", player: "B", espnId: 9, period: 2, clock: "10:20", made: true }),
+    shot({ team: "BBB", player: "B", espnId: 9, period: 2, clock: "10:00", made: true }),
+    // AAA shoots cold after conceding (0/2) -> not answered
+    shot({ team: "AAA", period: 2, clock: "9:40", made: false }),
+    shot({ team: "AAA", period: 2, clock: "9:20", made: false }),
+  ];
+
+  it("rolls keyShiftEvents into a total/answered/succeeded/rate summary", () => {
+    const mom = gameMomentum(game, "g1");
+    const eff = timeoutEffectiveness(mom.keyShiftEvents);
+    expect(eff.totalRuns).toBe(2); // two 8-0+ runs
+    expect(eff.answered).toBe(2); // both conceding teams had attempts after
+    expect(eff.succeeded).toBe(1); // only BBB improved on its baseline
+    expect(eff.successRate).toBeCloseTo(0.5, 10);
+  });
+
+  it("accepts the full gameMomentum result object too", () => {
+    const mom = gameMomentum(game, "g1");
+    expect(timeoutEffectiveness(mom)).toEqual(timeoutEffectiveness(mom.keyShiftEvents));
+  });
+
+  it("returns zeros with a safe 0 rate when there are no 8-0+ runs", () => {
+    // A blowout-free trade of baskets: no team strings 8 straight together.
+    const trade: RealShot[] = [
+      shot({ team: "AAA", period: 1, clock: "11:00", made: true }),
+      shot({ team: "BBB", espnId: 9, period: 1, clock: "10:40", made: true }),
+      shot({ team: "AAA", period: 1, clock: "10:20", made: true }),
+      shot({ team: "BBB", espnId: 9, period: 1, clock: "10:00", made: true }),
+    ];
+    const mom = gameMomentum(trade, "g1");
+    const eff = timeoutEffectiveness(mom);
+    expect(eff.totalRuns).toBe(0);
+    expect(eff.answered).toBe(0);
+    expect(eff.succeeded).toBe(0);
+    expect(eff.successRate).toBe(0);
+  });
+
+  it("counts a game-ending run toward totalRuns but not answered", () => {
+    expect(timeoutEffectiveness([])).toEqual({ totalRuns: 0, answered: 0, succeeded: 0, successRate: 0 });
+  });
+});
+
+describe("per-game scorers", () => {
+  const game: RealShot[] = [
+    // Star: 3/4 incl a three = 7 pts
+    shot({ team: "AAA", espnId: 1, player: "Star", value: 2, made: true }),
+    shot({ team: "AAA", espnId: 1, player: "Star", value: 2, made: true }),
+    shot({ team: "AAA", espnId: 1, player: "Star", value: 3, made: true }),
+    shot({ team: "AAA", espnId: 1, player: "Star", value: 2, made: false }),
+    // Role: 2/2 = 4 pts
+    shot({ team: "AAA", espnId: 2, player: "Role", value: 2, made: true }),
+    shot({ team: "AAA", espnId: 2, player: "Role", value: 2, made: true }),
+    // Cold: 0/3 = 0 pts
+    shot({ team: "BBB", espnId: 3, player: "Cold", value: 2, made: false }),
+    shot({ team: "BBB", espnId: 3, player: "Cold", value: 2, made: false }),
+    shot({ team: "BBB", espnId: 3, player: "Cold", value: 3, made: false }),
+    // shot in a DIFFERENT game — must be excluded
+    shot({ team: "AAA", espnId: 1, player: "Star", gameId: "other", value: 3, made: true }),
+  ];
+
+  it("ranks scorers by points and computes FG line", () => {
+    const board = gameScorers(game, "g1");
+    expect(board.map((s) => s.espnId)).toEqual([1, 2, 3]);
+    const star = board[0];
+    expect(star.pts).toBe(7);
+    expect(star.fgm).toBe(3);
+    expect(star.fga).toBe(4);
+    expect(star.fgPct).toBeCloseTo(0.75, 10);
+  });
+
+  it("excludes shots from other games and handles a 0-attempt-free cold scorer", () => {
+    const board = gameScorers(game, "g1");
+    const star = board.find((s) => s.espnId === 1)!;
+    expect(star.fga).toBe(4); // the 'other' game three is not counted
+    const cold = board.find((s) => s.espnId === 3)!;
+    expect(cold.pts).toBe(0);
+    expect(cold.fgPct).toBe(0); // 0/3 -> safe 0, not NaN
+  });
+
+  it("handles a game with a single scorer", () => {
+    const solo: RealShot[] = [
+      shot({ team: "AAA", espnId: 5, player: "Solo", gameId: "g2", value: 2, made: true }),
+      shot({ team: "AAA", espnId: 5, player: "Solo", gameId: "g2", value: 3, made: true }),
+    ];
+    const board = gameScorers(solo, "g2");
+    expect(board).toHaveLength(1);
+    expect(board[0]).toMatchObject({ espnId: 5, pts: 5, fgm: 2, fga: 2 });
+    expect(board[0].fgPct).toBe(1);
+  });
+
+  it("returns an empty board for a game with no shots", () => {
+    expect(gameScorers(game, "no-such-game")).toEqual([]);
   });
 });
 

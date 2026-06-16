@@ -10,7 +10,20 @@ import { Badge } from "@/components/ui/Controls";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool } from "@/lib/tools";
 import { TeamLogo } from "@/components/ui/TeamLogo";
-import { loadRealShots, playoffGames, gameMomentum, momentumNullTest, type RealShot } from "@/lib/data/shots";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { PLAYERS } from "@/lib/data";
+import type { Player } from "@/lib/types";
+import {
+  loadRealShots,
+  playoffGames,
+  gameMomentum,
+  momentumNullTest,
+  timeoutEffectiveness,
+  gameScorers,
+  type RealShot,
+} from "@/lib/data/shots";
+
+const playerByEspn = (id: number): Player | undefined => PLAYERS.find((p) => p.espnId === id);
 
 const ACCENT = "#4D8DFF";
 const AWAY = "#41C7E0";
@@ -52,6 +65,8 @@ export default function MomentumPage() {
   const finalMargin = mom?.timeline.at(-1)?.margin ?? 0;
   const biggest = mom?.biggest ?? null;
   const game = games.find((g) => g.gameId === gameId);
+  const eff = mom ? timeoutEffectiveness(mom.keyShiftEvents) : null;
+  const topScorers = gameId ? gameScorers(shots, gameId).slice(0, 4) : [];
 
   return (
     <ToolShell tool={tool}>
@@ -153,8 +168,98 @@ export default function MomentumPage() {
             </Reveal>
           </div>
 
-          <Reveal delay={0.04}>
-            <Panel title="Scoring runs (6+ points)">
+          <div className="space-y-6">
+            <Reveal delay={0.03}>
+              <Panel title="Timeout effectiveness · response to 8-0+ runs">
+                {eff && eff.totalRuns > 0 ? (
+                  <>
+                    <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+                      <span className="scoreboard text-3xl text-[var(--text)]">
+                        {eff.answered ? Math.round(eff.successRate * 100) : "—"}
+                        {eff.answered ? <span className="text-lg">%</span> : null}
+                      </span>
+                      <span className="text-sm text-[var(--text-muted)]">
+                        Of <span className="stat-num text-[var(--text)]">{eff.answered}</span> big{" "}
+                        {eff.answered === 1 ? "run" : "runs"} the conceding team could answer,{" "}
+                        <span className="stat-num text-[var(--text)]">{eff.succeeded}</span>{" "}
+                        {eff.succeeded === 1 ? "was" : "were"} answered.
+                      </span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                      <span className="border border-white/[0.08] bg-white/[0.02] px-2 py-1 text-white/60">
+                        <span className="stat-num text-white/90">{eff.totalRuns}</span> runs of 8-0+
+                      </span>
+                      <span className="border border-white/[0.08] bg-white/[0.02] px-2 py-1 text-white/60">
+                        <span className="stat-num text-white/90">{eff.answered}</span> answerable
+                      </span>
+                      <span className="border border-white/[0.08] bg-white/[0.02] px-2 py-1 text-white/60">
+                        <span className="stat-num" style={{ color: ACCENT }}>
+                          {eff.succeeded}
+                        </span>{" "}
+                        answered
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="py-4 text-center text-xs text-white/50">
+                    No 8-0+ runs in this game — nothing at timeout scale to answer.
+                  </p>
+                )}
+              </Panel>
+            </Reveal>
+
+            <Reveal delay={0.05}>
+              <Panel title="Hot hands · top scorers this game">
+                {topScorers.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-white/50">No scorers recorded.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {topScorers.map((sc) => {
+                      const p = playerByEspn(sc.espnId);
+                      const home = sc.team === A;
+                      const clr = home ? ACCENT : AWAY;
+                      return (
+                        <div
+                          key={sc.espnId}
+                          className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-2.5"
+                        >
+                          {p ? (
+                            <PlayerAvatar player={p} size={30} rounded />
+                          ) : (
+                            <div
+                              className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+                              style={{ background: `${clr}33` }}
+                            >
+                              {(sc.player || "?").slice(0, 1)}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-white/90">
+                                {sc.player}
+                                <TeamLogo abbr={sc.team} size={13} />
+                              </span>
+                              <span className="scoreboard shrink-0 text-base" style={{ color: clr }}>
+                                {sc.pts}
+                              </span>
+                            </div>
+                            <div className="stat-num mt-0.5 text-[11px] text-white/45">
+                              {sc.fgm}/{sc.fga} FG · {Math.round(sc.fgPct * 100)}%
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="mt-3 border-t border-white/[0.06] pt-2.5 text-[11px] text-white/45">
+                  Field-goal points only — free throws aren&rsquo;t in public shot data.
+                </p>
+              </Panel>
+            </Reveal>
+
+            <Reveal delay={0.07}>
+              <Panel title="Scoring runs (6+ points)">
               <div className="no-scrollbar max-h-[420px] space-y-2.5 overflow-y-auto">
                 {mom.runs.length === 0 && (
                   <p className="py-6 text-center text-xs text-white/50">No 6-0 runs in this game.</p>
@@ -190,8 +295,9 @@ export default function MomentumPage() {
                   );
                 })}
               </div>
-            </Panel>
-          </Reveal>
+              </Panel>
+            </Reveal>
+          </div>
         </div>
       )}
 

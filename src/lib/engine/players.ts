@@ -594,6 +594,12 @@ export function developmentCurve(id: string): DevResult | null {
       hi: Math.round((proj + uncertainty) * 10) / 10,
     });
   }
+  // Players past the curve's max age (34) produce no projection points; their
+  // peak is the current season at the current PER.
+  if (curve.length === 0) {
+    const pt: DevPoint = { age: p.age, proj: p.per, lo: p.per, hi: p.per };
+    curve.push(pt);
+  }
   const peak = curve.reduce((m, c) => (c.proj > m.proj ? c : m), curve[0]);
   const ceiling =
     p.starPower > 80 ? "Perennial All-NBA" : p.starPower > 65 ? "All-Star upside" : p.starPower > 50 ? "Quality starter" : "Rotation piece";
@@ -681,6 +687,99 @@ export function injuryRisk(
           ? "Normal rotation with periodic rest on long road trips."
           : "Durable profile — full availability expected.";
   return { risk: Math.round(risk), band, factors, recommendation };
+}
+
+// ---------------- Durability trajectory ----------------
+// The development curve projects PER for future ages but ignores that injury
+// risk drifts with age. For each projected season we re-run the existing
+// season-level injury-risk model with the player aged forward (age is the one
+// model input that moves deterministically year over year), so the durability
+// band tracks the same trajectory as the PER curve. Bands are collapsed to the
+// three season-level tiers — short-rest context ("High") is out of scope here.
+export type DurabilityBand = "Low" | "Moderate" | "Elevated";
+export interface DurabilityPoint {
+  age: number;
+  risk: number; // 0-100, age-adjusted season-level injury risk
+  band: DurabilityBand;
+}
+
+// Same cut points as injuryRisk, with the top two season-level tiers merged
+// into "Elevated" (the page surfaces a 3-band durability read, not load mgmt).
+function durabilityBand(risk: number): DurabilityBand {
+  return risk < 30 ? "Low" : risk < 50 ? "Moderate" : "Elevated";
+}
+
+export function durabilityTrajectory(p: Player, years = 3): DurabilityPoint[] {
+  const out: DurabilityPoint[] = [];
+  for (let yr = 1; yr <= years; yr++) {
+    const age = p.age + yr;
+    // Re-price risk at the future age; every other input stays at the player's
+    // current season (we don't pretend to know future minutes or availability).
+    const { risk } = injuryRisk({ ...p, age });
+    out.push({ age, risk, band: durabilityBand(risk) });
+  }
+  return out;
+}
+
+// ---------------- Archetype peak benchmark ----------------
+// Benchmarks a player's projected peak PER against the projected peaks of every
+// same-archetype peer, so a developmental ceiling reads relative to the player's
+// own stylistic cohort rather than the whole league.
+export type PeakVerdict =
+  | "Top-tier for archetype"
+  | "Above peer median"
+  | "Around peer median"
+  | "Below peer median"
+  | "No archetype peers";
+export interface ArchetypePeakBenchmark {
+  archetype: string;
+  thisPeak: number; // this player's projected peak PER
+  peerPeakMedian: number | null; // median projected peak across same-archetype peers
+  peerCount: number;
+  percentile: number; // 0-100, share of peers this peak meets or beats
+  verdict: PeakVerdict;
+}
+
+function projectedPeakPer(p: Player): number {
+  const res = developmentCurve(p.id);
+  // Players already past the curve's max age (34) yield an empty curve — their
+  // peak is simply their current PER, no projection runway remains.
+  if (!res || res.curve.length === 0) return p.per;
+  return res.curve.reduce((m, c) => Math.max(m, c.proj), res.curve[0].proj);
+}
+
+function median(xs: number[]): number {
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = s.length >> 1;
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+export function archetypePeakBenchmark(player: Player): ArchetypePeakBenchmark {
+  const thisPeak = Math.round(projectedPeakPer(player) * 10) / 10;
+  const peers = PLAYERS.filter((x) => x.id !== player.id && x.archetype === player.archetype);
+  if (peers.length === 0) {
+    return {
+      archetype: player.archetype,
+      thisPeak,
+      peerPeakMedian: null,
+      peerCount: 0,
+      percentile: 100,
+      verdict: "No archetype peers",
+    };
+  }
+  const peerPeaks = peers.map(projectedPeakPer);
+  const peerPeakMedian = Math.round(median(peerPeaks) * 10) / 10;
+  const beaten = peerPeaks.filter((v) => thisPeak >= v).length;
+  const percentile = Math.round((beaten / peerPeaks.length) * 100);
+  const verdict: PeakVerdict =
+    percentile >= 80
+      ? "Top-tier for archetype"
+      : thisPeak > peerPeakMedian
+        ? "Above peer median"
+        : thisPeak >= peerPeakMedian - 0.5
+          ? "Around peer median"
+          : "Below peer median";
+  return { archetype: player.archetype, thisPeak, peerPeakMedian, peerCount: peers.length, percentile, verdict };
 }
 
 // ---------------- Awards ----------------

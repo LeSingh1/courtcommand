@@ -261,6 +261,74 @@ export function gameMomentum(
   return { teams, timeline, runs, biggest: runs[0] ?? null, keyShiftEvents };
 }
 
+// ---- Aggregate timeout effectiveness for a single game ----------------------
+// The per-event view (keyShiftEvents) shows whether each 8-0+ run was answered.
+// This rolls them up into one line: of the big runs that the conceding team
+// still had attempts to answer, how many did it actually answer (shoot above
+// its pre-run baseline)? Runs that ended the game (no response) count toward
+// totalRuns but not toward `answered`, since they were never answerable.
+export interface TimeoutEffectiveness {
+  totalRuns: number; // 8-0+ runs in the game
+  answered: number; // runs the conceding team had a measurable response to
+  succeeded: number; // of those, how many improved on the pre-run baseline
+  successRate: number; // succeeded / answered, 0..1 (0 when none were answerable)
+}
+
+export function timeoutEffectiveness(
+  input: KeyShiftEvent[] | { keyShiftEvents: KeyShiftEvent[] },
+): TimeoutEffectiveness {
+  const events = Array.isArray(input) ? input : input.keyShiftEvents;
+  let answered = 0;
+  let succeeded = 0;
+  for (const e of events) {
+    if (!e.response) continue; // run ended the game — never answerable
+    answered++;
+    if (e.response.improved) succeeded++;
+  }
+  return {
+    totalRuns: events.length,
+    answered,
+    succeeded,
+    successRate: answered ? succeeded / answered : 0,
+  };
+}
+
+// ---- Per-player scoring within a single game --------------------------------
+// playerForm() works on a player's whole-playoff corpus (>=6 shots, baselined
+// against their own postseason mean), so it can't answer "who's hot in THIS
+// game". This counts field-goal scoring inside one game and ranks shooters,
+// for the per-game "hot hands" view. Field-goal points only — free throws
+// aren't in public shot data.
+export interface GameScorer {
+  player: string;
+  espnId: number;
+  team: string;
+  pts: number; // field-goal points
+  fgm: number;
+  fga: number;
+  fgPct: number; // fgm / fga, 0..1 (0 when no attempts)
+}
+
+export function gameScorers(shots: RealShot[], gameId: string): GameScorer[] {
+  const m = new Map<number, GameScorer>();
+  for (const s of shots) {
+    if (s.gameId !== gameId) continue;
+    let e = m.get(s.espnId);
+    if (!e) {
+      e = { player: s.player, espnId: s.espnId, team: s.team, pts: 0, fgm: 0, fga: 0, fgPct: 0 };
+      m.set(s.espnId, e);
+    }
+    e.fga++;
+    if (s.made) {
+      e.fgm++;
+      e.pts += s.value;
+    }
+  }
+  return [...m.values()]
+    .map((e) => ({ ...e, fgPct: e.fga ? e.fgm / e.fga : 0 }))
+    .sort((a, b) => b.pts - a.pts || b.fgm - a.fgm || a.player.localeCompare(b.player));
+}
+
 // ---- The momentum hypothesis, tested across every playoff game -------------
 // After conceding an 8-0+ run, does a team actually shoot worse (rattled) or
 // better (bounce-back) than its own baseline? Pool every run response in the

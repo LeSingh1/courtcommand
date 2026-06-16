@@ -4,6 +4,8 @@ import {
   rosterNeeds,
   simulateMatchup,
   simulateBracket,
+  fieldStrength,
+  upsetIndex,
   recruitRank,
   quizResults,
   debate,
@@ -118,6 +120,136 @@ describe("simulateMatchup", () => {
     expect(r1.champion.name).toBe(r2.champion.name);
     expect(r1.rounds.flat().map((g) => g.winner.name)).toEqual(
       r2.rounds.flat().map((g) => g.winner.name),
+    );
+  });
+});
+
+// ---------------- fieldStrength ----------------
+describe("fieldStrength", () => {
+  const mk = (over: Partial<NcaaTeam>): NcaaTeam => ({
+    name: "T",
+    seed: 4,
+    eff: 20,
+    sos: 6,
+    form: 0.7,
+    color: "#000000",
+    ...over,
+  });
+
+  it("ranks by efficiency adjusted for schedule strength, strongest first", () => {
+    const rows = fieldStrength();
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i - 1].trueStrength).toBeGreaterThanOrEqual(rows[i].trueStrength);
+      expect(rows[i - 1].trueRank).toBe(i);
+    }
+    expect(rows[0].trueRank).toBe(1);
+    // SOS must actually move the needle: equal efficiency, harder schedule wins.
+    const tie = fieldStrength([
+      mk({ name: "Soft", eff: 20, sos: 2 }),
+      mk({ name: "Brutal", eff: 20, sos: 10 }),
+    ]);
+    expect(tie[0].team.name).toBe("Brutal");
+    expect(tie[0].trueStrength).toBeGreaterThan(tie[1].trueStrength);
+  });
+
+  it("flags an over-seeded team (good seed, weak true strength) and an under-seeded one", () => {
+    const field = [
+      mk({ name: "Paper1", seed: 1, eff: 8, sos: 1 }), // top seed, weakest team
+      mk({ name: "Mid2", seed: 2, eff: 20, sos: 5 }),
+      mk({ name: "Mid3", seed: 3, eff: 18, sos: 5 }),
+      mk({ name: "Sleeper", seed: 7, eff: 32, sos: 10 }), // bad seed, strongest team
+    ];
+    const rows = fieldStrength(field, 2);
+    const byName = (n: string) => rows.find((r) => r.team.name === n)!;
+    expect(byName("Paper1").verdict).toBe("over-seeded");
+    expect(byName("Paper1").seedGap).toBeGreaterThan(0);
+    expect(byName("Sleeper").verdict).toBe("under-seeded");
+    expect(byName("Sleeper").seedGap).toBeLessThan(0);
+  });
+
+  it("calls a perfectly seeded field fair with zero gaps", () => {
+    const field = [
+      mk({ name: "A", seed: 1, eff: 30, sos: 8 }),
+      mk({ name: "B", seed: 2, eff: 25, sos: 7 }),
+      mk({ name: "C", seed: 3, eff: 20, sos: 6 }),
+      mk({ name: "D", seed: 4, eff: 15, sos: 5 }),
+    ];
+    const rows = fieldStrength(field);
+    rows.forEach((r) => {
+      expect(r.seedGap).toBe(0);
+      expect(r.verdict).toBe("fair");
+    });
+  });
+});
+
+// ---------------- upsetIndex ----------------
+describe("upsetIndex", () => {
+  const mk = (over: Partial<NcaaTeam>): NcaaTeam => ({
+    name: "T",
+    seed: 4,
+    eff: 20,
+    sos: 6,
+    form: 0.7,
+    color: "#000000",
+    ...over,
+  });
+  const game = (
+    a: NcaaTeam,
+    b: NcaaTeam,
+    winner: NcaaTeam,
+  ): import("@/lib/engine/content").BracketGame => ({
+    round: 1,
+    a,
+    b,
+    aProb: winner.name === a.name ? 60 : 40,
+    winner,
+    upset: winner.seed > Math.min(a.seed, b.seed),
+  });
+
+  it("reports pure chalk: every favorite advances, wildness 0", () => {
+    const one = mk({ name: "One", seed: 1 });
+    const eight = mk({ name: "Eight", seed: 8 });
+    const four = mk({ name: "Four", seed: 4 });
+    const five = mk({ name: "Five", seed: 5 });
+    const bracket = {
+      rounds: [
+        [game(one, eight, one), game(four, five, four)],
+        [game(one, four, one)],
+      ],
+    };
+    const r = upsetIndex(bracket);
+    expect(r.upsetCount).toBe(0);
+    expect(r.predictedSeedSum).toBe(r.chalkSeedSum);
+    expect(r.predictedSeedSum).toBe(1 + 4 + 1);
+    expect(r.wildness).toBe(0);
+  });
+
+  it("reports maximum carnage: every worse seed wins, wildness 100", () => {
+    const one = mk({ name: "One", seed: 1 });
+    const eight = mk({ name: "Eight", seed: 8 });
+    const four = mk({ name: "Four", seed: 4 });
+    const five = mk({ name: "Five", seed: 5 });
+    const bracket = {
+      rounds: [
+        [game(one, eight, eight), game(four, five, five)],
+        [game(eight, five, eight)],
+      ],
+    };
+    const r = upsetIndex(bracket);
+    expect(r.upsetCount).toBe(3);
+    expect(r.predictedSeedSum).toBe(r.maxSeedSum);
+    expect(r.predictedSeedSum).toBe(8 + 5 + 8);
+    expect(r.wildness).toBe(100);
+  });
+
+  it("lands a mixed bracket between the chalk and max bounds", () => {
+    const r = upsetIndex(simulateBracket("balanced"));
+    expect(r.predictedSeedSum).toBeGreaterThanOrEqual(r.chalkSeedSum);
+    expect(r.predictedSeedSum).toBeLessThanOrEqual(r.maxSeedSum);
+    expect(r.wildness).toBeGreaterThanOrEqual(0);
+    expect(r.wildness).toBeLessThanOrEqual(100);
+    expect(r.upsetCount).toBe(
+      simulateBracket("balanced").rounds.flat().filter((g) => g.upset).length,
     );
   });
 });

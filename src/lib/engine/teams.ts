@@ -10,7 +10,7 @@ import {
   LUXURY_TAX,
 } from "@/lib/data";
 import { letterGrade } from "@/lib/cn";
-import { checkTradeSide, capBand } from "@/lib/engine/cba";
+import { checkTradeSide, capBand, capContext, type CapContext } from "@/lib/engine/cba";
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const r1 = (v: number) => Math.round(v * 10) / 10;
@@ -28,6 +28,26 @@ export interface TradeSide {
   picks?: TradePick[]; // outgoing picks — transfer like players, carry no salary
   picksIn?: TradePick[]; // picks routed to this team
 }
+// Aggregate durability read on a team's incoming haul. The page surfaces the
+// flag as a warning badge; >= 60 on the per-player injuryRisk composite is the
+// same "Elevated"+ bar the Injury Risk and Scouting tools draw at.
+export const ACQUISITION_RISK_THRESHOLD = 60;
+export interface AcquisitionRisk {
+  maxRisk: number;
+  riskyPlayers: string[];
+  flag: boolean;
+}
+
+export function acquisitionRisk(players: Player[]): AcquisitionRisk {
+  const risky = players.filter((p) => p.injuryRisk >= ACQUISITION_RISK_THRESHOLD);
+  const maxRisk = players.reduce((m, p) => Math.max(m, p.injuryRisk), 0);
+  return {
+    maxRisk,
+    riskyPlayers: risky.map((p) => p.name),
+    flag: risky.length > 0,
+  };
+}
+
 export type ContractRiskLevel = "Low" | "Med" | "High";
 export interface ContractRisk {
   level: ContractRiskLevel;
@@ -53,6 +73,8 @@ export interface TradeResult {
     contract_risk: ContractRisk;
     roster_fit_score: number; // post-trade positional balance, 0-100
     roster_fit_delta: number; // vs the pre-trade roster
+    cap_context: CapContext; // post-trade cap/tax/apron distances
+    acquisition_risk: AcquisitionRisk; // durability read on incoming players
   }[];
   violations: string[];
 }
@@ -188,6 +210,8 @@ export function evaluateTrade(sides: TradeSide[]): TradeResult {
       contract_risk: contractRisk(s.incoming),
       roster_fit_score,
       roster_fit_delta,
+      cap_context: capContext(newPayroll),
+      acquisition_risk: acquisitionRisk(s.incoming),
     };
   });
   return { legal: violations.length === 0, sides: resSides, violations };

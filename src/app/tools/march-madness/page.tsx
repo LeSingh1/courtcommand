@@ -18,6 +18,8 @@ import {
   type NcaaTeam,
   type BracketGame,
   titleOdds,
+  fieldStrength,
+  upsetIndex,
 } from "@/lib/engine/content";
 
 const ROUND_NAMES = ["Round of 16", "Quarterfinals", "Semifinals", "Final"];
@@ -132,6 +134,15 @@ export default function MarchMadnessPage() {
   };
 
   const upsetCount = result?.rounds.flat().filter((g) => g.upset).length ?? 0;
+  const upsets = useMemo(() => (result ? upsetIndex(result) : null), [result]);
+
+  // True-strength read on the field: efficiency credited for schedule strength,
+  // flagging seeds that look generous or harsh relative to that composite.
+  const strength = useMemo(() => fieldStrength(), []);
+  const strengthOf = useMemo(
+    () => new Map(strength.map((r) => [r.team.name, r])),
+    [strength],
+  );
 
   // Head-to-head picker: any two teams in the field, same model emphasis.
   const [h2hA, setH2hA] = useState("UConn");
@@ -320,6 +331,26 @@ export default function MarchMadnessPage() {
                   {result.champion.seed} seed · {result.champion.eff} net eff
                 </span>
               </div>
+              {upsets && (
+                <div className="mt-4 flex items-center gap-2 text-[11px] text-white/55">
+                  <Zap size={12} style={{ color: ACCENT }} />
+                  <span className="stat-num">
+                    Upset index{" "}
+                    <b style={{ color: ACCENT }}>{upsets.wildness}</b>
+                    /100
+                  </span>
+                  <span className="text-white/35">·</span>
+                  <span>
+                    {upsets.wildness < 25
+                      ? "chalk bracket"
+                      : upsets.wildness < 55
+                        ? "a few busted lines"
+                        : "bracket carnage"}{" "}
+                    — seed total {upsets.predictedSeedSum} vs {upsets.chalkSeedSum}{" "}
+                    all-favorites
+                  </span>
+                </div>
+              )}
             </div>
           </Reveal>
 
@@ -425,26 +456,47 @@ export default function MarchMadnessPage() {
         >
         <Panel title="The field">
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-            {NCAA_FIELD.map((t, i) => (
-              <Reveal key={t.name} delay={i * 0.03}>
-                <div className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                  <span
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
-                    style={{ background: t.color, color: chipInk(t.color) }}
-                  >
-                    {t.seed}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-white">{t.name}</div>
-                    <div className="stat-num text-[10px] text-white/55">{t.eff} net eff</div>
+            {NCAA_FIELD.map((t, i) => {
+              const s = strengthOf.get(t.name);
+              const flag =
+                s?.verdict === "over-seeded"
+                  ? { text: "generous seed", color: "#E0556B" }
+                  : s?.verdict === "under-seeded"
+                    ? { text: "harsh seed", color: ACCENT }
+                    : null;
+              return (
+                <Reveal key={t.name} delay={i * 0.03}>
+                  <div className="flex items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                    <span
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
+                      style={{ background: t.color, color: chipInk(t.color) }}
+                    >
+                      {t.seed}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-white">{t.name}</div>
+                      <div className="stat-num text-[10px] text-white/55">
+                        {t.eff} eff · {t.sos} sos
+                      </div>
+                      {flag && (
+                        <div
+                          className="mt-1 text-[9px] font-semibold uppercase tracking-wide"
+                          style={{ color: flag.color }}
+                        >
+                          {flag.text}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Reveal>
-            ))}
+                </Reveal>
+              );
+            })}
           </div>
           <div className="mt-5 flex items-center gap-2 text-xs text-white/55">
             <Trophy size={13} style={{ color: ACCENT }} />
-            16 teams seeded 1–7. Press simulate to run the bracket end to end.
+            16 teams seeded 1–7, with net efficiency and strength of schedule. Seed flags
+            compare each team&rsquo;s line to its true-strength rank. Press simulate to run the
+            bracket end to end.
           </div>
         </Panel>
         </motion.div>

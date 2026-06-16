@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeftRight, Check, Plus, X, Loader2, ShieldAlert, BadgeCheck, GripVertical, Ticket } from "lucide-react";
+import { ArrowLeftRight, Check, Plus, X, Loader2, ShieldAlert, BadgeCheck, GripVertical, Ticket, HeartPulse } from "lucide-react";
 import { spring } from "@/lib/motion";
 import { ToolShell, Insight } from "@/components/tool/ToolShell";
 import { Segmented } from "@/components/ui/Controls";
@@ -612,6 +612,7 @@ function AfterTrade({
         <Cell label="Net" value={`${side.netSalary >= 0 ? "+" : ""}${side.netSalary}M`} />
         <Cell label="Apron" value={side.apronBand} />
       </div>
+      <CapContextRow ctx={side.cap_context} />
       {side.failure_reasons.length > 0 && (
         <div className="space-y-1 border-b border-[var(--line)] bg-[#F4647D]/[0.07] px-4 py-2.5">
           {side.failure_reasons.map((r) => (
@@ -638,9 +639,43 @@ function AfterTrade({
                 <Ticket size={11} className="text-white/45" /> {label}
               </span>
             ))}
+            {side.acquisition_risk.flag && (
+              <span
+                title={`${side.acquisition_risk.riskyPlayers.join(", ")} — injury-risk composite up to ${side.acquisition_risk.maxRisk}/100`}
+                className="flex items-center gap-1 rounded-lg border px-1.5 py-0.5 text-[10px] font-semibold"
+                style={{ background: "#F4647D1f", color: "#F4647D", borderColor: "#F4647D33" }}
+              >
+                <HeartPulse size={11} /> Durability risk
+              </span>
+            )}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Post-trade cap room and distance to each CBA line. Positive distance = line
+// still ahead (room to spend); negative = the team has crossed it.
+function CapContextRow({ ctx }: { ctx: TradeResult["sides"][number]["cap_context"] }) {
+  const cap =
+    ctx.capSpace >= 0
+      ? { text: `$${ctx.capSpace}M cap space`, color: "#4D8DFF" }
+      : { text: `$${Math.abs(ctx.capSpace)}M over cap`, color: "#D7BC6A" };
+  const line = (label: string, d: number) => {
+    const color = d > 0 ? "#6B6E78" : "#F4647D";
+    const text = d > 0 ? `$${r1(d)}M to ${label}` : `$${r1(Math.abs(d))}M over ${label}`;
+    return { color, text };
+  };
+  const tax = line("tax", ctx.taxDistance);
+  const apron = line("1st apron", ctx.firstApronDistance);
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--line)] px-4 py-2 text-[10px]">
+      <span className="stat-num font-semibold" style={{ color: cap.color }}>{cap.text}</span>
+      <span className="text-white/20">·</span>
+      <span className="stat-num" style={{ color: tax.color }}>{tax.text}</span>
+      <span className="text-white/20">·</span>
+      <span className="stat-num" style={{ color: apron.color }}>{apron.text}</span>
     </div>
   );
 }

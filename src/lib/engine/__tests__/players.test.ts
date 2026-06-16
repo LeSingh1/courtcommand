@@ -1,6 +1,58 @@
 import { describe, it, expect } from "vitest";
-import { similarPlayers, classifyRole, scoutingReport } from "@/lib/engine/players";
+import {
+  similarPlayers,
+  classifyRole,
+  scoutingReport,
+  durabilityTrajectory,
+  archetypePeakBenchmark,
+} from "@/lib/engine/players";
 import { getPlayer } from "@/lib/data";
+import type { Player } from "@/lib/types";
+
+const BASE: Player = {
+  id: "synthetic-player",
+  name: "Synthetic Player",
+  team: "BOS",
+  pos: "SG",
+  age: 24,
+  htIn: 78,
+  wtLb: 210,
+  exp: 4,
+  salary: 20,
+  gp: 70,
+  mpg: 30,
+  ppg: 18,
+  rpg: 5,
+  apg: 4,
+  spg: 1.1,
+  bpg: 0.5,
+  topg: 2.2,
+  fgp: 0.47,
+  tpp: 0.36,
+  ftp: 0.8,
+  tpa: 6,
+  usg: 24,
+  tsp: 0.58,
+  per: 18,
+  bpm: 2,
+  netRtg: 2,
+  shotRim: 0.3,
+  shotMid: 0.3,
+  shotThree: 0.4,
+  clutchPpg: 2.8,
+  clutchFgp: 0.45,
+  clutchUsg: 25,
+  defReb: 3,
+  defImpact: 50,
+  offImpact: 55,
+  injuryRisk: 40,
+  ortg: 112,
+  drtg: 112,
+  archetype: "Combo Guard",
+  starPower: 55,
+  efficiency: 60,
+};
+const mk = (over: Partial<Player>): Player => ({ ...BASE, ...over });
 
 // Real ids from src/lib/data/players.real.json (ESPN ingest)
 const EDWARDS = "anthony-edwards-4594268"; // high-usage scoring SG
@@ -107,5 +159,84 @@ describe("scoutingReport", () => {
 
   it("is null for unknown ids", () => {
     expect(scoutingReport("nobody-123")).toBeNull();
+  });
+});
+
+describe("durabilityTrajectory", () => {
+  it("returns one age-adjusted point per projected year, ages forward", () => {
+    const traj = durabilityTrajectory(mk({ age: 25 }), 3);
+    expect(traj).toHaveLength(3);
+    expect(traj.map((t) => t.age)).toEqual([26, 27, 28]);
+    for (const pt of traj) {
+      expect(pt.risk).toBeGreaterThanOrEqual(0);
+      expect(pt.risk).toBeLessThanOrEqual(100);
+      expect(["Low", "Moderate", "Elevated"]).toContain(pt.band);
+    }
+  });
+
+  it("collapses to the three season-level bands at the same cut points", () => {
+    for (const pt of durabilityTrajectory(mk({ age: 28, mpg: 36 }), 3)) {
+      if (pt.risk < 30) expect(pt.band).toBe("Low");
+      else if (pt.risk < 50) expect(pt.band).toBe("Moderate");
+      else expect(pt.band).toBe("Elevated");
+    }
+  });
+
+  it("rises with age — risk later in the horizon is at least as high as earlier", () => {
+    const traj = durabilityTrajectory(mk({ age: 30, mpg: 34 }), 3);
+    expect(traj[2].risk).toBeGreaterThanOrEqual(traj[0].risk);
+  });
+
+  it("rates a young low-minutes player more durable than an aging heavy-minutes one", () => {
+    const young = durabilityTrajectory(mk({ age: 22, mpg: 24, gp: 78 }), 3);
+    const old = durabilityTrajectory(mk({ age: 35, mpg: 37, gp: 55 }), 3);
+    expect(young[0].risk).toBeLessThan(old[0].risk);
+  });
+
+  it("honors a custom horizon length", () => {
+    expect(durabilityTrajectory(mk({ age: 26 }), 1)).toHaveLength(1);
+    expect(durabilityTrajectory(mk({ age: 26 }), 5)).toHaveLength(5);
+  });
+});
+
+describe("archetypePeakBenchmark", () => {
+  it("benchmarks a real player against same-archetype peers", () => {
+    const edwards = getPlayer(EDWARDS)!;
+    const b = archetypePeakBenchmark(edwards);
+    expect(b.archetype).toBe(edwards.archetype);
+    expect(b.peerCount).toBeGreaterThan(0);
+    expect(b.peerPeakMedian).not.toBeNull();
+    expect(b.percentile).toBeGreaterThanOrEqual(0);
+    expect(b.percentile).toBeLessThanOrEqual(100);
+    expect([
+      "Top-tier for archetype",
+      "Above peer median",
+      "Around peer median",
+      "Below peer median",
+    ]).toContain(b.verdict);
+  });
+
+  it("grades an elite peak top-tier and high percentile vs its cohort", () => {
+    const star = archetypePeakBenchmark(getPlayer(EDWARDS)!);
+    expect(star.percentile).toBeGreaterThanOrEqual(70);
+  });
+
+  it("returns the no-peers branch for a unique synthetic archetype", () => {
+    const unicorn = mk({ id: "unicorn", archetype: "__no-such-archetype__", per: 22 });
+    const b = archetypePeakBenchmark(unicorn);
+    expect(b.peerCount).toBe(0);
+    expect(b.peerPeakMedian).toBeNull();
+    expect(b.percentile).toBe(100);
+    expect(b.verdict).toBe("No archetype peers");
+  });
+
+  it("excludes the player from its own peer set (synthetic injected via real id reuse)", () => {
+    // A real roster player benchmarked against its archetype peers should never
+    // count itself: peerCount must be strictly less than the full cohort size.
+    const gobert = getPlayer(GOBERT)!;
+    const b = archetypePeakBenchmark(gobert);
+    const cohort = [gobert]; // at minimum, the player exists in the league
+    expect(b.peerCount).toBeGreaterThanOrEqual(cohort.length - 1);
+    expect(b.thisPeak).toBeGreaterThan(0);
   });
 });

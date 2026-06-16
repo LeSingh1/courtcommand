@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/Controls";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { TrackRecord } from "@/components/ui/TrackRecord";
 import { getTool, categoryColor } from "@/lib/tools";
-import { developmentCurve } from "@/lib/engine/players";
+import { developmentCurve, durabilityTrajectory, archetypePeakBenchmark } from "@/lib/engine/players";
 import { projectSeasons } from "@/lib/engine/value";
 import { getPlayer, getPlayerByName } from "@/lib/data";
 import { spring } from "@/lib/motion";
@@ -31,6 +31,8 @@ export default function DevelopmentCurvePage() {
 
   const result = useMemo(() => (player ? developmentCurve(player.id) : null), [player]);
   const projection = useMemo(() => (player ? projectSeasons(player, 3) : null), [player]);
+  const durability = useMemo(() => (player ? durabilityTrajectory(player, 3) : null), [player]);
+  const peakBench = useMemo(() => (player ? archetypePeakBenchmark(player) : null), [player]);
 
   const now = result?.curve[0];
   const peak = result ? result.curve.find((c) => c.age === result.peakAge) : undefined;
@@ -103,18 +105,27 @@ export default function DevelopmentCurvePage() {
             {projection && (
               <Panel title="Three-season projection bands">
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[420px] text-sm">
+                  <table className="w-full min-w-[520px] text-sm">
                     <thead>
                       <tr className="border-b border-white/10 text-left text-[11px] text-white/40">
                         <th className="py-2 pl-2 font-medium">Season</th>
                         <th className="py-2 text-right font-medium">Worst PPG</th>
                         <th className="py-2 text-right font-medium">Expected PPG</th>
                         <th className="py-2 text-right font-medium">Best PPG</th>
-                        <th className="py-2 pr-2 text-right font-medium">Composite</th>
+                        <th className="py-2 text-right font-medium">Composite</th>
+                        <th className="py-2 pr-2 text-right font-medium">Durability</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {projection.seasons.map((s) => (
+                      {projection.seasons.map((s, i) => {
+                        const dur = durability?.[i];
+                        const durColor =
+                          dur?.band === "Elevated"
+                            ? "#F4647D"
+                            : dur?.band === "Moderate"
+                              ? "#D7BC6A"
+                              : "#3FB98A";
+                        return (
                         <tr key={s.season} className="border-b border-white/[0.04]">
                           <td className="stat-num py-2.5 pl-2 text-white/65">
                             +{s.season} (age {s.age})
@@ -126,18 +137,32 @@ export default function DevelopmentCurvePage() {
                             {s.expected.ppg}
                           </td>
                           <td className="stat-num py-2.5 text-right text-[#4D8DFF]">{s.best.ppg}</td>
-                          <td className="stat-num py-2.5 pr-2 text-right text-white/55">
+                          <td className="stat-num py-2.5 text-right text-white/55">
                             {s.worst.composite}–{s.best.composite}
                           </td>
+                          <td className="py-2.5 pr-2 text-right">
+                            {dur && (
+                              <span
+                                className="stat-num inline-flex items-center gap-1.5 text-[11px]"
+                                style={{ color: durColor }}
+                                title={`Age-adjusted injury risk ${dur.risk}/100`}
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full" style={{ background: durColor }} />
+                                {dur.band}
+                              </span>
+                            )}
+                          </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
                 <p className="mt-3 text-[11px] leading-relaxed text-white/35">
                   Bands come from an age curve peaking at 27, an efficiency-trend proxy (true
                   shooting vs league), and role-expansion headroom — uncertainty widens with horizon
-                  and youth. Deterministic, computed from real season stats.
+                  and youth. The durability band re-prices the injury-risk model at each future age.
+                  Deterministic, computed from real season stats.
                 </p>
               </Panel>
             )}
@@ -243,6 +268,24 @@ export default function DevelopmentCurvePage() {
                   The closest stylistic blueprint is <b>{result.comp.name}</b>.
                 </>
               ) : null}
+              {peakBench && (
+                <>
+                  {" "}
+                  {peakBench.peerPeakMedian === null ? (
+                    <>
+                      No same-archetype peers to benchmark against — a relatively unique{" "}
+                      <b>{peakBench.archetype.toLowerCase()}</b> profile.
+                    </>
+                  ) : (
+                    <>
+                      Among <b>{peakBench.peerCount}</b> other{" "}
+                      <b>{peakBench.archetype.toLowerCase()}</b>s, that peak grades{" "}
+                      <b>{peakBench.verdict.toLowerCase()}</b> — <b>{peakBench.thisPeak} PER</b> vs a
+                      peer median of <b>{peakBench.peerPeakMedian}</b> ({peakBench.percentile}th pct).
+                    </>
+                  )}
+                </>
+              )}
             </Insight>
           </div>
         </motion.div>

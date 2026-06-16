@@ -396,6 +396,86 @@ export function simulateBracket(
   return { rounds, champion: alive[0] };
 }
 
+export interface FieldStrengthRow {
+  team: NcaaTeam;
+  trueStrength: number; // efficiency adjusted by strength of schedule
+  trueRank: number; // 1 = strongest by trueStrength
+  seedRank: number; // 1 = best seed (ties broken by trueStrength)
+  seedGap: number; // trueRank - seedRank; >0 generous (over-seeded), <0 harsh (under-seeded)
+  verdict: "over-seeded" | "under-seeded" | "fair";
+}
+
+// True strength = net efficiency plus a credit for the schedule that produced it.
+// A team's seed is "generous" (over-seeded) when the field's strength ranking
+// places it well below where its seed sits, and "harsh" (under-seeded) when its
+// strength ranking sits well above its seed.
+export function fieldStrength(
+  field: NcaaTeam[] = NCAA_FIELD,
+  gapThreshold = 3,
+): FieldStrengthRow[] {
+  const scored = field.map((team) => ({
+    team,
+    trueStrength: Math.round((team.eff + team.sos * 0.5) * 10) / 10,
+  }));
+
+  const byStrength = [...scored].sort((a, b) => b.trueStrength - a.trueStrength);
+  const trueRankOf = new Map<string, number>();
+  byStrength.forEach((s, i) => trueRankOf.set(s.team.name, i + 1));
+
+  const bySeed = [...scored].sort(
+    (a, b) => a.team.seed - b.team.seed || b.trueStrength - a.trueStrength,
+  );
+  const seedRankOf = new Map<string, number>();
+  bySeed.forEach((s, i) => seedRankOf.set(s.team.name, i + 1));
+
+  return scored
+    .map(({ team, trueStrength }) => {
+      const trueRank = trueRankOf.get(team.name)!;
+      const seedRank = seedRankOf.get(team.name)!;
+      // Positive when the seed flatters the team (ranks better than its true
+      // strength); negative when the seed sells it short.
+      const seedGap = trueRank - seedRank;
+      const verdict: FieldStrengthRow["verdict"] =
+        seedGap >= gapThreshold
+          ? "over-seeded"
+          : seedGap <= -gapThreshold
+            ? "under-seeded"
+            : "fair";
+      return { team, trueStrength, trueRank, seedRank, seedGap, verdict };
+    })
+    .sort((a, b) => a.trueRank - b.trueRank);
+}
+
+export interface UpsetIndex {
+  predictedSeedSum: number; // sum of every predicted winner's seed
+  chalkSeedSum: number; // sum if the better seed always advanced
+  maxSeedSum: number; // sum if the worse seed always advanced
+  upsetCount: number; // games the predicted winner was the worse seed
+  wildness: number; // 0 (pure chalk) → 100 (maximum carnage)
+}
+
+// How chalk-y or wild a simulated bracket is. predictedSeedSum totals the seeds
+// of every game's predicted winner; chalkSeedSum is the minimum possible (better
+// seed always wins) and maxSeedSum the maximum (worse seed always wins). wildness
+// maps the predicted total onto that [chalk, max] range.
+export function upsetIndex(bracket: { rounds: BracketGame[][] }): UpsetIndex {
+  const games = bracket.rounds.flat();
+  let predictedSeedSum = 0;
+  let chalkSeedSum = 0;
+  let maxSeedSum = 0;
+  let upsetCount = 0;
+  for (const g of games) {
+    predictedSeedSum += g.winner.seed;
+    chalkSeedSum += Math.min(g.a.seed, g.b.seed);
+    maxSeedSum += Math.max(g.a.seed, g.b.seed);
+    if (g.upset) upsetCount++;
+  }
+  const span = maxSeedSum - chalkSeedSum;
+  const wildness =
+    span === 0 ? 0 : Math.round(((predictedSeedSum - chalkSeedSum) / span) * 100);
+  return { predictedSeedSum, chalkSeedSum, maxSeedSum, upsetCount, wildness };
+}
+
 // ---------------- Debate Evidence ----------------
 export interface DebateCase {
   player: Player;
